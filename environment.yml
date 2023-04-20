@@ -10,13 +10,19 @@ name: intersect
 
 dependencies:
   - python
+  - pip
   - pytest
   - flake8
   - pre-commit
   - black
   - isort
+  - protobuf
+  - pydantic
+  - retrying
   - sphinx
   - pip:
     - furo
     - ipdb
+    - pika
+    - paho-mqtt
     - -e .
