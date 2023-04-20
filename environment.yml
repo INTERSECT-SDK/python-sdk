@@ -1,0 +1,22 @@
+# Use this file to create a conda environment for developing the intersect
+# package. Below are some useful conda environment commands.
+#
+# Create the environment:      conda env create --file environment.yml
+# Activate the environment:    conda activate intersect
+# Deactivate the environment:  conda deactivate
+# Remove the environment:      conda env remove --name intersect
+
+name: intersect
+
+dependencies:
+  - python
+  - pytest
+  - flake8
+  - pre-commit
+  - black
+  - isort
+  - sphinx
+  - pip:
+    - furo
+    - ipdb
+    - -e .
