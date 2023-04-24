@@ -13,26 +13,30 @@ from .logger import logger
 def parse_message_arguments(arguments: str, load: bool = False) -> dict:
     """Read the arguments from a message.
 
-    Interprets the contents of a message's payload
-    according to the type specified by arguments_parser.
+    Interprets the contents of a message's payload according to the type
+    specified by arguments_parser.
 
     Args:
-        arguments: A string with the encoded payload values of a message.
-            If the json contains "minio" as a key, an
-            attempt will be made to load data from the MinIO server.
+        arguments: A string with the encoded payload values of a message. If
+            the json contains "minio" as a key, an attempt will be made to
+            load data from the MinIO server. MinIO messages must be of the
+            form shown below.
 
-            MinIO messages must be of the form:
-            {
-                "minio" : {
-                    "object_id": minio object id to load,
-                    "bucket" : minio bucket to load the object from
-                    "service_name": String for the system name the object was originally stored by
+            .. code-block:: text
+
+                {
+                    "minio": {
+                        "object_id": minio object id to load,
+                        "bucket": minio bucket to load the object from,
+                        "service_name": string for system name the object was originally stored by
+                    }
                 }
-            }
+
         load: A boolean determining whether to load data referenced by ID.
             If it is false, any object identification information will be returned
             in raw form in the dictionary. If it is true, stored objects will be downloaded
             from whatever data storage they are in and returned in the dictionary.
+
     Returns:
         A dictionary of values taken from arguments.
     """
