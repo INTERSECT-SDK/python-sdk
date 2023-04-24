@@ -6,7 +6,7 @@
 Python SDK for INTERSECT
 ========================
 
-This site provides documentation for INTERSECT's Python SDK. See the getting started section for installation and usage. See the API documentation for more information about the SDK.
+This site provides documentation for INTERSECT's Python SDK. See the getting started section for installation and usage instructions as well as guidelines for contributing to the project. Examples of using the SDK are discussed in the examples section. See the API documentation for more information about the SDK components.
 
 .. toctree::
    :maxdepth: 2
@@ -14,7 +14,15 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
 
    installation
    usage
+   contributing
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Examples
+
+   examples/hello-world
+   examples/inspecting-messages
+   examples/client-server-counting
 
 .. toctree::
    :caption: API documentation
@@ -31,7 +39,6 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    api/brokers
    api/channel
    api/client
-
 
 Indices and tables
 ==================
