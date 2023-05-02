@@ -6,14 +6,14 @@ import time
 from typing import Tuple
 
 # intersect imports
-from intersect.common import adapter, common
+from intersect import common
 from intersect import messages
 
 logger = logging.getLogger(f"demo2.intersect.epics.{__file__}")
 env_get = os.environ.get
 
 
-class Client(adapter.Adapter):
+class Client(common.Adapter):
     """ A sample Hello World client for demonstrating communication with INTERSECT messages.
 
     The client regularly sends Status messages containing its state. It can also send START/STOP Action messages or
