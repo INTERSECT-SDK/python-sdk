@@ -1,12 +1,12 @@
 Installation
 ============
 
-Here
+Software, developer tools, and other items that need to be installed for using the Python SDK for INTERSECT are discussed below.
 
-Broker
+Docker
 ------
 
-Here.
+`Docker <https://www.docker.com>`_ is used to create containers for using the Python SDK and to run the examples. Download and install Docker using the instructions provided on their website. See the Authenticating section to use the GitLab Container registry which contains INTERSECT dependencies.
 
 Authenticating
 --------------
@@ -19,17 +19,55 @@ For the Docker containers, you need to login to the GitLab Container registry us
 
    docker login code.ornl.gov:4567
 
-Docker
+Broker
 ------
 
-`Docker <https://www.docker.com>`_ is used to create containers for using the Python SDK and to run the examples. See the Authenticating section above to use the GitLab Container registry.
+A broker configuration for SDK developoment is available on the INTERSECT GitLab at https://code.ornl.gov/intersect/sdk/broker. This broker is meant for testing and development purposes and should not be used for deploying INTERSECT in production.
+
+Build for testing
+~~~~~~~~~~~~~~~~~
+
+To build the broker for testing, use the following Docker commands:
+
+.. code-block::
+
+   docker login code.ornl.gov:4567
+   docker build -t broker --target test .
+
+Next, run the tests with:
+
+.. code-block::
+
+   docker run --rm broker python3 -m unittest
+
+Build for production
+~~~~~~~~~~~~~~~~~~~~
+
+To build the broker for production, use the following commands:
+
+.. code-block::
+
+   docker login code.ornl.gov:4567
+   docker build -t broker --target production .
+
+
+Running the broker
+~~~~~~~~~~~~~~~~~~
+
+Run the broker using the following command:
+
+.. code-block::
+
+   docker run -p 5672:5672 -p 1883:1883 -v $PWD/definitions.json:/etc/rabbitmq/definitions.json -v $PWD/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf --rm --name=broker broker
+
+To expose the management UI as well, add ``-p 15672:15672`` to the command. Then you can navigate to localhost:15672 in your browser (credentials will match the values from ``definitions.json``).
 
 Poetry
 ------
 
-The `poetry <https://python-poetry.org>`_ packaging and dependency management tool can be used to install the Python SDK.
+The `poetry <https://python-poetry.org>`_ packaging and dependency management tool can be used to install the Python SDK. Download and install poetry using the instructions on their website.
 
 Conda
 -----
 
-The `conda <https://docs.conda.io/en/latest/>`_ packaging, dependency, and environment management tool can also be used to intall the Python SDK. Install conda from the `Anaconda <https://www.anaconda.com>`_ website or follow the `Conda installation <https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html>`_ steps. Notice that Miniconda is a mini version of Anaconda that includes only conda and its dependencies. If you prefer to have conda plus over 7,500 open-source packages, install Anaconda.
+The `conda <https://docs.conda.io/en/latest/>`_ packaging, dependency, and environment management tool can also be used to intall the Python SDK. Install conda from the `Anaconda <https://www.anaconda.com>`_ website or follow the `Conda installation <https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html>`_ steps. Notice that Miniconda is a mini version of Anaconda that includes only conda and its dependencies. If you prefer to have conda plus over 7,500 open-source packages, install Anaconda. Follow the instructions on their website to download and install conda or miniconda.
