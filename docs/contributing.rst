@@ -1,7 +1,31 @@
 Contributing
 ============
 
-This section discusses linters, formatters, and style guides for the INTERSECT Python SDK.
+This section discusses documentation, testing, linters, formatters, and style guides for developing the INTERSECT Python SDK.
+
+Environment
+-----------
+
+The command shown below uses the ``environment.yml`` file in the python-sdk repository to create a conda environment named ``intersect``. This will install all the dependencies for developing the INTERSECT Python SDK. After running the command, follow the instructions in the terminal to activate the environment.
+
+.. code-block::
+
+   conda env create --file environment.yml
+
+Documentation
+-------------
+
+Documentation for the INTERSECT Python SDK is generated with `Sphinx <https://www.sphinx-doc.org/en/master/>`_ from the ``docs`` directory.
+
+Testing
+-------
+
+The `pytest <https://docs.pytest.org>`_ framework is used to run tests.
+
+Style guide
+-----------
+
+Adhere to the `pep8 <https://pep8.org>`_ style guide for writing Python code.
 
 Linting
 -------
