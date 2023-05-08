@@ -1,11 +1,17 @@
 import time
 from sys import exit, stderr
+from typing import Tuple
 
 from intersect import common
 from intersect import messages
 
 
 class Client(common.Adapter):
+
+    arguments_parser: str = "json"
+    status_ticker_interval: float = 30.0
+    id_counter_init: int = 100
+    handled_status: Tuple = (messages.Status.GENERAL,)
 
     def __init__(self, config: common.IntersectConfig):
         super().__init__(config)
@@ -14,6 +20,12 @@ class Client(common.Adapter):
             self.handle_status_general,
             {messages.Status: [messages.Status.GENERAL]},
         )
+
+        # Generate and publish start message
+        self.status_channel.publish(self.generate_status_starting())
+
+        # Start status ticker and start action subscribe
+        self.start_status_ticker()
 
     def handle_status_general(self, message, type_, subtype, payload):
         print("Count received from server: %s", payload['count'])

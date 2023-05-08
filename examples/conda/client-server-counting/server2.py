@@ -1,13 +1,24 @@
 import time
 import threading
 from sys import exit, stderr
-from typing import Union
+from typing import Tuple, Union
 
 from intersect import common
 from intersect import messages
 
 
 class CountingAdapter(common.Adapter):
+
+    handled_actions: Tuple = (
+        messages.Action.START,
+        messages.Action.STOP,
+        messages.Action.RESTART,
+    )
+
+    handled_request: Tuple = (
+        messages.Request.STATUS,
+        messages.Request.DETAIL,
+    )
 
     def __init__(self, config: common.IntersectConfig):
         super().__init__(config)
@@ -31,6 +42,9 @@ class CountingAdapter(common.Adapter):
             self.handle_request_detail,
             {messages.Request: [messages.Request.DETAIL]}
         )
+
+        # Generate and publish start message
+        self.status_channel.publish(self.generate_status_starting())
 
         # Start status ticker and start action subscribe
         self.start_status_ticker()
