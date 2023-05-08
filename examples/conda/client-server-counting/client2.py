@@ -8,10 +8,8 @@ from intersect import messages
 class Client(common.Adapter):
 
     def __init__(self, config: common.IntersectConfig):
-        # Setup base class
         super().__init__(config)
 
-        # Register request for "Hello, World!" message handler
         self.register_message_handler(
             self.handle_counting_request,
             {messages.Request: [messages.Request.DETAIL]},
@@ -22,7 +20,7 @@ class Client(common.Adapter):
             f"Received request from {message.header.source}, sending reply...",
             flush=True,
         )
-        reply = self.generate_status_general(detail={"message": "Hello, World!"})
+        reply = self.generate_status_general(detail={"message": "Hello from client"})
         reply.header.destination = message.header.source
         self.send(reply)
         return True
@@ -52,9 +50,9 @@ if __name__ == "__main__":
         "hierarchy": {
             "organization": "Oak Ridge National Laboratory",
             "facility": "Hello World Facility",
-            "system": "Adapter",
-            "subsystem": "Adapter",
-            "service": "Adapter",
+            "system": "Example Client",
+            "subsystem": "Example Client",
+            "service": "example-client",
         },
     }
 
