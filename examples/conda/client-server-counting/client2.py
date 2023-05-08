@@ -11,11 +11,12 @@ class Client(common.Adapter):
         super().__init__(config)
 
         self.register_message_handler(
-            self.handle_counting_request,
-            {messages.Request: [messages.Request.DETAIL]},
+            self.handle_status_general,
+            {messages.Status: [messages.Status.GENERAL]},
         )
 
-    def handle_counting_request(self, message, type_, subtype, payload):
+    def handle_status_general(self, message, type_, subtype, payload):
+        print("Count received from server: %s", payload['count'])
         print(
             f"Received request from {message.header.source}, sending reply...",
             flush=True,
