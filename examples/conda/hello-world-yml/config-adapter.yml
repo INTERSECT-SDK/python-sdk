@@ -3,7 +3,7 @@ broker:
   username: "intersect_username"
   password: "intersect_password"
   # you may need to change "host" if running outside of docker environment
-  host: "broker"
+  host: "localhost"
   port: 1883
 
 # most of the "hierarchy" is not relevant for this demo application
