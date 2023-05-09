@@ -51,7 +51,7 @@ if __name__ == "__main__":
             "subsystem": "Requestor",
             "service": "Requestor",
         },
-        "destination": "hello-world-adapter",
+        "destination": "Adapter",
     }
 
     try:
