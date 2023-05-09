@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--destination",
         type=str,
-        default=environ.get("DESTINATION", "hello-world-adapter"),
+        default=environ.get("DESTINATION", "Adapter"),
         help="System name of the destination for the request",
     )
     args = parser.parse_args()
