@@ -24,33 +24,6 @@ Broker
 
 A broker configuration for SDK developoment is available on the INTERSECT GitLab at https://code.ornl.gov/intersect/sdk/broker. This broker is meant for testing and development purposes and should not be used for deploying INTERSECT in production.
 
-Build for testing
-~~~~~~~~~~~~~~~~~
-
-To build the broker for testing, use the following Docker commands:
-
-.. code-block::
-
-   docker login code.ornl.gov:4567
-   docker build -t broker --target test .
-
-Next, run the tests with:
-
-.. code-block::
-
-   docker run --rm broker python3 -m unittest
-
-Build for production
-~~~~~~~~~~~~~~~~~~~~
-
-To build the broker for production, use the following commands:
-
-.. code-block::
-
-   docker login code.ornl.gov:4567
-   docker build -t broker --target production .
-
-
 Running the broker
 ~~~~~~~~~~~~~~~~~~
 
@@ -58,9 +31,12 @@ Run the broker using the following command:
 
 .. code-block::
 
-   docker run -p 5672:5672 -p 1883:1883 -v $PWD/definitions.json:/etc/rabbitmq/definitions.json -v $PWD/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf --rm --name=broker broker
+   docker login code.ornl.gov:4567
+   docker run -p 1883:1883 code.ornl.gov:4567/intersect/sdk/broker/0.2.0
 
-To expose the management UI as well, add ``-p 15672:15672`` to the command. Then you can navigate to localhost:15672 in your browser (credentials will match the values from ``definitions.json``).
+To expose the management UI as well, add ``-p 15672:15672`` to the command.
+Then you can navigate to localhost:15672 in your browser.
+The credentials will be those found in the [broker's definitions.json](https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json) to login.
 
 Poetry
 ------
