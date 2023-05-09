@@ -32,7 +32,7 @@ Run the broker using the following command:
 .. code-block::
 
    docker login code.ornl.gov:4567
-   docker run -p 1883:1883 code.ornl.gov:4567/intersect/sdk/broker/0.2.0
+   docker run --rm -p 1883:1883 code.ornl.gov:4567/intersect/sdk/broker/0.2.0
 
 To expose the management UI as well, add ``-p 15672:15672`` to the command.
 Then you can navigate to localhost:15672 in your browser.
