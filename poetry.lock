@@ -570,7 +570,7 @@ files = [
 name = "pika"
 version = "1.3.2"
 description = "Pika Python AMQP Client Library"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -1164,4 +1164,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.10"
-content-hash = "2b0671876e4f523ffbd0af1e8bd4cb167677b74ade77f1316fc4e7b9bd649ef1"
+content-hash = "ae521bd4f2d822a8f99bda4ad2943471936b14e8d96ad2aa02f8f7e81f495e11"
