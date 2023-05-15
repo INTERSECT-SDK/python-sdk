@@ -24,19 +24,14 @@ Broker
 
 A broker configuration for SDK developoment is available on the INTERSECT GitLab at https://code.ornl.gov/intersect/sdk/broker. This broker is meant for testing and development purposes and should not be used for deploying INTERSECT in production.
 
-Running the broker
-~~~~~~~~~~~~~~~~~~
-
-Run the broker using the following command:
+Run the broker using the Docker commands shown below. See the previous section regarding authentication for the login command.
 
 .. code-block::
 
    docker login code.ornl.gov:4567
    docker run --rm -p 1883:1883 code.ornl.gov:4567/intersect/sdk/broker/0.2.0
 
-To expose the management UI as well, add ``-p 15672:15672`` to the command.
-Then you can navigate to localhost:15672 in your browser.
-The credentials will be those found in the [broker's definitions.json](https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json) to login.
+To expose the management UI as well, add ``-p 15672:15672`` to the command. Then you can navigate to ``localhost:15672`` in your browser. The login credentials will be those found in the broker's `definitions file <https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json>`_.
 
 Poetry
 ------
