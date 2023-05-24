@@ -1,7 +1,7 @@
 from time import sleep
 from sys import exit, stderr
 
-from intersect import messages
+from intersect.messages import JsonHandler
 from intersect import common
 
 
@@ -27,7 +27,8 @@ class MessageInspectorAdapter(common.Adapter):
 
     @staticmethod
     def inspect_messages(client, userdata, message):
-        payload = messages.deserialize(message.payload)
+        json_handler = JsonHandler()
+        payload = json_handler.deserialize(message.payload)
         print(payload)
         return True
 
