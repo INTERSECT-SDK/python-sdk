@@ -8,7 +8,7 @@ Documentation for the INTERSECT Python SDK is available [here](x). The documenta
 
 ## Examples
 
-Examples are available in the `examples` directory. The examples in the `conda` directory should be run using the supplied conda environment while the examples in the `docker-compose` directory are run with Docker compose. See the documentation and the code comments in each example for more information.
+Examples are available in the `examples` directory. The examples in the `python-environment` directory should be run using the supplied conda environment while the examples in the `docker-compose` directory are run with Docker compose. See the documentation and the code comments in each example for more information.
 
 ## Contributing
 
