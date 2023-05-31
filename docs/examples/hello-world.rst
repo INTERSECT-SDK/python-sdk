@@ -1,19 +1,19 @@
 Hello world
 ===========
 
-This is a basic example to demonstrate how to communicate with the INTERSECT SDK. The ``adapter.py`` subscribes to ``Request`` INTERSECT messages of the ``DETAIL`` subtype. The adapter will respond with a "Hello, World!" message in its reply. The ``requestor.py`` publishes ``Status`` INTERSECT messages of the ``GENERAL`` subtype.
-
-The ``hello-world-dict`` example uses a dictionary for configuration settings while the example in ``hello-world-yml`` uses a YAML configuration file. Follow the steps below to run these examples using a conda environment or Docker compose.
+This is a basic example to demonstrate how to communicate with the INTERSECT SDK. The ``adapter.py`` subscribes to ``Request`` INTERSECT messages of the ``DETAIL`` subtype. The adapter will respond with a "Hello, World!" message in its reply. The ``requestor.py`` publishes ``Status`` INTERSECT messages of the ``GENERAL`` subtype. See the sections below for running the example using Docker compose or within a Python environment.
 
 Using Docker compose
 --------------------
 
 Here.
 
-Using Conda
------------
+Using a Python environment
+--------------------------
 
-Conda is an open-source package and environment management system. It is included with Anaconda and Miniconda. Run the following commands to use the ``environment.yml`` file to create a conda environment for this example:
+This section discusses the ``hello-world`` examples in ``examples/python-environment/``. The ``hello-world-dict`` example uses a dictionary for configuration settings while the example in ``hello-world-yml`` uses a YAML configuration file. Follow the steps below to run these examples using a conda environment.
+
+Run the following commands to use the ``environment.yml`` file to create a conda environment for this example:
 
 .. code-block:: bash
 
@@ -26,7 +26,6 @@ Conda is an open-source package and environment management system. It is include
    # Install the intersect packages using pip in the conda environment, this will
    # ask for your username (UCAMS ID) and password (GitLab token)
    pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-common
-
 
 After starting the broker and activating the conda environment, run the adapter and requestor as follows in separate terminal sessions:
 
