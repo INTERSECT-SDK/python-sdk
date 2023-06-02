@@ -647,7 +647,7 @@ class Adapter(base.Service):
             if message.header.destination is None or message.header.destination == "None":
                 self.status_channel.publish(message)
             else:
-                self.reply_channel.publish(message)
+                self.connection.channel(message.header.destination + "/reply").publish(message)
         elif isinstance(message, messages.Action):
             self.connection.channel(message.header.destination + "/action").publish(message)
         elif isinstance(message, messages.Request):
