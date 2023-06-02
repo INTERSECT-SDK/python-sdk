@@ -28,7 +28,7 @@ class Client(common.Adapter):
         self.start_status_ticker()
 
     def handle_status_general(self, message, type_, subtype, payload):
-        print("Count received from server: %s", payload['count'])
+        print("Count received from server: {}".format(payload['count']))
         print(
             f"Received request from {message.header.source}, sending reply...",
             flush=True,
