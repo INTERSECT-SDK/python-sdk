@@ -1,7 +1,7 @@
 Hello world
 ===========
 
-This is a basic example to demonstrate how to communicate with the INTERSECT SDK. The ``adapter.py`` subscribes to ``Request`` INTERSECT messages of the ``DETAIL`` subtype. The adapter will respond with a "Hello, World!" message in its reply. The ``requestor.py`` publishes ``Status`` INTERSECT messages of the ``GENERAL`` subtype. See the sections below for running the example using Docker compose or within a Python environment.
+This is a basic example to demonstrate how to communicate with the INTERSECT SDK. The ``adapter.py`` subscribes to ``Request`` INTERSECT messages of the ``DETAIL`` subtype. The adapter will respond with a "Hello, World!" message in its reply. The ``requestor.py`` publishes ``Status`` INTERSECT messages of the ``GENERAL`` subtype. See the sections below for running the example using Docker compose or from within a Python environment.
 
 Using Docker compose
 --------------------
