@@ -1,3 +1,5 @@
 # flake8: noqa
 
-# from .common.adapter import Adapter
+import intersect.client
+import intersect.common
+import intersect.messages
