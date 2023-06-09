@@ -1,10 +1,9 @@
 # Standard imports
-from time import sleep
 from sys import exit, stderr
+from time import sleep
 
 # intersect imports
-from intersect import messages
-from intersect import common
+from intersect import common, messages
 
 
 class HelloWorldRequestor(common.Adapter):

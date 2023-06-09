@@ -1,0 +1,155 @@
+# Default values for intersect-sdk-python-docs.
+# most of this structure is consistent with Bitnami's, but there are no RBAC or persistence values.
+
+# global values used by this chart
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+  kubeVersion: ""
+
+### Generic Kubernetes parameters ###
+
+kubeVersion: ""
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+commonLabels: {}
+commonAnnotations: {}
+extraDeploy: [] # dynamic Kubernetes templates
+diagnosticMode:
+  enabled: false
+  command:
+    - sleep
+  args:
+    - infinity
+
+### Container params ###
+
+image:
+  registry: code.ornl.gov:4567
+  repository: intersect/sdk/python-sdk/sdk/base/next
+  tag: "latest"
+  digest: ""
+  pullPolicy: ""
+  pullSecrets: []
+
+replicaCount: 1
+
+livenessProbe: # the application developers should help determine sane default params
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe: # the application developers should help determine sane default params
+  enabled: true
+  initialDelaySeconds: 5
+  timeoutSeconds: 3
+  periodSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+startupProbe: # the application developers should help determine sane default params
+  enabled: false
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+
+customLivenessProbe: {}
+customReadinessProbe: {}
+customStartupProbe: {}
+
+resources:
+  limits: {}
+  requests: {}
+
+# TODO this probably has to be configured based on the system
+podSecurityContext:
+  enabled: false
+  fsGroup: 1001
+containerSecurityContext:
+  enabled: false
+  runAsUser: 1001
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+
+command: []
+args: []
+hostAliases: []
+podLabels: {}
+podAnnotations: {}
+podAffinityPreset: ""
+podAntiAffinityPreset: soft
+
+pdb:
+  create: false
+  minAvailable: 1
+  maxUnavailable: ""
+autoscaling:
+  enabled: false
+  minReplicas: ""
+  maxReplicas: ""
+  targetCPUUtilizationPercentage: ""
+  targetMemoryUtilizationPercentage: ""
+nodeAffinityPreset:
+  type: ""
+  key: ""
+  values: []
+affinity: {}
+nodeSelector: {}
+tolerations: []
+updateStrategy:
+  type: RollingUpdate
+priorityClassName: ""
+topologySpreadConstraints: []
+schedulerName: ""
+terminationGracePeriodSeconds: ""
+lifecycleHooks: {}
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+initContainers: []
+sidecars: []
+
+### Traffic exposure ###
+
+service:
+  type: ClusterIP
+  port: 80
+  # make sure this is a number
+  nodePort: ""
+  clusterIP: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: Cluster
+  annotations: {}
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+
+ingress:
+  enabled: false
+  pathType: ImplementationSpecific
+  hostname: intersect-sdk-python-docs.local
+  ingressClassName: ""
+  path: /docs/python-sdk
+  annotations: {}
+  tls: false
+  selfSigned: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  secrets: []
+  extraRules: []
+
+### Kubernetes role stuff
+
+serviceAccount:
+  create: false
+  annotations: {}
+  name: ""
+  automountServiceAccountToken: true

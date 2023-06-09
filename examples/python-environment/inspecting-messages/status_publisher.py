@@ -1,5 +1,5 @@
-from time import sleep
 from sys import exit, stderr
+from time import sleep
 
 from intersect import common
 
@@ -53,4 +53,3 @@ if __name__ == "__main__":
             print(f"Publisher Uptime: {int(adapter.uptime)} seconds", flush=True)
     except KeyboardInterrupt:
         print("User requested exit")
-

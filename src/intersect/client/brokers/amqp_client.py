@@ -274,7 +274,6 @@ class AMQPClient(BrokerClient):
 
         # For each topic, add the handler
         for topic in topics:
-
             # If there are no handlers for this topic, make a new list
             if topic not in self.topics_to_handlers:
                 self.lock.acquire()

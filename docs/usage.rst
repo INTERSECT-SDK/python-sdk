@@ -1,7 +1,7 @@
 Usage
 =====
 
-After installing the Python SDK package (which is named ``intersect``) with pip or poetry, import the package as shown below:
+After installing the Python SDK package (which is named ``intersect``) with pip or PDM, import the package as shown below:
 
 .. code-block:: python
 

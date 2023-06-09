@@ -1,8 +1,8 @@
-from time import sleep
 from sys import exit, stderr
+from time import sleep
 
-from intersect.messages import JsonHandler
 from intersect import common
+from intersect.messages import JsonHandler
 
 
 class MessageInspectorAdapter(common.Adapter):

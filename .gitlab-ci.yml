@@ -1,0 +1,163 @@
+stages:
+  - dev_build
+  - checks
+  - publish-chart
+  - deploy
+  - package
+
+variables:
+  GIT_STRATEGY: clone
+  CONTAINER_URL: "${CI_REGISTRY_IMAGE}/base"
+  CONTAINER_DOCS_URL: "${CI_REGISTRY_IMAGE}/docs"
+
+# This import is for the func_rse_docker_* functions
+before_script:
+  - curl https://code.ornl.gov/rse-deployment/rse-sharables/raw/master/rse-bash-modules.sh -O
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  - source rse-bash-modules.sh
+  - func_rse_docker_cleanup
+
+after_script:
+  - curl https://code.ornl.gov/rse-deployment/rse-sharables/raw/master/rse-bash-modules.sh -O
+  - source rse-bash-modules.sh
+  - func_rse_docker_cleanup
+  - sudo chown -R gitlab-runner .
+
+container-build:
+  stage: dev_build
+  script:
+    - >
+      docker build
+      -f Dockerfile
+      -t intersect-sdk-python .
+    - docker tag intersect-sdk-python $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+    - docker tag intersect-sdk-python $CONTAINER_URL/$CI_COMMIT_REF_NAME:latest
+    - docker push $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $CONTAINER_URL/$CI_COMMIT_REF_NAME:latest
+  tags:
+    - intersect-sdk-builder
+
+lint:
+  stage: checks
+  script:
+    # TODO -> forbid mypy command from failing
+    - >
+      docker run --rm $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA bash -ec "
+      pdm run isort --filter-files --check-only . ;
+      pdm run black --check --diff .;
+      pdm run flake8 .; 
+      pdm run mypy src/intersect/ || true
+      "
+  tags:
+    - intersect-sdk-builder
+
+unit-tests:
+  stage: checks
+  script:
+    - >
+      docker run --rm
+      -v $PWD:/reports
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA bash -c 
+      "pdm run test-with-reports"
+  artifacts:
+    when: always
+    reports:
+      junit: report_unit.xml
+  tags:
+    - intersect-sdk-builder
+
+coverage:
+  stage: checks
+  script:
+    - >
+      docker run --rm
+      -v $PWD:/reports
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA bash -c 
+      "pdm run tests-coverage"
+    - sed -i "s:<source>/code:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:g" coverage.xml
+  coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - htmlcov/
+      - coverage.xml
+  tags:
+    - intersect-sdk-builder
+
+build-docs:
+  stage: checks
+  script:
+    # read Dockerfile from stdin with no build context
+    - >
+      docker build
+      --build-arg IMAGE=${CONTAINER_URL}/$CI_COMMIT_REF_NAME
+      -t intersect-sdk-python-docs - < docs/Dockerfile
+    - >
+      docker tag
+      intersect-sdk-python-docs
+      $CONTAINER_DOCS_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+    - >
+      docker tag
+      intersect-sdk-python-docs
+      $CONTAINER_DOCS_URL/$CI_COMMIT_REF_NAME:latest
+    - docker push $CONTAINER_DOCS_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $CONTAINER_DOCS_URL/$CI_COMMIT_REF_NAME:latest
+  tags:
+    - intersect-sdk-builder
+
+publish-chart:
+  stage: publish-chart
+  variables:
+    KUBECTL_IMAGE: code.ornl.gov:4567/rse/images/kubectl:1.23.3-debian-10-r13_helm-3.8.1
+  script:
+    - docker pull ${KUBECTL_IMAGE}
+    - >
+      docker run --rm --name kubectl
+      -v $PWD:/mount
+      --workdir /mount
+      --user $UID:$UID
+      -e CI_JOB_TOKEN=${CI_JOB_TOKEN}
+      -e CI_API_V4_URL=${CI_API_V4_URL}
+      -e CI_PROJECT_ID=${CI_PROJECT_ID}
+      -e CI_COMMIT_REF_NAME=${CI_COMMIT_REF_NAME}
+      ${KUBECTL_IMAGE} helm-publish-chart-with-gitlab-ci chart
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "next"
+      changes:
+        - chart/**/*
+  tags:
+    - intersect-sdk-builder
+
+kubernetes:
+  stage: deploy
+  trigger:
+    project: intersect/devops/deployments/ornl-cloud-k8s
+    branch: main
+    strategy: depend
+  inherit:
+    variables: false
+  variables:
+    TRIGGER_UPSTREAM_BRANCH: ${CI_COMMIT_REF_NAME}
+    TRIGGER_UPSTREAM_CHART_NAME: intersect-sdk-python-docs
+    TRIGGER_UPSTREAM_IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "next"
+
+publish-package:
+  stage: package
+  script:
+    - docker login --username=$CI_REGISTRY_USER --password=$CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - >
+      docker run --rm 
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA 
+      pdm publish 
+      --username gitlab-ci-token 
+      --password "$CI_JOB_TOKEN" 
+      --repository "https://code.ornl.gov/api/v4/projects/${CI_PROJECT_ID}/packages/pypi"
+  tags:
+    - intersect-sdk-builder
+  only:
+    - /^v\d+\.\d+\.\d+.*$/

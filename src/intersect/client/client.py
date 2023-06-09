@@ -2,9 +2,9 @@ import json
 from typing import Union
 
 import urllib3
+
 from ..messages import JsonHandler
 from ..messages.handlers.serialization_handler import SerializationHandler
-
 from .brokers.broker_client import BrokerClient
 from .channel import Channel
 from .exceptions import IntersectInvalidBrokerException

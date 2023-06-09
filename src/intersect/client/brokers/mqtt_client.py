@@ -41,7 +41,6 @@ class MQTTClient(BrokerClient):
 
         # Pass the payload to each handler for this topic
         for handler in self.topics_to_handlers[message.topic]:
-
             # If the handler returns false, do not pass the message to
             # subsequent handlers in the list
             if not handler.on_receive(message.topic, message.payload):
@@ -130,7 +129,6 @@ class MQTTClient(BrokerClient):
 
         # For each topic, add the handler
         for topic in topics:
-
             # If there are no handlers for this topic, make a new list
             if topic not in self.topics_to_handlers:
                 self.topics_to_handlers[topic] = []

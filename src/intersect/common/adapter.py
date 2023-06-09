@@ -7,9 +7,10 @@ import weakref
 from builtins import list
 from typing import Any, Callable, Dict, List, Union
 
+from .. import messages
+
 # intersect imports
 from ..client import Channel
-from .. import messages
 
 # Project import
 from . import base

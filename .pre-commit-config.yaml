@@ -1,0 +1,42 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pdm-lock-check
+        name: PDM Lock Check
+        description: run pdm lock --check to validate config
+        entry: pdm lock --check
+        pass_filenames: false
+        files: ^pyproject.toml$
+        language: system
+      - id: pdm-export-lock
+        name: PDM Export Lock
+        description: Verify lock can be exported to requirements.txt format
+        entry: pdm export
+        pass_filenames: false
+        files: ^pdm.lock$
+        language: system
+      - id: black
+        name: Black
+        description: use Black for formatting
+        entry: pdm run black .
+        pass_filenames: false
+        language: system
+      - id: isort
+        name: Isort
+        description: use Isort to sort imports
+        entry: pdm run isort --filter-files .
+        pass_filenames: false
+        language: system
+      # TODO - get mypy working
+      #- id: mypy
+        #name: MyPy
+        #description: use MyPy for static type checking
+        #entry: pdm run mypy src/intersect/
+        #pass_filenames: false
+        #language: system
+      - id: flake8
+        name: Flake8
+        description: use Flake8 to lint
+        entry: pdm run flake8
+        pass_filenames: false
+        language: system

@@ -3,12 +3,14 @@ __pycache__
 *.log
 *.bkp
 
+# tests
+report_unit.xml
+
 # Created by https://www.toptal.com/developers/gitignore/api/windows,macos,linux,eclipse,visualstudiocode,vim,emacs,pycharm,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,linux,eclipse,visualstudiocode,vim,emacs,pycharm,python
 
 ### Eclipse ###
 .metadata
-bin/
 tmp/
 *.tmp
 *.bak
@@ -378,6 +380,9 @@ ipython_config.py
 #   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
 #poetry.lock
 
+# PDM
+.pdm-python
+
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
 
@@ -495,3 +500,4 @@ $RECYCLE.BIN/
 
 .idea
 
+.pdm-python

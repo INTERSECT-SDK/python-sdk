@@ -11,7 +11,7 @@ Docker
 Authenticating
 --------------
 
-Some dependencies are stored on private package registries on code.ornl.gov. A personal access token is required in order to install these with either poetry or pip. Create a personal access token on the `Access Tokens page <https://code.ornl.gov/-/profile/personal_access_tokens>`_ in GitLab Preferences with ``read_api`` or ``api`` permissions then save the auto-generated key. This key is only displayed immediately after generating it, so be sure to save it (otherwise a new token will need to be generated).
+Some dependencies are stored on private package registries on code.ornl.gov. A personal access token is required in order to install these with either pip or PDM. Create a personal access token on the `Access Tokens page <https://code.ornl.gov/-/profile/personal_access_tokens>`_ in GitLab Preferences with ``read_api`` or ``api`` permissions then save the auto-generated key. This key is only displayed immediately after generating it, so be sure to save it (otherwise a new token will need to be generated).
 
 For the Docker containers, you need to login to the GitLab Container registry using the command shown below. Then sign in with your UCAMS or XCAMS credentials.
 
@@ -33,10 +33,10 @@ Run the broker using the Docker commands shown below. See the previous section r
 
 To expose the management UI as well, add ``-p 15672:15672`` to the command. Then you can navigate to ``localhost:15672`` in your browser. The login credentials will be those found in the broker's `definitions file <https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json>`_.
 
-Poetry
+PDM
 ------
 
-The `poetry <https://python-poetry.org>`_ packaging and dependency management tool can be used to install the Python SDK. Download and install poetry using the instructions on their website.
+The `PDM <https://pdm.fming.dev/latest/>`_ packaging and dependency management tool can be used to install the Python SDK. Download and install PDM using the instructions on their website.
 
 Conda
 -----

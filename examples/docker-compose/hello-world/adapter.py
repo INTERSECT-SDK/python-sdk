@@ -1,24 +1,21 @@
 # Standard importsDict
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
-from time import sleep
 from sys import exit, stderr
+from time import sleep
 
 # intersect imports
-from intersect import messages
-from intersect import common
+from intersect import common, messages
 
 
 class HelloWorldAdapter(common.Adapter):
     def __init__(self, config: common.IntersectConfig):
-
         # Setup base class
         super().__init__(config)
 
         # Register request for "Hello, World!" message handler
         self.register_message_handler(
-            self.handle_hello_world_request,
-            {messages.Request: [messages.Request.DETAIL]}
+            self.handle_hello_world_request, {messages.Request: [messages.Request.DETAIL]}
         )
 
     def handle_hello_world_request(self, message, type_, subtype, payload):
