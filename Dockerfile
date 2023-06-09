@@ -1,17 +1,19 @@
-# development container - not meant to be extensible
+# container for CI/CD or development - NOT meant to be an extensible Docker image with the installed package
 
 ARG REPO=code.ornl.gov:4567/rse/images/
-FROM ${REPO}python:3.8-slim
+
+FROM ${REPO}python:3.8-slim as minimal
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100 \
-    PDM_VERSION=2.7.1
+    PDM_VERSION=2.7.1 \
+    PDM_HOME=/usr/local
 # uncomment to allow prereleases to be installed
 #ENV PDM_PRERELEASE=1
-ENV PATH="$HOME/.local/bin:$PATH"
+ENV PATH="/root/.local/bin:$PATH"
 
 RUN apt update \
     && apt install -y curl make \
@@ -19,6 +21,9 @@ RUN apt update \
     && curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python -
 
 WORKDIR /sdk
-COPY . .
-# install all optional and development dependencies
+COPY pyproject.toml pdm.lock README.md ./
+RUN pdm install --prod
+
+FROM minimal as complete
 RUN pdm install -G:all
+COPY . .

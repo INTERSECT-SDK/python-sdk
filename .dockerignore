@@ -3,3 +3,5 @@ dist
 build
 .pdm-python
 .pdm-build
+.mypy_cache
+.pytest_cache
