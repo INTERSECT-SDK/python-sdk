@@ -37,7 +37,7 @@ conda_environment = {
             "pip": dependencies
             + [
                 f"{DEP_DELIMITER}{item}"
-                for sublist in list(chain(optionals.values()))
+                for sublist in chain(optionals.values())
                 for item in sublist
             ]
             + [
