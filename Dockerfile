@@ -2,6 +2,7 @@
 
 ARG REPO=code.ornl.gov:4567/rse/images/
 
+# use this stage for development
 FROM ${REPO}python:3.8-slim as minimal
 
 ENV PYTHONUNBUFFERED=1 \
@@ -22,8 +23,8 @@ RUN apt update \
 
 WORKDIR /sdk
 COPY pyproject.toml pdm.lock README.md ./
-RUN pdm install --prod
-
-FROM minimal as complete
 RUN pdm install -G:all
+
+# use this stage in CI/CD, not useful in development
+FROM minimal as complete
 COPY . .

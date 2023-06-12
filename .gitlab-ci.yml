@@ -56,9 +56,9 @@ unit-tests:
   script:
     - >
       docker run --rm
-      -v $PWD:/reports
+      -v $PWD:/sdk
       $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA 
-      pdm run pytest tests/ --junitxml=/reports/report_unit.xml
+      pdm run test-report
   artifacts:
     when: always
     reports:
@@ -71,15 +71,10 @@ coverage:
   script:
     - >
       docker run --rm
-      -v $PWD:/reports
+      -v $PWD:/sdk
       $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA  
-      pdm run pytest 
-      --cov=.
-      --cov-fail-under=50
-      --cov-report=html:/reports/htmlcov
-      --cov-report=xml:/reports/coverage.xml
-      tests/ 
-    - sed -i "s:<source>/code:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:g" coverage.xml
+      pdm run test-coverage 
+    - sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:g" coverage.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:
     reports:
@@ -164,5 +159,5 @@ publish-package:
       --repository "https://code.ornl.gov/api/v4/projects/${CI_PROJECT_ID}/packages/pypi"
   tags:
     - intersect-sdk-builder
-  only:
-    - /^v\d+\.\d+\.\d+.*$/
+  rules:
+    - if: $CI_COMMIT_TAG ~= /^v\d+\.\d+\.\d+.*$/

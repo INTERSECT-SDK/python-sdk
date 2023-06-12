@@ -14,6 +14,12 @@ To install pre-commit hooks, run `pdm run pre-commit install` after installation
 
 Main commands are specified under `tool.pdm.scripts` in `pyproject.toml`
 
+### Docker build instructions
+
+`docker build --target minimal -t intersect-sdk-python .` 
+
+You will only need to rebuild this image if you need to add/update dependencies.
+
 ## Adding dependencies
 
 - **Required dependency**: `pdm add <dependency>`
