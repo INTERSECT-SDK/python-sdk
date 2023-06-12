@@ -4,7 +4,6 @@ This file generates a Conda environment.yml from pyproject.toml
 (prints to stdout)
 """
 
-from itertools import chain
 from pathlib import Path
 
 try:
@@ -35,11 +34,7 @@ conda_environment = {
         "pip",
         {
             "pip": dependencies
-            + [
-                f"{DEP_DELIMITER}{item}"
-                for sublist in chain(optionals.values())
-                for item in sublist
-            ]
+            + [f"{DEP_DELIMITER}{dep}" for optlist in optionals.values() for dep in optlist]
             + [
                 f"intersect=={version}",
                 "-e .",

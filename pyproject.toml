@@ -65,8 +65,6 @@ doc = [
 [tool.pdm.scripts]
 test = "pytest tests/"
 test-debug = "pytest tests/ -s"
-test-with-report = "pytest tests/ --junitxml=report_unit.xml"
-test-coverage = "pytest tests/ --cov=. --cov-fail-under=50 --cov-report=html:./htmlcov --cov-report=xml:./coverage.xml"
 lint = {composite = ["lint-isort", "lint-black", "lint-flake8", "lint-mypy"]}
 lint-black = "black ."
 lint-isort = "isort --filter-files ."

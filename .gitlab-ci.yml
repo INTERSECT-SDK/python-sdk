@@ -57,8 +57,8 @@ unit-tests:
     - >
       docker run --rm
       -v $PWD:/reports
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA bash -c 
-      "pdm run test-with-reports"
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA 
+      pdm run pytest tests/ --junitxml=/reports/report_unit.xml
   artifacts:
     when: always
     reports:
@@ -72,8 +72,13 @@ coverage:
     - >
       docker run --rm
       -v $PWD:/reports
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA bash -c 
-      "pdm run tests-coverage"
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA  
+      pdm run pytest 
+      --cov=.
+      --cov-fail-under=50
+      --cov-report=html:/reports/htmlcov
+      --cov-report=xml:/reports/coverage.xml
+      tests/ 
     - sed -i "s:<source>/code:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:g" coverage.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:
