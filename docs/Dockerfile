@@ -4,8 +4,8 @@ ARG NGINX_IMAGE=code.ornl.gov:4567/rse/images/
 
 # Build the HTML from docs
 FROM ${IMAGE}:${TAG} as docs
-WORKDIR /sdk
-RUN pdm run make -C docs html
+WORKDIR /sdk/docs
+RUN pdm run make html
 
 # Nginx to serve HTML
 FROM ${NGINX_IMAGE}nginx:1.22-alpine as server
