@@ -23,7 +23,7 @@ RUN apt update \
 
 WORKDIR /sdk
 # add minimal files needed for build
-COPY pyproject.toml pdm.lock README.md src/intersect/version ./
+COPY pyproject.toml pdm.lock README.md src/intersect/version.py ./
 RUN pdm install -G:all
 
 # use this stage in CI/CD, not useful in development
