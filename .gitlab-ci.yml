@@ -56,7 +56,7 @@ unit-tests:
   script:
     - >
       docker run --rm
-      -v $PWD:/sdk
+      -v $PWD/reports:/sdk/reports
       $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA 
       pdm run test-report
   artifacts:
@@ -71,19 +71,18 @@ coverage:
   script:
     - >
       docker run --rm
-      -v $PWD:/sdk
+      -v $PWD/reports:/sdk/reports
       $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA  
-      pdm run test-coverage 
-    - sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:g" coverage.xml
+      pdm run test-coverage
+    - sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: reports/coverage.xml
     paths:
-      - htmlcov/
-      - coverage.xml
+      - reports/
   tags:
     - intersect-sdk-builder
 
