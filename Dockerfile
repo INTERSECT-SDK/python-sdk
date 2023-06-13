@@ -22,7 +22,8 @@ RUN apt update \
     && curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python -
 
 WORKDIR /sdk
-COPY pyproject.toml pdm.lock README.md ./
+# add minimal files needed for build
+COPY pyproject.toml pdm.lock README.md src/intersect/version ./
 RUN pdm install -G:all
 
 # use this stage in CI/CD, not useful in development

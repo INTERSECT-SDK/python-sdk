@@ -79,9 +79,10 @@ package-dir = "src"
 
 [tool.pdm.version]
 source = "file"
-path = "src/intersect/__init__.py"
+path = "src/intersect/version.py"
 
 [tool.black]
+color = true
 line-length = 100
 target-version = ['py38']
 include = '.pyi?$'
@@ -95,6 +96,7 @@ exclude = '''
   | dist
 )/
 '''
+skip-string-normalization = true
 
 [tool.isort]
 multi_line_output = 3
