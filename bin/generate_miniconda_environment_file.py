@@ -12,8 +12,9 @@ try:
 except ImportError:
     # python < 3.11
     import tomli as toml
-
 import yaml
+
+from intersect import __version__
 
 # use delimiter which avoids YAML attempting to insert quotes
 DEP_DELIMITER = "\\"
@@ -22,7 +23,6 @@ BASE_DIR = Path(__file__).absolute().parents[1]
 with open(BASE_DIR / "pyproject.toml", "rb") as f:
     pyproject = toml.load(f)
 
-version = pyproject["project"]["version"]
 requires_python = pyproject["project"]["requires-python"]
 dependencies = pyproject["project"]["dependencies"]
 optionals = pyproject["project"]["optional-dependencies"]
@@ -36,7 +36,7 @@ conda_environment = {
             "pip": dependencies
             + [f"{DEP_DELIMITER}{dep}" for optlist in optionals.values() for dep in optlist]
             + [
-                f"intersect=={version}",
+                f"intersect=={__version__}",
                 "-e .",
             ]
         },

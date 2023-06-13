@@ -1,3 +1,3 @@
 # flake8: noqa
 
-# from .common.adapter import Adapter
+__version__ = "0.1.2"
