@@ -21,12 +21,12 @@ def _parse_json(filearg: Path):
 
 
 def _parse_toml(filearg: Path):
-    # NOTE: TOML is listed as a dependency of the intersect.messages library
-    # so don't bother validating the import
     try:
+        # check for optional dependency first
         import tomli as toml
     except ImportError:
         try:
+            # for python >= 3.11
             import tomllib as toml  # type: ignore
         except ImportError:
             raise IntersectConfigParseException(
