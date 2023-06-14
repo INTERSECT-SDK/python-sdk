@@ -2,13 +2,17 @@
 from time import sleep
 from sys import exit, stderr
 
-# intersect imports
-from intersect import messages
-from intersect import common
+from intersect import (
+    Adapter,
+    IntersectConfig,
+    load_config_from_dict,
+    IntersectConfigParseException,
+    messages,
+)
 
 
-class HelloWorldAdapter(common.Adapter):
-    def __init__(self, config: common.IntersectConfig):
+class HelloWorldAdapter(Adapter):
+    def __init__(self, config: IntersectConfig):
         # Setup base class
         super().__init__(config)
 
@@ -48,8 +52,8 @@ if __name__ == "__main__":
     }
 
     try:
-        config = common.load_config_from_dict(config_dict)
-    except common.IntersectConfigParseException() as ex:
+        config = load_config_from_dict(config_dict)
+    except IntersectConfigParseException() as ex:
         print(ex.message, file=stderr)
         exit(ex.returnCode)
 

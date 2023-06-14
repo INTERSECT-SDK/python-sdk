@@ -3,12 +3,16 @@ import threading
 from sys import exit, stderr
 from typing import Tuple, Union
 
-from intersect import common
-from intersect import messages
+from intersect import (
+    Adapter,
+    IntersectConfig,
+    load_config_from_dict,
+    IntersectConfigParseException,
+    messages,
+)
 
 
-class CountingAdapter(common.Adapter):
-
+class CountingAdapter(Adapter):
     handled_actions: Tuple = (
         messages.Action.START,
         messages.Action.STOP,
@@ -20,7 +24,7 @@ class CountingAdapter(common.Adapter):
         messages.Request.DETAIL,
     )
 
-    def __init__(self, config: common.IntersectConfig):
+    def __init__(self, config: IntersectConfig):
         super().__init__(config)
 
         # Set attributes for counting
@@ -30,17 +34,15 @@ class CountingAdapter(common.Adapter):
         # Register message handlers
         self.register_message_handler(
             self.handle_start,
-            {messages.Action: [messages.Action.START, messages.Action.RESTART]}
+            {messages.Action: [messages.Action.START, messages.Action.RESTART]},
         )
 
         self.register_message_handler(
-            self.handle_stop,
-            {messages.Action: [messages.Action.STOP]}
+            self.handle_stop, {messages.Action: [messages.Action.STOP]}
         )
 
         self.register_message_handler(
-            self.handle_request_detail,
-            {messages.Request: [messages.Request.DETAIL]}
+            self.handle_request_detail, {messages.Request: [messages.Request.DETAIL]}
         )
 
         # Generate and publish start message
@@ -80,7 +82,7 @@ class CountingAdapter(common.Adapter):
             self.counter_thread = threading.Thread(
                 target=self._run_count,
                 daemon=True,
-                name=f"{self.service_name}_counter_thread"
+                name=f"{self.service_name}_counter_thread",
             )
             self.counter_thread.start()
 
@@ -98,7 +100,6 @@ class CountingAdapter(common.Adapter):
 
 
 if __name__ == "__main__":
-
     config_dict = {
         "broker": {
             "username": "intersect_username",
@@ -116,8 +117,8 @@ if __name__ == "__main__":
     }
 
     try:
-        config = common.load_config_from_dict(config_dict)
-    except common.IntersectConfigParseException() as ex:
+        config = load_config_from_dict(config_dict)
+    except IntersectConfigParseException() as ex:
         print(ex.message, file=stderr)
         exit(ex.returnCode)
 

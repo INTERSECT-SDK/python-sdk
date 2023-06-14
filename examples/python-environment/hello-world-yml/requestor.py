@@ -5,13 +5,17 @@ from pathlib import Path
 from time import sleep
 from sys import exit, stderr
 
-# intersect imports
-from intersect import messages
-from intersect import common
+from intersect import (
+    Adapter,
+    IntersectConfig,
+    load_config_from_file,
+    IntersectConfigParseException,
+    messages,
+)
 
 
-class HelloWorldRequestor(common.Adapter):
-    def __init__(self, config: common.IntersectConfig):
+class HelloWorldRequestor(Adapter):
+    def __init__(self, config: IntersectConfig):
 
         # Setup base class
         super().__init__(config)
@@ -71,8 +75,8 @@ if __name__ == "__main__":
 
     # -- Config --
     try:
-        config = common.load_config_from_file(args.config, broker_config)
-    except common.IntersectConfigParseException as ex:
+        config = load_config_from_file(args.config, broker_config)
+    except IntersectConfigParseException as ex:
         print(ex.message, file=stderr)
         exit(ex.returnCode)
 

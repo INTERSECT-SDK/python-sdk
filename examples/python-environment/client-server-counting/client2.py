@@ -2,18 +2,23 @@ import time
 from sys import exit, stderr
 from typing import Tuple
 
-from intersect import common
-from intersect import messages
+from intersect import (
+    Adapter,
+    IntersectConfig,
+    load_config_from_dict,
+    IntersectConfigParseException,
+    messages,
+)
 
 
-class Client(common.Adapter):
+class Client(Adapter):
 
     arguments_parser: str = "json"
     status_ticker_interval: float = 30.0
     id_counter_init: int = 100
     handled_status: Tuple = (messages.Status.GENERAL,)
 
-    def __init__(self, config: common.IntersectConfig):
+    def __init__(self, config: IntersectConfig):
         super().__init__(config)
 
         self.register_message_handler(
@@ -70,8 +75,8 @@ if __name__ == "__main__":
     }
 
     try:
-        config = common.load_config_from_dict(config_dict)
-    except common.IntersectConfigParseException() as ex:
+        config = load_config_from_dict(config_dict)
+    except IntersectConfigParseException() as ex:
         print(ex.message, file=stderr)
         exit(ex.returnCode)
 

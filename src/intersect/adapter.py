@@ -8,8 +8,8 @@ from builtins import list
 from typing import Any, Callable, Dict, List, Union
 
 # intersect imports
-from ..client import Channel
-from .. import messages
+from .client import Channel
+from . import messages
 
 # Project import
 from . import base
