@@ -7,8 +7,8 @@ from ..messages.handlers.serialization_handler import SerializationHandler
 from ..messages.types import IntersectMessage
 
 # project
-from .brokers.broker_client import BrokerClient
-from .brokers.message_handler import MessageHandler
+from ..brokers import BrokerClient
+from ..brokers import MessageHandler
 
 
 class Channel:

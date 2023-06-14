@@ -5,7 +5,7 @@ import urllib3
 from ..messages import JsonHandler
 from ..messages.handlers.serialization_handler import SerializationHandler
 
-from .brokers.broker_client import BrokerClient
+from ..brokers import BrokerClient
 from .channel import Channel
 from .exceptions import IntersectInvalidBrokerException
 
@@ -47,13 +47,11 @@ class Client:
             raise IntersectInvalidBrokerException(msg)
 
         if backend_name == "rabbitmq-mqtt":
-            from .brokers.mqtt_client import MQTTClient
-
+            from ..brokers import MQTTClient
             return MQTTClient()
 
         if backend_name == "rabbitmq-amqp":
-            from .brokers.amqp_client import AMQPClient
-
+            from ..brokers import AMQPClient
             return AMQPClient()
 
         return None
