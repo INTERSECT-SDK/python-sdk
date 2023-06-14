@@ -103,7 +103,7 @@ summary = "Distribution utilities"
 
 [[package]]
 name = "docutils"
-version = "0.19"
+version = "0.20.1"
 requires_python = ">=3.7"
 summary = "Docutils -- Python Documentation Utilities"
 
@@ -132,14 +132,14 @@ dependencies = [
 
 [[package]]
 name = "furo"
-version = "2023.3.27"
+version = "2023.5.20"
 requires_python = ">=3.7"
 summary = "A clean customisable Sphinx documentation theme."
 dependencies = [
     "beautifulsoup4",
     "pygments>=2.7",
     "sphinx-basic-ng",
-    "sphinx<7.0,>=5.0",
+    "sphinx<8.0,>=6.0",
 ]
 
 [[package]]
@@ -292,7 +292,7 @@ summary = "plugin and hook calling mechanisms for python"
 
 [[package]]
 name = "pre-commit"
-version = "3.3.2"
+version = "3.3.3"
 requires_python = ">=3.8"
 summary = "A framework for managing and maintaining multi-language pre-commit hooks."
 dependencies = [
@@ -422,20 +422,20 @@ summary = "A modern CSS selector implementation for Beautiful Soup."
 
 [[package]]
 name = "sphinx"
-version = "5.3.0"
-requires_python = ">=3.6"
+version = "7.0.1"
+requires_python = ">=3.8"
 summary = "Python documentation generator"
 dependencies = [
     "Jinja2>=3.0",
-    "Pygments>=2.12",
+    "Pygments>=2.13",
     "alabaster<0.8,>=0.7",
     "babel>=2.9",
     "colorama>=0.4.5; sys_platform == \"win32\"",
-    "docutils<0.20,>=0.14",
+    "docutils<0.21,>=0.18.1",
     "imagesize>=1.3",
     "importlib-metadata>=4.8; python_version < \"3.10\"",
     "packaging>=21.0",
-    "requests>=2.5.0",
+    "requests>=2.25.0",
     "snowballstemmer>=2.0",
     "sphinxcontrib-applehelp",
     "sphinxcontrib-devhelp",
@@ -544,7 +544,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 lock_version = "4.2"
 cross_platform = true
 groups = ["default", "amqp", "doc", "lint", "test", "toml", "yaml"]
-content_hash = "sha256:7debca1097f5873fdb6b336496d984b4730ab1719ec7839bfd79aaaea204aa57"
+content_hash = "sha256:df9cc3185cc5219bb08345bc100b789b89b9de4f7fb81641a8ad30dbec0f0a07"
 
 [metadata.files]
 "alabaster 0.7.13" = [
@@ -749,9 +749,9 @@ content_hash = "sha256:7debca1097f5873fdb6b336496d984b4730ab1719ec7839bfd79aaaea
     {url = "https://files.pythonhosted.org/packages/58/07/815476ae605bcc5f95c87a62b95e74a1bce0878bc7a3119bc2bf4178f175/distlib-0.3.6.tar.gz", hash = "sha256:14bad2d9b04d3a36127ac97f30b12a19268f211063d8f8ee4f47108896e11b46"},
     {url = "https://files.pythonhosted.org/packages/76/cb/6bbd2b10170ed991cf64e8c8b85e01f2fb38f95d1bc77617569e0b0b26ac/distlib-0.3.6-py2.py3-none-any.whl", hash = "sha256:f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e"},
 ]
-"docutils 0.19" = [
-    {url = "https://files.pythonhosted.org/packages/6b/5c/330ea8d383eb2ce973df34d1239b3b21e91cd8c865d21ff82902d952f91f/docutils-0.19.tar.gz", hash = "sha256:33995a6753c30b7f577febfc2c50411fec6aac7f7ffeb7c4cfe5991072dcf9e6"},
-    {url = "https://files.pythonhosted.org/packages/93/69/e391bd51bc08ed9141ecd899a0ddb61ab6465309f1eb470905c0c8868081/docutils-0.19-py3-none-any.whl", hash = "sha256:5e1de4d849fee02c63b040a4a3fd567f4ab104defd8a5511fbbc24a8a017efbc"},
+"docutils 0.20.1" = [
+    {url = "https://files.pythonhosted.org/packages/1f/53/a5da4f2c5739cf66290fac1431ee52aff6851c7c8ffd8264f13affd7bcdd/docutils-0.20.1.tar.gz", hash = "sha256:f08a4e276c3a1583a86dce3e34aba3fe04d02bba2dd51ed16106244e8a923e3b"},
+    {url = "https://files.pythonhosted.org/packages/26/87/f238c0670b94533ac0353a4e2a1a771a0cc73277b88bff23d3ae35a256c1/docutils-0.20.1-py3-none-any.whl", hash = "sha256:96f387a2c5562db4476f09f13bbab2192e764cac08ebbf3a34a95d9b1e4a59d6"},
 ]
 "exceptiongroup 1.1.1" = [
     {url = "https://files.pythonhosted.org/packages/61/97/17ed81b7a8d24d8f69b62c0db37abbd8c0042d4b3fc429c73dab986e7483/exceptiongroup-1.1.1-py3-none-any.whl", hash = "sha256:232c37c63e4f682982c8b6459f33a8981039e5fb8756b2074364e5055c498c9e"},
@@ -765,9 +765,9 @@ content_hash = "sha256:7debca1097f5873fdb6b336496d984b4730ab1719ec7839bfd79aaaea
     {url = "https://files.pythonhosted.org/packages/66/53/3ad4a3b74d609b3b9008a10075c40e7c8909eae60af53623c3888f7a529a/flake8-6.0.0.tar.gz", hash = "sha256:c61007e76655af75e6785a931f452915b371dc48f56efd765247c8fe68f2b181"},
     {url = "https://files.pythonhosted.org/packages/d9/6a/bb0122ebe280476c924470779d2595f1403878cafe3c8a343ac56a5a9c0e/flake8-6.0.0-py2.py3-none-any.whl", hash = "sha256:3833794e27ff64ea4e9cf5d410082a8b97ff1a06c16aa3d2027339cd0f1195c7"},
 ]
-"furo 2023.3.27" = [
-    {url = "https://files.pythonhosted.org/packages/d3/21/233938933f1629a4933c8fce2f803cc8fd211ca563ea4337cb44920bbbfa/furo-2023.3.27.tar.gz", hash = "sha256:b99e7867a5cc833b2b34d7230631dd6558c7a29f93071fdbb5709634bb33c5a5"},
-    {url = "https://files.pythonhosted.org/packages/ec/8c/fa66eb31b1b89b9208269f1fea5edcbecd52b274e5c7afadb9152fb3d4ca/furo-2023.3.27-py3-none-any.whl", hash = "sha256:4ab2be254a2d5e52792d0ca793a12c35582dd09897228a6dd47885dabd5c9521"},
+"furo 2023.5.20" = [
+    {url = "https://files.pythonhosted.org/packages/7f/0e/889dae152d33c35cb7fc5a1076df6a1f5e0c94642d241fab90234d96a934/furo-2023.5.20.tar.gz", hash = "sha256:40e09fa17c6f4b22419d122e933089226dcdb59747b5b6c79363089827dea16f"},
+    {url = "https://files.pythonhosted.org/packages/fd/7e/4b38c29717b8c1e2d9e839afeb1a133178fd572df176b1c2ee0f159fa5a9/furo-2023.5.20-py3-none-any.whl", hash = "sha256:594a8436ddfe0c071f3a9e9a209c314a219d8341f3f1af33fdf7c69544fab9e6"},
 ]
 "identify 2.5.24" = [
     {url = "https://files.pythonhosted.org/packages/4f/fd/2c46fba2bc032ba4c970bb8de59d25187087d7138a0ebf7c1dcc91d94f01/identify-2.5.24-py2.py3-none-any.whl", hash = "sha256:986dbfb38b1140e763e413e6feb44cd731faf72d1909543178aa79b0e258265d"},
@@ -924,9 +924,9 @@ content_hash = "sha256:7debca1097f5873fdb6b336496d984b4730ab1719ec7839bfd79aaaea
     {url = "https://files.pythonhosted.org/packages/9e/01/f38e2ff29715251cf25532b9082a1589ab7e4f571ced434f98d0139336dc/pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
     {url = "https://files.pythonhosted.org/packages/a1/16/db2d7de3474b6e37cbb9c008965ee63835bba517e22cdb8c35b5116b5ce1/pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
-"pre-commit 3.3.2" = [
-    {url = "https://files.pythonhosted.org/packages/21/55/fccc69a49b66c54dcb9a7d8620131a2566db973837c6611b516a2d4e87d7/pre_commit-3.3.2.tar.gz", hash = "sha256:66e37bec2d882de1f17f88075047ef8962581f83c234ac08da21a0c58953d1f0"},
-    {url = "https://files.pythonhosted.org/packages/45/30/c3d5d192b97de482b9adfa356724dfbb07e293b54d94c3b98dd2e5f24759/pre_commit-3.3.2-py2.py3-none-any.whl", hash = "sha256:8056bc52181efadf4aac792b1f4f255dfd2fb5a350ded7335d251a68561e8cb6"},
+"pre-commit 3.3.3" = [
+    {url = "https://files.pythonhosted.org/packages/35/0e/564c71fe3cdf59a4acaaccaea354d066e5d9044eba564dac070bb2075432/pre_commit-3.3.3.tar.gz", hash = "sha256:a2256f489cd913d575c145132ae196fe335da32d91a8294b7afe6622335dd023"},
+    {url = "https://files.pythonhosted.org/packages/e3/b7/1d145c985d8be9729672a45b8b8113030ad60dff45dec592efc4e5f5897a/pre_commit-3.3.3-py2.py3-none-any.whl", hash = "sha256:10badb65d6a38caff29703362271d7dca483d01da88f9d7e05d0b97171c136cb"},
 ]
 "protobuf 3.20.3" = [
     {url = "https://files.pythonhosted.org/packages/00/e7/d23c439c55c90ae2e52184363162f7079ca3e7d86205b411d4e9dc266f81/protobuf-3.20.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:398a9e0c3eaceb34ec1aee71894ca3299605fa8e761544934378bbc6c97de23b"},
@@ -1109,9 +1109,9 @@ content_hash = "sha256:7debca1097f5873fdb6b336496d984b4730ab1719ec7839bfd79aaaea
     {url = "https://files.pythonhosted.org/packages/47/9e/780779233a615777fbdf75a4dee2af7a345f4bf74b42d4a5f836800b9d91/soupsieve-2.4.1.tar.gz", hash = "sha256:89d12b2d5dfcd2c9e8c22326da9d9aa9cb3dfab0a83a024f05704076ee8d35ea"},
     {url = "https://files.pythonhosted.org/packages/49/37/673d6490efc51ec46d198c75903d99de59baffdd47aea3d071b80a9e4e89/soupsieve-2.4.1-py3-none-any.whl", hash = "sha256:1c1bfee6819544a3447586c889157365a27e10d88cde3ad3da0cf0ddf646feb8"},
 ]
-"sphinx 5.3.0" = [
-    {url = "https://files.pythonhosted.org/packages/67/a7/01dd6fd9653c056258d65032aa09a615b5d7b07dd840845a9f41a8860fbc/sphinx-5.3.0-py3-none-any.whl", hash = "sha256:060ca5c9f7ba57a08a1219e547b269fadf125ae25b06b9fa7f66768efb652d6d"},
-    {url = "https://files.pythonhosted.org/packages/af/b2/02a43597980903483fe5eb081ee8e0ba2bb62ea43a70499484343795f3bf/Sphinx-5.3.0.tar.gz", hash = "sha256:51026de0a9ff9fc13c05d74913ad66047e104f56a129ff73e174eb5c3ee794b5"},
+"sphinx 7.0.1" = [
+    {url = "https://files.pythonhosted.org/packages/4b/a9/9760e8373a11a62f5ef66684771b0a5b2c4a699bf0dbbc650ca2b75cec36/sphinx-7.0.1-py3-none-any.whl", hash = "sha256:60c5e04756c1709a98845ed27a2eed7a556af3993afb66e77fec48189f742616"},
+    {url = "https://files.pythonhosted.org/packages/61/b6/b2ca621fba7f1d938d75891fe175ba8054b47e803d11727d3e9f4433d86c/Sphinx-7.0.1.tar.gz", hash = "sha256:61e025f788c5977d9412587e733733a289e2b9fdc2fef8868ddfbfc4ccfe881d"},
 ]
 "sphinx-basic-ng 1.0.0b1" = [
     {url = "https://files.pythonhosted.org/packages/76/aa/eb38c4ad0a46e9fe45604bde48fee569c1954929edb7c3f1d8a3a86fca71/sphinx_basic_ng-1.0.0b1-py3-none-any.whl", hash = "sha256:ade597a3029c7865b24ad0eda88318766bcc2f9f4cef60df7e28126fde94db2a"},
