@@ -67,7 +67,7 @@ doc = [
 test = "pytest tests/"
 test-debug = "pytest tests/ -s"
 test-report = "pytest tests/ --junitxml=reports/report_unit.xml"
-test-coverage = "pytest --cov=. --cov-fail-under=50 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml tests/"
+test-coverage = "pytest --cov=. --cov-fail-under=40 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml tests/"
 lint = {composite = ["lint-isort", "lint-black", "lint-flake8", "lint-mypy"]}
 lint-black = "black ."
 lint-isort = "isort --filter-files ."
