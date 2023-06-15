@@ -1,12 +1,17 @@
 from sys import exit, stderr
 from time import sleep
 
-from intersect import common
-from intersect.messages import JsonHandler
+from intersect import (
+    Adapter,
+    IntersectConfig,
+    IntersectConfigParseException,
+    load_config_from_dict,
+    messages,
+)
 
 
-class MessageInspectorAdapter(common.Adapter):
-    def __init__(self, config: common.IntersectConfig):
+class MessageInspectorAdapter(Adapter):
+    def __init__(self, config: IntersectConfig):
         # Setup base class
         super().__init__(config)
 
@@ -27,7 +32,7 @@ class MessageInspectorAdapter(common.Adapter):
 
     @staticmethod
     def inspect_messages(client, userdata, message):
-        json_handler = JsonHandler()
+        json_handler = messages.JsonHandler()
         payload = json_handler.deserialize(message.payload)
         print(payload)
         return True
@@ -52,8 +57,8 @@ if __name__ == "__main__":
     }
 
     try:
-        config = common.load_config_from_dict(config_dict)
-    except common.IntersectConfigParseException() as ex:
+        config = load_config_from_dict(config_dict)
+    except IntersectConfigParseException() as ex:
         print(ex.message, file=stderr)
         exit(ex.returnCode)
 

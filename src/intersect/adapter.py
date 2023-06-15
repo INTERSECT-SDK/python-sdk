@@ -7,13 +7,11 @@ import weakref
 from builtins import list
 from typing import Any, Callable, Dict, List, Union
 
-from .. import messages
+# Project import
+from . import base, messages
 
 # intersect imports
-from ..client import Channel
-
-# Project import
-from . import base
+from .client import Channel
 from .config_models import IntersectConfig
 from .exceptions import IntersectWarning
 from .logger import logger

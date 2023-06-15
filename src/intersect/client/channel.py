@@ -2,13 +2,11 @@
 import uuid
 from typing import Callable
 
+# project
+from ..brokers import BrokerClient, MessageHandler
 from ..messages.handlers.json_handler import JsonHandler
 from ..messages.handlers.serialization_handler import SerializationHandler
 from ..messages.types import IntersectMessage
-
-# project
-from .brokers.broker_client import BrokerClient
-from .brokers.message_handler import MessageHandler
 
 
 class Channel:

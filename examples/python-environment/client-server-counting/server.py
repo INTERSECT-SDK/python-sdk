@@ -3,10 +3,16 @@ import time
 from sys import exit, stderr
 from typing import Tuple, Union
 
-from intersect import common, messages
+from intersect import (
+    Adapter,
+    IntersectConfig,
+    IntersectConfigParseException,
+    load_config_from_dict,
+    messages,
+)
 
 
-class CountingAdapter(common.Adapter):
+class CountingAdapter(Adapter):
     handled_actions: Tuple = (
         messages.Action.START,
         messages.Action.STOP,
@@ -18,7 +24,7 @@ class CountingAdapter(common.Adapter):
         messages.Request.DETAIL,
     )
 
-    def __init__(self, config: common.IntersectConfig):
+    def __init__(self, config: IntersectConfig):
         super().__init__(config)
 
         # Set attributes for counting
@@ -27,7 +33,8 @@ class CountingAdapter(common.Adapter):
 
         # Register message handlers
         self.register_message_handler(
-            self.handle_start, {messages.Action: [messages.Action.START, messages.Action.RESTART]}
+            self.handle_start,
+            {messages.Action: [messages.Action.START, messages.Action.RESTART]},
         )
 
         self.register_message_handler(self.handle_stop, {messages.Action: [messages.Action.STOP]})
@@ -71,7 +78,9 @@ class CountingAdapter(common.Adapter):
     def start_count(self):
         if self.counter_thread is None:
             self.counter_thread = threading.Thread(
-                target=self._run_count, daemon=True, name=f"{self.service_name}_counter_thread"
+                target=self._run_count,
+                daemon=True,
+                name=f"{self.service_name}_counter_thread",
             )
             self.counter_thread.start()
 
@@ -106,8 +115,8 @@ if __name__ == "__main__":
     }
 
     try:
-        config = common.load_config_from_dict(config_dict)
-    except common.IntersectConfigParseException() as ex:
+        config = load_config_from_dict(config_dict)
+    except IntersectConfigParseException() as ex:
         print(ex.message, file=stderr)
         exit(ex.returnCode)
 
