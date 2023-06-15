@@ -7,7 +7,8 @@ __pycache__
 report_unit.xml
 
 # Conda environments
-*environment*.y?ml
+*environment*.yaml
+*environment*.yml
 
 # Created by https://www.toptal.com/developers/gitignore/api/windows,macos,linux,eclipse,visualstudiocode,vim,emacs,pycharm,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,linux,eclipse,visualstudiocode,vim,emacs,pycharm,python
