@@ -45,8 +45,9 @@ lint:
       docker run --rm $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA bash -ec "
       pdm run isort --filter-files --check-only . ;
       pdm run black --check --diff .;
-      pdm run flake8 .; 
-      pdm run mypy src/intersect/ || true
+      pdm run lint-flake8; 
+      pdm run lint-mypy || true;
+      pdm run lint-security
       "
   tags:
     - intersect-sdk-builder
@@ -124,7 +125,7 @@ publish-chart:
       -e CI_COMMIT_REF_NAME=${CI_COMMIT_REF_NAME}
       ${KUBECTL_IMAGE} helm-publish-chart-with-gitlab-ci chart
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "next"
+    - if: $CI_COMMIT_BRANCH == "main"
       changes:
         - chart/**/*
   tags:
@@ -139,11 +140,11 @@ kubernetes:
   inherit:
     variables: false
   variables:
-    TRIGGER_UPSTREAM_BRANCH: ${CI_COMMIT_REF_NAME}
+    TRIGGER_UPSTREAM_BRANCH: next
     TRIGGER_UPSTREAM_CHART_NAME: intersect-sdk-python-docs
     TRIGGER_UPSTREAM_IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "next"
+    - if: $CI_COMMIT_BRANCH == "main"
 
 publish-package:
   stage: package

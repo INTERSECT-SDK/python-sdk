@@ -59,8 +59,8 @@ def force_emit_stop_status(client_ref: weakref.ReferenceType):
         controller_ref: A ReferenceType for the controller to add pre-garbage collection cleanup to.
     """
     client_obj = client_ref()
-    assert isinstance(client_obj, Adapter)
-    client_obj.status_channel.publish(client_obj.generate_status_stopping())
+    if isinstance(client_obj, Adapter):
+        client_obj.status_channel.publish(client_obj.generate_status_stopping())
 
 
 class Adapter(base.Service):

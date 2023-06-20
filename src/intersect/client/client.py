@@ -1,5 +1,4 @@
 import json
-from typing import Union
 
 import urllib3
 
@@ -28,7 +27,7 @@ class Client:
             "rabbitmq-amqp",
         ]
 
-    def _create_broker_client(self, backend_name: str) -> Union[BrokerClient, None]:
+    def _create_broker_client(self, backend_name: str) -> BrokerClient:
         """Create a BrokerClient of the appropriate type for the requested backend.
 
         Args:
@@ -38,25 +37,27 @@ class Client:
             A BrokerClient of a subclass corresponding to backend_name.
         """
 
-        # Error check for valid broker backend name
-        if backend_name not in self._valid_broker_backends:
-            msg = (
-                "Unknown broker backend: {backend_name}. "
-                "Broker options: {self._valid_broker_backends}"
-            )
-            raise IntersectInvalidBrokerException(msg)
-
         if backend_name == "rabbitmq-mqtt":
             from ..brokers import MQTTClient
 
             return MQTTClient()
 
         if backend_name == "rabbitmq-amqp":
-            from ..brokers import AMQPClient
+            try:
+                from ..brokers import AMQPClient
 
-            return AMQPClient()
+                return AMQPClient()
+            except ImportError:
+                raise IntersectInvalidBrokerException(
+                    f"Using broker backend {backend_name}, but AMQP dependencies were not installed. Install intersect with the 'amqp' optional dependency to use this backend."
+                )
 
-        return None
+        raise IntersectInvalidBrokerException(
+            (
+                f"Unknown broker backend: {backend_name}. "
+                f"Broker options: {self._valid_broker_backends}"
+            )
+        )
 
     def _discover_broker(self, address: str):
         """Get the metadata for a broker from the discovery service.
@@ -90,6 +91,9 @@ class Client:
                 which are address and port.
             username: A string for the broker username.
             password: A string for the broker password.
+
+        Raises:
+            IntersectInvalidBrokerException: if invalid broker backend was chosen, or chosen broker backend cannot import necessary modules
         """
         address, port, *others = connection
         use_discovery_service = False
@@ -101,7 +105,6 @@ class Client:
             backend_name, address, port = self._discover_broker(address)
 
         self.broker_client = self._create_broker_client(backend_name)
-        assert self.broker_client is not None
 
         self.broker_client.connect(address, port, username, password)
 
@@ -115,7 +118,7 @@ class Client:
             serializer: An IntersectSerializer responsible for taking the bytes
                 received from the broker in the new Channel and turning it into
                 a Message object.
-        Return:
+        Returns:
             A new Channel with the given channel name and serializer.
         """
         return Channel(name, self.broker_client, serializer=serializer)

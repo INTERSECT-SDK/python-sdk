@@ -53,6 +53,7 @@ lint = [
     "types-pyyaml>=6.0.12.10",
     "types-jsonschema>=4.17.0.8",
     "types-protobuf>=4.23.0.1",
+    "bandit>=1.7.5",
 ]
 test = [
     "pytest>=7.3.2",
@@ -68,11 +69,12 @@ test = "pytest tests/"
 test-debug = "pytest tests/ -s"
 test-report = "pytest tests/ --junitxml=reports/report_unit.xml"
 test-coverage = "pytest --cov=. --cov-fail-under=40 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml tests/"
-lint = {composite = ["lint-isort", "lint-black", "lint-flake8", "lint-mypy"]}
+lint = {composite = ["lint-isort", "lint-black", "lint-flake8", "lint-mypy", "lint-security"]}
 lint-black = "black ."
 lint-isort = "isort --filter-files ."
 lint-flake8 = "flake8"
 lint-mypy = "mypy src/intersect/"
+lint-security = "bandit -c pyproject.toml -r ."
 
 [tool.pdm.build]
 package-dir = "src"
@@ -113,6 +115,9 @@ show_error_codes = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true
+
+[tool.bandit]
+exclude_dirs = [".venv", "tests"]
 
 [build-system]
 requires = ["pdm-backend"]
