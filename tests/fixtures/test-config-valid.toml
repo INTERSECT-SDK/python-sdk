@@ -1,0 +1,15 @@
+status_interval=45.0
+id_counter_init=125
+
+[hierarchy]
+service = "service"
+subsystem = "subsystem"
+system = "system"
+facility = "facility"
+organization = "organization"
+
+[broker]
+username = "user"
+password = "password"
+host = "devnull.ornl.gov"
+port = 1883

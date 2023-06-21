@@ -59,6 +59,7 @@ lint = [
 test = [
     "pytest>=7.3.2",
     "pytest-cov>=4.1.0",
+    "httpretty>=1.1.4",
 ]
 doc = [
     "sphinx>=5.3.0",
@@ -66,10 +67,14 @@ doc = [
 ]
 
 [tool.pdm.scripts]
-test = "pytest tests/"
-test-debug = "pytest tests/ -s"
-test-report = "pytest tests/ --junitxml=reports/report_unit.xml"
-test-coverage = "pytest --cov=. --cov-fail-under=40 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml tests/"
+test = "pytest tests/unit/ --cov=."
+test-debug = "pytest tests/unit/ --cov=. -s"
+test-report = "pytest tests/unit/ --cov=. --junitxml=reports/report_unit.xml"
+test-coverage = "pytest --cov=. --cov-fail-under=70 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml tests/unit/"
+integration = "pytest tests/integration/"
+integration-debug = "pytest tests/integration/ -s"
+integration-report = "pytest tests/integration/ --junitxml=reports/report_integration.xml"
+integration-coverage = "pytest --cov=. --cov-fail-under=70 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml tests/integration/"
 lint = {composite = ["lint-isort", "lint-black", "lint-flake8", "lint-mypy", "lint-bandit"]}
 lint-black = "black ."
 lint-isort = "isort --filter-files ."

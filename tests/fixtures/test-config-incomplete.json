@@ -1,0 +1,12 @@
+{
+  "hierarchy": {
+    "service": "service",
+    "system": "system",
+    "facility": "facility",
+    "organization": "organization"
+  },
+  "broker": {
+    "host": "devnull.ornl.gov",
+    "port": 1883
+  }
+}

@@ -1,0 +1,27 @@
+status_interval = 45
+id_counter_init = 125.3
+
+[hierarchy]
+subsystem = false
+system = 123
+facility = []
+
+[broker]
+username = ""
+host = "devnull.ornl.gov"
+port = -1883
+
+# this schema is valid on its own
+[argument_schema]
+title = "Meat Freezing Factory"
+description = "I'm gonna put that rat on ice"
+type = "object"
+required = [ "weapon", "freezer", "bribes",]
+
+[hierarchy.service]
+
+# everything in this schema is using the wrong types for defined JSON-LD keys
+[argument_schema.properties.weapon]
+type = "meat cleaver"
+title = -1
+minLength = "whaddaya lookin at, punk? This cleaver not big enough for ya?"

@@ -184,6 +184,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "httpretty"
+version = "1.1.4"
+requires_python = ">=3"
+summary = "HTTP client mock for Python"
+
+[[package]]
 name = "identify"
 version = "2.5.24"
 requires_python = ">=3.7"
@@ -632,7 +638,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 lock_version = "4.2"
 cross_platform = true
 groups = ["default", "amqp", "doc", "lint", "test", "toml", "yaml"]
-content_hash = "sha256:5e0afd02039422565501753eb80cdf7c5e839bbba08e49d1b1d78da9f8ccb818"
+content_hash = "sha256:5cbf288a6ef947cf1d3603c9bb1c107770058351aaf6ddb4659242a9ac827229"
 
 [metadata.files]
 "alabaster 0.7.13" = [
@@ -872,6 +878,9 @@ content_hash = "sha256:5e0afd02039422565501753eb80cdf7c5e839bbba08e49d1b1d78da9f
 "gitpython 3.1.31" = [
     {url = "https://files.pythonhosted.org/packages/5f/11/2b0f60686dbda49028cec8c66bd18a5e82c96d92eef4bc34961e35bb3762/GitPython-3.1.31.tar.gz", hash = "sha256:8ce3bcf69adfdf7c7d503e78fd3b1c492af782d58893b650adb2ac8912ddd573"},
     {url = "https://files.pythonhosted.org/packages/9e/8a/d1e02cc111d65b0346f70abb83c51f8593e7134bf694a4a56d1a470caaf7/GitPython-3.1.31-py3-none-any.whl", hash = "sha256:f04893614f6aa713a60cbbe1e6a97403ef633103cdd0ef5eb6efe0deb98dbe8d"},
+]
+"httpretty 1.1.4" = [
+    {url = "https://files.pythonhosted.org/packages/6e/19/850b7ed736319d0c4088581f4fc34f707ef14461947284026664641e16d4/httpretty-1.1.4.tar.gz", hash = "sha256:20de0e5dd5a18292d36d928cc3d6e52f8b2ac73daec40d41eb62dee154933b68"},
 ]
 "identify 2.5.24" = [
     {url = "https://files.pythonhosted.org/packages/4f/fd/2c46fba2bc032ba4c970bb8de59d25187087d7138a0ebf7c1dcc91d94f01/identify-2.5.24-py2.py3-none-any.whl", hash = "sha256:986dbfb38b1140e763e413e6feb44cd731faf72d1909543178aa79b0e258265d"},
