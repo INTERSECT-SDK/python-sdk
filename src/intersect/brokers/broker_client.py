@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional
 
 from .message_handler import MessageHandler
 
@@ -10,7 +11,7 @@ class BrokerClient(ABC):
     calls and higher level pub/sub features.
     """
 
-    def __init__(self, flags: dict = dict()):
+    def __init__(self, flags: Optional[Dict[str, Any]] = None):
         """The default constructor.
 
         Args:
@@ -18,7 +19,7 @@ class BrokerClient(ABC):
         """
 
         self._connection = None
-        self._flags = flags
+        self._flags = flags if flags is not None else {}
 
     @abstractmethod
     def connect(self, host: str, port: int, username: str, password: str):

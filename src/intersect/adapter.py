@@ -5,7 +5,7 @@ import threading
 import time
 import weakref
 from builtins import list
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 # Project import
 from . import base, messages
@@ -161,7 +161,7 @@ class Adapter(base.Service):
         self,
         request: messages.Request = None,
         destination: str = "None",
-        arguments: dict = dict(),
+        arguments: Optional[Dict[str, Any]] = None,
     ) -> messages.Request:
         """Create a Request message.
 
@@ -172,6 +172,7 @@ class Adapter(base.Service):
         Returns:
             An Request message with sensible default values.
         """
+        arguments = arguments if arguments is not None else {}
         tmp = messages.Request()
         tmp.header.source = self.service_name
         tmp.header.destination = destination
@@ -188,7 +189,7 @@ class Adapter(base.Service):
         self,
         status: messages.Status = messages.Status.GENERAL,
         destination: str = "None",
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create a Status message.
 
@@ -199,6 +200,7 @@ class Adapter(base.Service):
         Returns:
             A Status message with sensible default values.
         """
+        detail = detail if detail is not None else {}
         tmp = messages.Status()
         tmp.header.source = self.service_name
         tmp.header.destination = destination
@@ -214,7 +216,7 @@ class Adapter(base.Service):
         return tmp
 
     def _generate_capabilities_availability_status(
-        self, detail: dict = dict(), description: str = ""
+        self, detail: Optional[Dict[str, Any]] = None, description: str = ""
     ) -> dict:
         """Creates a message detail section for availibility status.
 
@@ -224,6 +226,7 @@ class Adapter(base.Service):
         Return:
             A dictionay of the detail section
         """
+        detail = detail if detail is not None else {}
         if "capabilities" not in detail:
             detail["capabilities"] = []
 
@@ -463,7 +466,7 @@ class Adapter(base.Service):
         self,
         status: messages.Status,
         description: str = "",
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Used to create Status messages. Adds capabilites if types requires the section.
 
@@ -474,6 +477,7 @@ class Adapter(base.Service):
         Returns:
             A status message
         """
+        detail = detail if detail is not None else {}
         # Create status message
         msg = self._create_status(status=status, detail=detail)
 
@@ -498,7 +502,7 @@ class Adapter(base.Service):
 
     def generate_status_online(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create an ONLINE Status message.
 
@@ -507,6 +511,7 @@ class Adapter(base.Service):
         Returns:
             An ONLINE Status message with sensible default values.
         """
+        detail = detail if detail is not None else {}
         description = f"Service {self.service_name} is online."
         msg = self.generate_status(
             status=messages.Status.ONLINE,
@@ -517,7 +522,7 @@ class Adapter(base.Service):
 
     def generate_status_offline(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create an OFFLINE Status message.
 
@@ -526,6 +531,7 @@ class Adapter(base.Service):
         Returns:
             An OFFLINE Status message with sensible default values.
         """
+        detail = detail if detail is not None else {}
         description = f"Service {self.service_name} is offline."
         msg = self.generate_status(
             status=messages.Status.OFFLINE,
@@ -536,7 +542,7 @@ class Adapter(base.Service):
 
     def generate_status_starting(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create a STARTING Status message.
 
@@ -545,6 +551,7 @@ class Adapter(base.Service):
         Returns:
             An ONLINE Status message with correct metadata showing that the server has started.
         """
+        detail = detail if detail is not None else {}
         description = f"Service {self.service_name} online, starting normal status ticker."
         msg = self.generate_status(
             status=messages.Status.STARTING,
@@ -555,7 +562,7 @@ class Adapter(base.Service):
 
     def generate_status_stopping(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create a STOPPING Status message.
 
@@ -564,7 +571,7 @@ class Adapter(base.Service):
         Returns:
             An OFFLINE Status message with correct metadata showing that the server has stopped.
         """
-
+        detail = detail if detail is not None else {}
         description = f"Service {self.service_name} is stopping."
         msg = self.generate_status(
             status=messages.Status.STOPPING,
@@ -575,7 +582,7 @@ class Adapter(base.Service):
 
     def generate_status_available(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create an AVAILABLE Status message.
 
@@ -584,13 +591,13 @@ class Adapter(base.Service):
         Returns:
             An AVAILABLE Status message with sensible default values.
         """
-
+        detail = detail if detail is not None else {}
         msg = self._create_status(status=messages.Status.AVAILABLE, detail=detail)
         return msg
 
     def generate_status_ready(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create a READY Status message.
 
@@ -599,13 +606,13 @@ class Adapter(base.Service):
         Returns:
             A READY Status message with sensible default values.
         """
-
+        detail = detail if detail is not None else {}
         msg = self._create_status(status=messages.Status.READY, detail=detail)
         return msg
 
     def generate_status_busy(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create a BUSY Status message.
 
@@ -614,13 +621,13 @@ class Adapter(base.Service):
         Returns:
             A BUSY Status message with sensible default values.
         """
-
+        detail = detail if detail is not None else {}
         msg = self._create_status(status=messages.Status.BUSY, detail=detail)
         return msg
 
     def generate_status_general(
         self,
-        detail: dict = dict(),
+        detail: Optional[Dict[str, Any]] = None,
     ) -> messages.Status:
         """Create a GENERAL Status message.
 
@@ -629,7 +636,7 @@ class Adapter(base.Service):
         Returns:
             A GENERAL Status message with sensible default values.
         """
-
+        detail = detail if detail is not None else {}
         msg = self._create_status(status=messages.Status.GENERAL, detail=detail)
         return msg
 

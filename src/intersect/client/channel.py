@@ -1,6 +1,6 @@
 # standard
 import uuid
-from typing import Callable
+from typing import Callable, Optional
 
 # project
 from ..brokers import BrokerClient, MessageHandler
@@ -33,7 +33,7 @@ class Channel:
         def __init__(
             self,
             callback: Callable[[IntersectMessage], bool],
-            serializer: SerializationHandler = JsonHandler(),
+            serializer: Optional[SerializationHandler] = None,
         ):
             """The default constructor.
 
@@ -42,7 +42,7 @@ class Channel:
                 callback: A Callable to be invoked on each received message.
             """
 
-            self.serializer = serializer
+            self.serializer = serializer if serializer is not None else JsonHandler()
             self.callback = callback
 
         def on_receive(self, topic: str, payload):
@@ -63,7 +63,7 @@ class Channel:
             return pass_to_next_handler
 
     def __init__(
-        self, channel: str, broker: BrokerClient, serializer: SerializationHandler = JsonHandler()
+        self, channel: str, broker: BrokerClient, serializer: Optional[SerializationHandler] = None
     ):
         """The default constructor.
 
@@ -75,7 +75,9 @@ class Channel:
 
         self.id: uuid.UUID = uuid.uuid4()
         self.channel: str = channel
-        self.serializer: SerializationHandler = serializer
+        self.serializer: SerializationHandler = (
+            serializer if serializer is not None else JsonHandler()
+        )
         self.broker: BrokerClient = broker
         self.handler: Channel.ChannelCallback
 

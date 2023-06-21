@@ -43,6 +43,6 @@ repos:
       - id: bandit
         name: Bandit
         description: security checks with Bandit
-        entry: pdm run lint-security
+        entry: pdm run lint-bandit
         pass_filenames: false
         language: system        

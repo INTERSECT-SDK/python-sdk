@@ -29,7 +29,7 @@ def test_serialize():
 
     try:
         str_handler.serialize(test_generic)
-        assert False
+        raise AssertionError()
     except TypeError:
         assert True
 
@@ -42,6 +42,6 @@ def test_deserialize():
 
     try:
         str_handler.deserialize(test_bad_generic_str)
-        assert False
+        raise AssertionError()
     except TypeError:
         assert True

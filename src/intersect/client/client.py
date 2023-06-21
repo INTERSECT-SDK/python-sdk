@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 import urllib3
 
@@ -108,7 +109,7 @@ class Client:
 
         self.broker_client.connect(address, port, username, password)
 
-    def channel(self, name: str, serializer: SerializationHandler = JsonHandler()):
+    def channel(self, name: str, serializer: Optional[SerializationHandler] = None):
         """Creates an interface to a broker's channel.
 
         See class Channel.
@@ -121,4 +122,8 @@ class Client:
         Returns:
             A new Channel with the given channel name and serializer.
         """
-        return Channel(name, self.broker_client, serializer=serializer)
+        return Channel(
+            name,
+            self.broker_client,
+            serializer=(serializer if serializer is not None else JsonHandler()),
+        )

@@ -47,7 +47,7 @@ lint:
       pdm run black --check --diff .;
       pdm run lint-flake8; 
       pdm run lint-mypy || true;
-      pdm run lint-security
+      pdm run lint-bandit
       "
   tags:
     - intersect-sdk-builder

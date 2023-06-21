@@ -144,6 +144,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flake8-bugbear"
+version = "23.6.5"
+requires_python = ">=3.8.1"
+summary = "A plugin for flake8 finding likely bugs and design problems in your program. Contains warnings that don't belong in pyflakes and pycodestyle."
+dependencies = [
+    "attrs>=19.2.0",
+    "flake8>=6.0.0",
+]
+
+[[package]]
 name = "furo"
 version = "2023.5.20"
 requires_python = ">=3.7"
@@ -622,7 +632,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 lock_version = "4.2"
 cross_platform = true
 groups = ["default", "amqp", "doc", "lint", "test", "toml", "yaml"]
-content_hash = "sha256:8b241236421339322821ed4083722d46cdde2b4bc7634d4cb6a992566e984bd0"
+content_hash = "sha256:5e0afd02039422565501753eb80cdf7c5e839bbba08e49d1b1d78da9f8ccb818"
 
 [metadata.files]
 "alabaster 0.7.13" = [
@@ -846,6 +856,10 @@ content_hash = "sha256:8b241236421339322821ed4083722d46cdde2b4bc7634d4cb6a992566
 "flake8 6.0.0" = [
     {url = "https://files.pythonhosted.org/packages/66/53/3ad4a3b74d609b3b9008a10075c40e7c8909eae60af53623c3888f7a529a/flake8-6.0.0.tar.gz", hash = "sha256:c61007e76655af75e6785a931f452915b371dc48f56efd765247c8fe68f2b181"},
     {url = "https://files.pythonhosted.org/packages/d9/6a/bb0122ebe280476c924470779d2595f1403878cafe3c8a343ac56a5a9c0e/flake8-6.0.0-py2.py3-none-any.whl", hash = "sha256:3833794e27ff64ea4e9cf5d410082a8b97ff1a06c16aa3d2027339cd0f1195c7"},
+]
+"flake8-bugbear 23.6.5" = [
+    {url = "https://files.pythonhosted.org/packages/00/c5/e95dcb8f8a882858481e324d33853cc83701d581b51034079881b391c715/flake8-bugbear-23.6.5.tar.gz", hash = "sha256:8631e1071c9d85d24a615f235565c16c9a2ac57add4a14636d331bf9f4ef14fa"},
+    {url = "https://files.pythonhosted.org/packages/1d/b4/6e6efac6e664e33c4a4ad065f31e80883398a33243a189eb453d787297e6/flake8_bugbear-23.6.5-py3-none-any.whl", hash = "sha256:1d9eae6d262a3823765f4579cdab169963d1d2288b02f0f5c6e829b03dded509"},
 ]
 "furo 2023.5.20" = [
     {url = "https://files.pythonhosted.org/packages/7f/0e/889dae152d33c35cb7fc5a1076df6a1f5e0c94642d241fab90234d96a934/furo-2023.5.20.tar.gz", hash = "sha256:40e09fa17c6f4b22419d122e933089226dcdb59747b5b6c79363089827dea16f"},
