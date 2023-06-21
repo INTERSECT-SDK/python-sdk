@@ -28,7 +28,7 @@ diagnosticMode:
 
 image:
   registry: code.ornl.gov:4567
-  repository: intersect/sdk/python-sdk/sdk/base/next
+  repository: intersect/sdk/python-sdk/sdk/base/main
   tag: "latest"
   digest: ""
   pullPolicy: ""

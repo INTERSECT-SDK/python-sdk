@@ -1,4 +1,4 @@
-ARG IMAGE=code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/base/next
+ARG IMAGE=code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/base/main
 ARG TAG=latest
 ARG NGINX_IMAGE=code.ornl.gov:4567/rse/images/
 
