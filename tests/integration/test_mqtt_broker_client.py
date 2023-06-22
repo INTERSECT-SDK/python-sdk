@@ -7,7 +7,7 @@ from time import sleep
 from intersect.brokers import mqtt_client
 
 # local
-from tests.exampleMessageHandler import ExampleMessageHandler
+from tests.fixtures.example_message_handler import ExampleMessageHandler
 
 
 class TestMqttClient(unittest.TestCase):
