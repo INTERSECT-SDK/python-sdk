@@ -43,7 +43,7 @@ class TestAmqpClient(unittest.TestCase):
         self.assertFalse(client.is_connected())
 
     def test_subscribe_2clients(self):
-        client1 = amqp_client.AMQPClient(id="123")
+        client1 = amqp_client.AMQPClient(uid="123")
         client2 = amqp_client.AMQPClient()
         client1.connect(
             os.environ["RABBITMQ_HOST"],
@@ -80,7 +80,7 @@ class TestAmqpClient(unittest.TestCase):
         """
 
         # Open a connection
-        client = amqp_client.AMQPClient(id="123")
+        client = amqp_client.AMQPClient(uid="123")
         client.connect(
             os.environ["RABBITMQ_HOST"],
             5672,
