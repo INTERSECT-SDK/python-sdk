@@ -65,7 +65,9 @@ unit-tests:
   artifacts:
     when: always
     reports:
-      junit: report_unit.xml
+      junit: reports/report_unit.xml
+    paths:
+      - reports/        
   tags:
     - intersect-sdk-builder
 
@@ -95,7 +97,9 @@ integration-tests:
   artifacts:
     when: always
     reports:
-      junit: report_integration.xml
+      junit: reports/report_integration.xml
+    paths:
+      - reports/      
   tags:
     - intersect-sdk-builder
 
@@ -111,6 +115,7 @@ coverage:
     - sudo sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:
+    when: always
     reports:
       coverage_report:
         coverage_format: cobertura
