@@ -114,7 +114,7 @@ class Adapter(base.Service):
 
         # Set attributes for regular status outputs
         self.status = messages.Status.AVAILABLE
-        self.status_thread: Union[None, threading.Thread] = None
+        self.status_thread: Optional[threading.Thread] = None
         self.status_ticker_active: bool = True
         self.message_id_counter = identifier(self.service_name, self.id_counter_init)
 
@@ -131,7 +131,7 @@ class Adapter(base.Service):
         self._finalizer = weakref.finalize(self, force_emit_stop_status, weak_self)
 
         # Map of message types to subtypes to lists of handlers for that type
-        self.types_to_handlers: Dict[Any, Dict[int, list]] = dict()
+        self.types_to_handlers: Dict[Any, Dict[int, list]] = {}
 
     def __del__(self):
         """Performs finalization upon deletion."""
@@ -233,7 +233,7 @@ class Adapter(base.Service):
         # Search for an existing Availability_Status
         found_availability_status = False
         for capability in detail["capabilities"]:
-            if capability.get("name", None) == "Availability_Status":
+            if capability.get("name") == "Availability_Status":
                 found_availability_status = True
                 break
 
@@ -721,7 +721,7 @@ class Adapter(base.Service):
         # instead of hardcoding in never to do it. Only parse the payload once
         payload = parse_message_arguments(message.arguments, False)
 
-        subtypes = self.types_to_handlers.get(messages.Action, dict())
+        subtypes = self.types_to_handlers.get(messages.Action, {})
         handlers = subtypes.get(message.action, [])
 
         for handler in handlers:
@@ -750,7 +750,7 @@ class Adapter(base.Service):
         # Only parse the payload once
         payload = parse_message_arguments(message.arguments, False)
 
-        subtypes = self.types_to_handlers.get(messages.Request, dict())
+        subtypes = self.types_to_handlers.get(messages.Request, {})
         handlers = subtypes.get(message.request, [])
 
         for handler in handlers:
@@ -778,7 +778,7 @@ class Adapter(base.Service):
         # instead of hardcoding in never to do it. Only parse the payload once
         payload = parse_message_arguments(message.detail, False)
 
-        subtypes = self.types_to_handlers.get(messages.Status, dict())
+        subtypes = self.types_to_handlers.get(messages.Status, {})
         handlers = subtypes.get(message.status, [])
 
         for handler in handlers:
@@ -799,9 +799,9 @@ class Adapter(base.Service):
             types_: Dictionary of message types with lists of handled subtypes.
         """
         for message_type, message_subtypes in types_.items():
-            subtypes: dict = self.types_to_handlers.setdefault(message_type, dict())
+            subtypes: dict = self.types_to_handlers.setdefault(message_type, {})
             for item in message_subtypes:
-                handlers = subtypes.setdefault(item, list())
+                handlers = subtypes.setdefault(item, [])
                 if handler in handlers:
                     continue
                 handlers.append(handler)

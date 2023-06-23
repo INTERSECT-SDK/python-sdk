@@ -13,7 +13,7 @@ _get_wrapped_type = message_wrapper.Type.Value
 # a generic message (i.e. they are defined in the Type enum.) The enum uses all
 # upper case unlike the actually class names.
 all_message_names = set(demo.DESCRIPTOR.message_types_by_name.keys())
-wrapped_message_names = set(name for name in all_message_names if name.upper() in _wrapped_types)
+wrapped_message_names = {name for name in all_message_names if name.upper() in _wrapped_types}
 
 
 # Get the class objects and setup a dictionary for easy mapping

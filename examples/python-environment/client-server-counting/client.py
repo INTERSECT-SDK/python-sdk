@@ -43,15 +43,15 @@ class Client(Adapter):
         return True
 
     def generate_request(self, destination):
-        msg = self.generate_request_detail(destination, dict())
+        msg = self.generate_request_detail(destination, {})
         self.connection.channel(destination + "/request").publish(msg)
 
     def generate_stop(self, destination):
-        msg = self.generate_action_stop(destination, dict())
+        msg = self.generate_action_stop(destination, {})
         self.send(msg)
 
     def generate_start(self, destination):
-        msg = self.generate_action_start(destination, dict())
+        msg = self.generate_action_start(destination, {})
         self.send(msg)
 
 

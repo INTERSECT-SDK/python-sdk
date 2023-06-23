@@ -8,12 +8,10 @@ __handlers__ = [
     "StringHandler",
 ]
 
-valid_serialization_handlers = tuple(
-    [
-        BinaryHandler,
-        JsonHandler,
-        StringHandler,
-    ]
+valid_serialization_handlers = (
+    BinaryHandler,
+    JsonHandler,
+    StringHandler,
 )
 
 

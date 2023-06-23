@@ -8,7 +8,7 @@ from .config_models import IntersectConfig
 from .utils import identifier
 
 
-class Service(object):
+class Service:
     """Base microservice implementation.
 
     This is the base class for microservices that has some common functionality

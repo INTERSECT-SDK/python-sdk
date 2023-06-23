@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 # -- Project information -----------------------------------------------------
 
 project = "Python SDK"
-copyright = "2023, INTERSECT developers"
+copyright = "2023, INTERSECT developers"  # noqa: A001
 author = "INTERSECT developers"
 
 # The full version, including alpha/beta/rc tags

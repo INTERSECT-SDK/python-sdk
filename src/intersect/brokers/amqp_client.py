@@ -1,6 +1,7 @@
 import functools
 import threading
 import uuid
+from typing import Optional
 
 # third party
 import pika
@@ -20,16 +21,16 @@ class AMQPClient(BrokerClient):
             Callables to invoke for messages on that topic.
     """
 
-    def __init__(self, id=None):
+    def __init__(self, uid: Optional[str] = None):
         """The default constructor.
 
         Args:
-            id: String for the client's UUID.
+            uid: String for the client's UUID.
         """
         BrokerClient.__init__(self)
 
-        if id:
-            self.id = id
+        if uid:
+            self.id = uid
         else:
             self.id = str(uuid.uuid1())
         # The pika connection to the broker

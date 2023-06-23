@@ -15,12 +15,7 @@ def get_schema_errors(errlines: List[str]) -> List[str]:
     schema errors will always have the same space indentations
     and start with "$."
     """
-    return list(
-        map(
-            lambda x: x.strip().split(" ")[0],
-            filter(lambda y: y.strip().startswith("$."), errlines),
-        )
-    )
+    return [x.strip().split(" ")[0] for x in filter(lambda y: y.strip().startswith("$."), errlines)]
 
 
 # TESTS #####################
@@ -92,9 +87,9 @@ def test_incomplete_config():
 
     # now try running with the callback, this should complete all required fields
     # (this callback gives users a lot of control over how to determine variables programmatically)
-    def _add_broker_creds_callback(dict):
-        dict["broker"]["username"] = "user"
-        dict["broker"]["password"] = "password"
+    def _add_broker_creds_callback(struct):
+        struct["broker"]["username"] = "user"
+        struct["broker"]["password"] = "password"
 
     config = load_config_from_file(FIXTURE, _add_broker_creds_callback)
     assert config.broker.username == "user"

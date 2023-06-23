@@ -8,6 +8,11 @@ exclude =
     build,
     dist,
 max-complexity = 10
-extend-ignore = E203, E501
+extend-ignore = 
+    E203, 
+    # handled by other tools
+    E501,
+    # "with contextlib.suppress():" is slower than try-except-pass
+    SIM105,
 per-file-ignores =
     __init__.py:F401,

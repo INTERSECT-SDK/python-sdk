@@ -1,7 +1,7 @@
 import threading
 import time
 from sys import exit, stderr
-from typing import Tuple, Union
+from typing import Optional, Tuple
 
 from intersect import (
     Adapter,
@@ -28,7 +28,7 @@ class CountingAdapter(Adapter):
         super().__init__(config)
 
         # Set attributes for counting
-        self.counter_thread: Union[None, threading.Thread] = None
+        self.counter_thread: Optional[threading.Thread] = None
         self.count_active: bool = True
 
         # Register message handlers
