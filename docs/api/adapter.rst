@@ -1,6 +1,6 @@
 Adapter
 =======
 
-.. automodule:: intersect.common.adapter
+.. automodule:: intersect.adapter
    :members:
    :undoc-members:

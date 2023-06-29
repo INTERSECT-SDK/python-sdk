@@ -1,6 +1,6 @@
 Utils
 =====
 
-.. automodule:: intersect.common.utils
+.. automodule:: intersect.utils
    :members:
    :undoc-members:

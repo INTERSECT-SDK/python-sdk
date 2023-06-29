@@ -1,7 +1,7 @@
 Exceptions
 ==========
 
-.. automodule:: intersect.common.exceptions
+.. automodule:: intersect.exceptions
    :members:
    :undoc-members:
 

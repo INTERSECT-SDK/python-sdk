@@ -1,6 +1,6 @@
 Base
 ====
 
-.. autoclass:: intersect.common.base.Service
+.. autoclass:: intersect.base.Service
    :members:
    :undoc-members:
