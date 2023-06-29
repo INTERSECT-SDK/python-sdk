@@ -4,7 +4,7 @@ This repository contains the Python SDK for INTERSECT.
 
 ## Documentation
 
-Documentation for the INTERSECT Python SDK is available [here](x). The documentation is generated with [Sphinx](https://www.sphinx-doc.org) from the `docs` directory. See the documentation for more information about installation, usage, and examples of the Python SDK for INTERSECT.
+Documentation for the INTERSECT Python SDK can be viewed at http://10.64.193.144:30002. The documentation is generated with [Sphinx](https://www.sphinx-doc.org) from the `docs` directory. See the documentation for more information about installation, usage, and examples of the Python SDK for INTERSECT.
 
 ## Quickstart (developers)
 
