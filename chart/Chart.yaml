@@ -9,5 +9,5 @@ version: 0.1.0
 
 dependencies:
   - name: common
-    repository: https://charts.bitnami.com/bitnami
+    repository: oci://registry-1.docker.io/bitnamicharts
     version: 2.x.x
