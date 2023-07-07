@@ -136,7 +136,7 @@ ingress:
   pathType: ImplementationSpecific
   hostname: intersect-sdk-python-docs.local
   ingressClassName: ""
-  path: /docs/python-sdk
+  path: /
   annotations: {}
   tls: false
   selfSigned: false
