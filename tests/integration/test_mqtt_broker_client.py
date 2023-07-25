@@ -21,7 +21,7 @@ class TestMqttClient(unittest.TestCase):
         """
 
         # Open the connection
-        client = mqtt_client.MQTTClient()
+        client = mqtt_client.MQTTClient("test_mqtt_broker_client_test_connect")
         client.connect(
             os.environ["RABBITMQ_HOST"],
             1883,
@@ -38,7 +38,7 @@ class TestMqttClient(unittest.TestCase):
         """
 
         # The connection should start closed
-        client = mqtt_client.MQTTClient()
+        client = mqtt_client.MQTTClient("test_mqtt_broker_client_test_subscribe")
         self.assertFalse(client.is_connected())
 
         # Open a connection

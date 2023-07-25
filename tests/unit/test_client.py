@@ -22,7 +22,7 @@ def mock_function_mqtt(backend_name):
 
 
 def test_create_broker() -> None:
-    client = Client()
+    client = Client("test_clien_test_create_broker")
     broker = client._create_broker_client("rabbitmq-mqtt")
     assert isinstance(broker, mqtt_client.MQTTClient)
 
@@ -31,7 +31,7 @@ def test_create_broker() -> None:
 
 
 def test_connect_calls_broker() -> None:
-    client = Client()
+    client = Client("test_clien_test_connect_calls_broker")
     client._create_broker_client = mock_function_mqtt
     client.connect(("", ""), "", "")
 
@@ -47,7 +47,7 @@ def test_connect_calls_discovery_service() -> None:
         body=r'{"backendName":"rabbitmq-amqp","endpoint":"ip:port"}',
     )
 
-    client = Client()
+    client = Client("test_clien_test_connect_calls_discovery_service")
     client._create_broker_client = mock_function_amqp
 
     client.connect(("discovery_address", "", True), "username", "passwd")
@@ -64,7 +64,7 @@ def test_connect_can_use_another_endpoint() -> None:
         body=r'{"backendName":"rabbitmq-mqtt","endpoint":"ip:port"}',
     )
 
-    client = Client()
+    client = Client("test_clien_test_connect_can_use_another_endpoint")
     client._broker_endpoint = "intersect-broker-mqtt"
     client._create_broker_client = mock_function_mqtt
 
@@ -75,7 +75,7 @@ def test_connect_can_use_another_endpoint() -> None:
 
 
 def test_amqp_client_creates_channel() -> None:
-    client = Client()
+    client = Client("test_clien_test_amqp_client_creates_channel")
     client.broker_client = client._create_broker_client("rabbitmq-amqp")
 
     channel = client.channel("amqp-broker-json-handler-channel")
@@ -94,7 +94,7 @@ def test_amqp_client_creates_channel() -> None:
 
 
 def test_mqtt_client_creates_channel() -> None:
-    client = Client()
+    client = Client("test_clien_test_mqtt_client_creates_channel")
     client.broker_client = client._create_broker_client("rabbitmq-mqtt")
 
     channel = client.channel("mqtt-broker-json-handler-channel")

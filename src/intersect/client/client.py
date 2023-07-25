@@ -19,8 +19,13 @@ class Client:
         broker_client: A BrokerClient to handle the broker connection.
     """
 
-    def __init__(self):
-        """The default constructor."""
+    def __init__(self, uid):
+        """The default constructor.
+
+        Args:
+            uid: A string representing the unique id to identify the client.
+        """
+        self.uid = uid
         self.broker_client = None
         self._broker_endpoint = "intersect-broker"
         self._valid_broker_backends = [
@@ -41,13 +46,14 @@ class Client:
         if backend_name == "rabbitmq-mqtt":
             from ..brokers import mqtt_client
 
-            return mqtt_client.MQTTClient()
+            return mqtt_client.MQTTClient(self.uid)
 
         if backend_name == "rabbitmq-amqp":
             try:
                 from ..brokers import amqp_client
 
-                return amqp_client.AMQPClient()
+                return amqp_client.AMQPClient(self.uid)
+
             except ImportError:
                 raise IntersectInvalidBrokerException(
                     f"Using broker backend {backend_name}, but AMQP dependencies were not installed. Install intersect with the 'amqp' optional dependency to use this backend."

@@ -31,7 +31,7 @@ class Service:
         self.identifier = identifier(self.service_name)
 
         # Connection (intersect.client)
-        self.connection = client.Client()
+        self.connection = client.Client(self.service_name)
         self.connection.connect(
             (config.broker.host, config.broker.port), config.broker.username, config.broker.password
         )

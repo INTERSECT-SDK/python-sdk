@@ -10,13 +10,21 @@ class MQTTClient(BrokerClient):
     """Client for performing broker actions backed by a MQTT broker.
 
     Attributes:
+        uid: String defining this client's unique ID in the broker
         topics_to_handlers: Dictionary of string topic names to lists of
             Callables to invoke for messages on that topic.
     """
 
-    def __init__(self):
-        """The default constructor."""
-        BrokerClient.__init__(self)
+    def __init__(self, uid):
+        """The default constructor.
+
+        Args:
+            uid: A string representing the unique id to identify the client.
+        """
+        BrokerClient.__init__(self, uid)
+
+        # Unique id for the MQTT broker to associate this client with
+        self.uid = uid
 
         # The paho client which is connected to the broker
         self._connection = None
@@ -59,7 +67,7 @@ class MQTTClient(BrokerClient):
         """
 
         # Create a client to connect to RabbitMQ
-        self._connection = paho_client.Client()
+        self._connection = paho_client.Client(client_id=self.uid, clean_session=False)
         self._connection.on_connect = self._set_connection_status
         self._connection.on_disconnect = self._handle_disconnect
         self._connection.username_pw_set(username=username, password=password)
