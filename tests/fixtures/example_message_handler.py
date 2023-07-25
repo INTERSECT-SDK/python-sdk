@@ -1,8 +1,8 @@
 # project
-from intersect.brokers import MessageHandler
+from intersect.brokers import message_handler
 
 
-class ExampleMessageHandler(MessageHandler):
+class ExampleMessageHandler(message_handler.MessageHandler):
     """
     A MessageHandler example that stores the messages it receives and allows
     the programmer to define whether future handlers will also get the messages

@@ -3,7 +3,7 @@ from typing import Optional
 
 import urllib3
 
-from ..brokers import BrokerClient
+from ..brokers import broker_client
 from ..messages import JsonHandler
 from ..messages.handlers.serialization_handler import SerializationHandler
 from .channel import Channel
@@ -28,7 +28,7 @@ class Client:
             "rabbitmq-amqp",
         ]
 
-    def _create_broker_client(self, backend_name: str) -> BrokerClient:
+    def _create_broker_client(self, backend_name: str) -> broker_client.BrokerClient:
         """Create a BrokerClient of the appropriate type for the requested backend.
 
         Args:
@@ -39,15 +39,15 @@ class Client:
         """
 
         if backend_name == "rabbitmq-mqtt":
-            from ..brokers import MQTTClient
+            from ..brokers import mqtt_client
 
-            return MQTTClient()
+            return mqtt_client.MQTTClient()
 
         if backend_name == "rabbitmq-amqp":
             try:
-                from ..brokers import AMQPClient
+                from ..brokers import amqp_client
 
-                return AMQPClient()
+                return amqp_client.AMQPClient()
             except ImportError:
                 raise IntersectInvalidBrokerException(
                     f"Using broker backend {backend_name}, but AMQP dependencies were not installed. Install intersect with the 'amqp' optional dependency to use this backend."

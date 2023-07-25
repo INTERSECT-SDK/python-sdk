@@ -3,7 +3,7 @@ import uuid
 from typing import Callable, Optional
 
 # project
-from ..brokers import BrokerClient, MessageHandler
+from ..brokers import broker_client, message_handler
 from ..messages.handlers.json_handler import JsonHandler
 from ..messages.handlers.serialization_handler import SerializationHandler
 from ..messages.types import IntersectMessage
@@ -22,7 +22,7 @@ class Channel:
         id: A unique UUID4 for the channel.
     """
 
-    class ChannelCallback(MessageHandler):
+    class ChannelCallback(message_handler.MessageHandler):
         """Handler for subscribed messages on a Channel.
 
         Attributes:
@@ -63,7 +63,10 @@ class Channel:
             return pass_to_next_handler
 
     def __init__(
-        self, channel: str, broker: BrokerClient, serializer: Optional[SerializationHandler] = None
+        self,
+        channel: str,
+        broker: broker_client.BrokerClient,
+        serializer: Optional[SerializationHandler] = None,
     ):
         """The default constructor.
 
@@ -78,7 +81,7 @@ class Channel:
         self.serializer: SerializationHandler = (
             serializer if serializer is not None else JsonHandler()
         )
-        self.broker: BrokerClient = broker
+        self.broker: broker_client.BrokerClient = broker
         self.handler: Channel.ChannelCallback
 
     def publish(self, message: IntersectMessage):

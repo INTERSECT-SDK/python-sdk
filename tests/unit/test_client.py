@@ -2,9 +2,7 @@ from unittest.mock import Mock
 
 import httpretty
 
-from intersect.brokers.amqp_client import AMQPClient
-from intersect.brokers.broker_client import BrokerClient
-from intersect.brokers.mqtt_client import MQTTClient
+from intersect.brokers import amqp_client, broker_client, mqtt_client
 from intersect.client import Client
 from intersect.client.channel import Channel
 from intersect.messages import BinaryHandler, JsonHandler
@@ -26,10 +24,10 @@ def mock_function_mqtt(backend_name):
 def test_create_broker() -> None:
     client = Client()
     broker = client._create_broker_client("rabbitmq-mqtt")
-    assert isinstance(broker, MQTTClient)
+    assert isinstance(broker, mqtt_client.MQTTClient)
 
     broker = client._create_broker_client("rabbitmq-amqp")
-    assert isinstance(broker, AMQPClient)
+    assert isinstance(broker, amqp_client.AMQPClient)
 
 
 def test_connect_calls_broker() -> None:
@@ -82,15 +80,15 @@ def test_amqp_client_creates_channel() -> None:
 
     channel = client.channel("amqp-broker-json-handler-channel")
     assert isinstance(channel, Channel)
-    assert isinstance(channel.broker, BrokerClient)
-    assert isinstance(channel.broker, AMQPClient)
+    assert isinstance(channel.broker, broker_client.BrokerClient)
+    assert isinstance(channel.broker, amqp_client.AMQPClient)
     assert isinstance(channel.serializer, SerializationHandler)
     assert isinstance(channel.serializer, JsonHandler)
 
     channel = client.channel("amqp-broker-binary-handler-channel", serializer=BinaryHandler())
     assert isinstance(channel, Channel)
-    assert isinstance(channel.broker, BrokerClient)
-    assert isinstance(channel.broker, AMQPClient)
+    assert isinstance(channel.broker, broker_client.BrokerClient)
+    assert isinstance(channel.broker, amqp_client.AMQPClient)
     assert isinstance(channel.serializer, SerializationHandler)
     assert isinstance(channel.serializer, BinaryHandler)
 
@@ -101,14 +99,14 @@ def test_mqtt_client_creates_channel() -> None:
 
     channel = client.channel("mqtt-broker-json-handler-channel")
     assert isinstance(channel, Channel)
-    assert isinstance(channel.broker, BrokerClient)
-    assert isinstance(channel.broker, MQTTClient)
+    assert isinstance(channel.broker, broker_client.BrokerClient)
+    assert isinstance(channel.broker, mqtt_client.MQTTClient)
     assert isinstance(channel.serializer, SerializationHandler)
     assert isinstance(channel.serializer, JsonHandler)
 
     channel = client.channel("mqtt-broker-binary-handler-channel", serializer=BinaryHandler())
     assert isinstance(channel, Channel)
-    assert isinstance(channel.broker, BrokerClient)
-    assert isinstance(channel.broker, MQTTClient)
+    assert isinstance(channel.broker, broker_client.BrokerClient)
+    assert isinstance(channel.broker, mqtt_client.MQTTClient)
     assert isinstance(channel.serializer, SerializationHandler)
     assert isinstance(channel.serializer, BinaryHandler)
