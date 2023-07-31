@@ -25,7 +25,7 @@ Run the following commands to use the ``environment.yml`` file to create a conda
 
    # Install the intersect packages using pip in the conda environment, this will
    # ask for your username (UCAMS ID) and password (GitLab token)
-   pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-common
+   pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-sdk
 
 After starting the broker and activating the conda environment, run the adapter and requestor as follows in separate terminal sessions:
 

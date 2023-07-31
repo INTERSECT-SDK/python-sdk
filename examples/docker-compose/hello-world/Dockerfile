@@ -15,6 +15,5 @@ RUN conda install -c conda-forge python=${PYTHON_VERSION} \
 FROM conda_setup as base
 ARG GITLAB_USERNAME
 ARG GITLAB_PASSWORD
-ARG INTERSECT_COMMON_VERSION=0.0.6
 RUN python -m pip install pip --upgrade \
-    && python -m pip install -i https://${GITLAB_USERNAME}:${GITLAB_PASSWORD}@code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-common==${INTERSECT_COMMON_VERSION}
+    && python -m pip install -i https://${GITLAB_USERNAME}:${GITLAB_PASSWORD}@code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect

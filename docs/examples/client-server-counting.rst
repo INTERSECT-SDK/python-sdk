@@ -22,7 +22,7 @@ Next, in another terminal session, run the following commands to use the ``envir
 
    # Install the intersect packages using pip in the conda environment, this will
    # ask for your username (UCAMS ID) and password (GitLab token)
-   pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-common
+   pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-sdk
 
 After activating the conda environment, run the ``server.py`` in the same terminal session as shown below. The server will begin outputting status messages while measuring its uptime and incrementing a count up from 0 every second.
 
