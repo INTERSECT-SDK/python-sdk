@@ -1,5 +1,5 @@
 String handler
 ==============
 
-.. autoclass:: intersect.messages.StringHandler
+.. autoclass:: intersect_sdk.messages.StringHandler
    :members:

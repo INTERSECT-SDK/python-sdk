@@ -3,5 +3,5 @@ Client
 
 Information about the ``Client`` class is provided below.
 
-.. autoclass:: intersect.client.Client
+.. autoclass:: intersect_sdk.client.Client
    :members:

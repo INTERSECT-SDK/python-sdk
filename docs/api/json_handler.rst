@@ -1,5 +1,5 @@
 JSON handler
 ============
 
-.. autoclass:: intersect.messages.JsonHandler
+.. autoclass:: intersect_sdk.messages.JsonHandler
    :members:

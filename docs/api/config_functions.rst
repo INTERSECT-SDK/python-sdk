@@ -1,6 +1,6 @@
 Config functions
 ================
 
-.. automodule:: intersect.config_functions
+.. automodule:: intersect_sdk.config_functions
    :members:
    :undoc-members:

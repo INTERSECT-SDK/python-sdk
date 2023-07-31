@@ -1,5 +1,5 @@
 Binary handler
 ==============
 
-.. autoclass:: intersect.messages.BinaryHandler
+.. autoclass:: intersect_sdk.messages.BinaryHandler
    :members:

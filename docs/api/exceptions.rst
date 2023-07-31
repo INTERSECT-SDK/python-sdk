@@ -1,9 +1,9 @@
 Exceptions
 ==========
 
-.. automodule:: intersect.exceptions
+.. automodule:: intersect_sdk.exceptions
    :members:
    :undoc-members:
 
-.. automodule:: intersect.client.exceptions
+.. automodule:: intersect_sdk.client.exceptions
    :members:

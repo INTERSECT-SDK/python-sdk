@@ -1,6 +1,6 @@
 Config models
 =============
 
-.. automodule:: intersect.config_models
+.. automodule:: intersect_sdk.config_models
    :members:
    :undoc-members:

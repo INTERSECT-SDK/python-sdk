@@ -791,7 +791,7 @@ class Adapter(base.Service):
         Register the handler so that it will be run whenever
         a message of one of the given Action, Request, and/or Status
         types is received. Reference
-        intersect.common.message_handler.SampleMessageHandler
+        intersect_sdk.common.message_handler.SampleMessageHandler
         for a callable class.
 
         Args:

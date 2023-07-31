@@ -14,17 +14,17 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
     name="demo.proto",
-    package="intersect.sdk",
+    package="intersect_sdk.sdk",
     syntax="proto3",
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\ndemo.proto\x12\rintersect.sdk"\x82\x01\n\x07Generic\x12)\n\x04type\x18\x03 \x01(\x0e\x32\x1b.intersect.sdk.Generic.Type\x12\x0e\n\x06length\x18\x04 \x01(\x05\x12\x0f\n\x07message\x18\x05 \x01(\t"+\n\x04Type\x12\n\n\x06\x41\x43TION\x10\x00\x12\x0b\n\x07REQUEST\x10\x01\x12\n\n\x06STATUS\x10\x02"R\n\x06Header\x12\x0e\n\x06source\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\x12\x12\n\nmessage_id\x18\x03 \x01(\t\x12\x0f\n\x07\x63reated\x18\x04 \x01(\t"\xd6\x01\n\x06\x41\x63tion\x12%\n\x06header\x18\x01 \x01(\x0b\x32\x15.intersect.sdk.Header\x12\x30\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32 .intersect.sdk.Action.ActionType\x12\x11\n\targuments\x18\x03 \x01(\t"`\n\nActionType\x12\x0c\n\x08REGISTER\x10\x00\x12\x0e\n\nUNREGISTER\x10\x01\x12\t\n\x05START\x10\x02\x12\x08\n\x04STOP\x10\x03\x12\x0b\n\x07RESTART\x10\x04\x12\t\n\x05RESET\x10\x05\x12\x07\n\x03SET\x10\x06"\xe8\x01\n\x07Request\x12%\n\x06header\x18\x01 \x01(\x0b\x32\x15.intersect.sdk.Header\x12\x33\n\x07request\x18\x02 \x01(\x0e\x32".intersect.sdk.Request.RequestType\x12\x11\n\targuments\x18\x03 \x01(\t"n\n\x0bRequestType\x12\n\n\x06UPTIME\x10\x00\x12\x08\n\x04TYPE\x10\x01\x12\r\n\tRESOURCES\x10\x02\x12\x0f\n\x0b\x45NVIRONMENT\x10\x03\x12\n\n\x06STATUS\x10\x04\x12\x08\n\x04LIST\x10\x05\x12\n\n\x06\x44\x45TAIL\x10\x06\x12\x07\n\x03\x41LL\x10\x07"\xe5\x01\n\x06Status\x12%\n\x06header\x18\x01 \x01(\x0b\x32\x15.intersect.sdk.Header\x12\x30\n\x06status\x18\x02 \x01(\x0e\x32 .intersect.sdk.Status.StatusType\x12\x0e\n\x06\x64\x65tail\x18\x03 \x01(\t"r\n\nStatusType\x12\n\n\x06ONLINE\x10\x00\x12\x0b\n\x07OFFLINE\x10\x01\x12\x0c\n\x08STARTING\x10\x02\x12\x0c\n\x08STOPPING\x10\x03\x12\r\n\tAVAILABLE\x10\x04\x12\t\n\x05READY\x10\x05\x12\x08\n\x04\x42USY\x10\x06\x12\x0b\n\x07GENERAL\x10\x07\x62\x06proto3',
+    serialized_pb=b'\n\ndemo.proto\x12\rintersect_sdk.sdk"\x82\x01\n\x07Generic\x12)\n\x04type\x18\x03 \x01(\x0e\x32\x1b.intersect_sdk.sdk.Generic.Type\x12\x0e\n\x06length\x18\x04 \x01(\x05\x12\x0f\n\x07message\x18\x05 \x01(\t"+\n\x04Type\x12\n\n\x06\x41\x43TION\x10\x00\x12\x0b\n\x07REQUEST\x10\x01\x12\n\n\x06STATUS\x10\x02"R\n\x06Header\x12\x0e\n\x06source\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\x12\x12\n\nmessage_id\x18\x03 \x01(\t\x12\x0f\n\x07\x63reated\x18\x04 \x01(\t"\xd6\x01\n\x06\x41\x63tion\x12%\n\x06header\x18\x01 \x01(\x0b\x32\x15.intersect_sdk.sdk.Header\x12\x30\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32 .intersect_sdk.sdk.Action.ActionType\x12\x11\n\targuments\x18\x03 \x01(\t"`\n\nActionType\x12\x0c\n\x08REGISTER\x10\x00\x12\x0e\n\nUNREGISTER\x10\x01\x12\t\n\x05START\x10\x02\x12\x08\n\x04STOP\x10\x03\x12\x0b\n\x07RESTART\x10\x04\x12\t\n\x05RESET\x10\x05\x12\x07\n\x03SET\x10\x06"\xe8\x01\n\x07Request\x12%\n\x06header\x18\x01 \x01(\x0b\x32\x15.intersect_sdk.sdk.Header\x12\x33\n\x07request\x18\x02 \x01(\x0e\x32".intersect_sdk.sdk.Request.RequestType\x12\x11\n\targuments\x18\x03 \x01(\t"n\n\x0bRequestType\x12\n\n\x06UPTIME\x10\x00\x12\x08\n\x04TYPE\x10\x01\x12\r\n\tRESOURCES\x10\x02\x12\x0f\n\x0b\x45NVIRONMENT\x10\x03\x12\n\n\x06STATUS\x10\x04\x12\x08\n\x04LIST\x10\x05\x12\n\n\x06\x44\x45TAIL\x10\x06\x12\x07\n\x03\x41LL\x10\x07"\xe5\x01\n\x06Status\x12%\n\x06header\x18\x01 \x01(\x0b\x32\x15.intersect_sdk.sdk.Header\x12\x30\n\x06status\x18\x02 \x01(\x0e\x32 .intersect_sdk.sdk.Status.StatusType\x12\x0e\n\x06\x64\x65tail\x18\x03 \x01(\t"r\n\nStatusType\x12\n\n\x06ONLINE\x10\x00\x12\x0b\n\x07OFFLINE\x10\x01\x12\x0c\n\x08STARTING\x10\x02\x12\x0c\n\x08STOPPING\x10\x03\x12\r\n\tAVAILABLE\x10\x04\x12\t\n\x05READY\x10\x05\x12\x08\n\x04\x42USY\x10\x06\x12\x0b\n\x07GENERAL\x10\x07\x62\x06proto3',
 )
 
 
 _GENERIC_TYPE = _descriptor.EnumDescriptor(
     name="Type",
-    full_name="intersect.sdk.Generic.Type",
+    full_name="intersect_sdk.sdk.Generic.Type",
     filename=None,
     file=DESCRIPTOR,
     create_key=_descriptor._internal_create_key,
@@ -63,7 +63,7 @@ _sym_db.RegisterEnumDescriptor(_GENERIC_TYPE)
 
 _ACTION_ACTIONTYPE = _descriptor.EnumDescriptor(
     name="ActionType",
-    full_name="intersect.sdk.Action.ActionType",
+    full_name="intersect_sdk.sdk.Action.ActionType",
     filename=None,
     file=DESCRIPTOR,
     create_key=_descriptor._internal_create_key,
@@ -134,7 +134,7 @@ _sym_db.RegisterEnumDescriptor(_ACTION_ACTIONTYPE)
 
 _REQUEST_REQUESTTYPE = _descriptor.EnumDescriptor(
     name="RequestType",
-    full_name="intersect.sdk.Request.RequestType",
+    full_name="intersect_sdk.sdk.Request.RequestType",
     filename=None,
     file=DESCRIPTOR,
     create_key=_descriptor._internal_create_key,
@@ -213,7 +213,7 @@ _sym_db.RegisterEnumDescriptor(_REQUEST_REQUESTTYPE)
 
 _STATUS_STATUSTYPE = _descriptor.EnumDescriptor(
     name="StatusType",
-    full_name="intersect.sdk.Status.StatusType",
+    full_name="intersect_sdk.sdk.Status.StatusType",
     filename=None,
     file=DESCRIPTOR,
     create_key=_descriptor._internal_create_key,
@@ -293,7 +293,7 @@ _sym_db.RegisterEnumDescriptor(_STATUS_STATUSTYPE)
 
 _GENERIC = _descriptor.Descriptor(
     name="Generic",
-    full_name="intersect.sdk.Generic",
+    full_name="intersect_sdk.sdk.Generic",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -301,7 +301,7 @@ _GENERIC = _descriptor.Descriptor(
     fields=[
         _descriptor.FieldDescriptor(
             name="type",
-            full_name="intersect.sdk.Generic.type",
+            full_name="intersect_sdk.sdk.Generic.type",
             index=0,
             number=3,
             type=14,
@@ -320,7 +320,7 @@ _GENERIC = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="length",
-            full_name="intersect.sdk.Generic.length",
+            full_name="intersect_sdk.sdk.Generic.length",
             index=1,
             number=4,
             type=5,
@@ -339,7 +339,7 @@ _GENERIC = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="message",
-            full_name="intersect.sdk.Generic.message",
+            full_name="intersect_sdk.sdk.Generic.message",
             index=2,
             number=5,
             type=9,
@@ -374,7 +374,7 @@ _GENERIC = _descriptor.Descriptor(
 
 _HEADER = _descriptor.Descriptor(
     name="Header",
-    full_name="intersect.sdk.Header",
+    full_name="intersect_sdk.sdk.Header",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -382,7 +382,7 @@ _HEADER = _descriptor.Descriptor(
     fields=[
         _descriptor.FieldDescriptor(
             name="source",
-            full_name="intersect.sdk.Header.source",
+            full_name="intersect_sdk.sdk.Header.source",
             index=0,
             number=1,
             type=9,
@@ -401,7 +401,7 @@ _HEADER = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="destination",
-            full_name="intersect.sdk.Header.destination",
+            full_name="intersect_sdk.sdk.Header.destination",
             index=1,
             number=2,
             type=9,
@@ -420,7 +420,7 @@ _HEADER = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="message_id",
-            full_name="intersect.sdk.Header.message_id",
+            full_name="intersect_sdk.sdk.Header.message_id",
             index=2,
             number=3,
             type=9,
@@ -439,7 +439,7 @@ _HEADER = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="created",
-            full_name="intersect.sdk.Header.created",
+            full_name="intersect_sdk.sdk.Header.created",
             index=3,
             number=4,
             type=9,
@@ -472,7 +472,7 @@ _HEADER = _descriptor.Descriptor(
 
 _ACTION = _descriptor.Descriptor(
     name="Action",
-    full_name="intersect.sdk.Action",
+    full_name="intersect_sdk.sdk.Action",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -480,7 +480,7 @@ _ACTION = _descriptor.Descriptor(
     fields=[
         _descriptor.FieldDescriptor(
             name="header",
-            full_name="intersect.sdk.Action.header",
+            full_name="intersect_sdk.sdk.Action.header",
             index=0,
             number=1,
             type=11,
@@ -499,7 +499,7 @@ _ACTION = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="action",
-            full_name="intersect.sdk.Action.action",
+            full_name="intersect_sdk.sdk.Action.action",
             index=1,
             number=2,
             type=14,
@@ -518,7 +518,7 @@ _ACTION = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="arguments",
-            full_name="intersect.sdk.Action.arguments",
+            full_name="intersect_sdk.sdk.Action.arguments",
             index=2,
             number=3,
             type=9,
@@ -553,7 +553,7 @@ _ACTION = _descriptor.Descriptor(
 
 _REQUEST = _descriptor.Descriptor(
     name="Request",
-    full_name="intersect.sdk.Request",
+    full_name="intersect_sdk.sdk.Request",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -561,7 +561,7 @@ _REQUEST = _descriptor.Descriptor(
     fields=[
         _descriptor.FieldDescriptor(
             name="header",
-            full_name="intersect.sdk.Request.header",
+            full_name="intersect_sdk.sdk.Request.header",
             index=0,
             number=1,
             type=11,
@@ -580,7 +580,7 @@ _REQUEST = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="request",
-            full_name="intersect.sdk.Request.request",
+            full_name="intersect_sdk.sdk.Request.request",
             index=1,
             number=2,
             type=14,
@@ -599,7 +599,7 @@ _REQUEST = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="arguments",
-            full_name="intersect.sdk.Request.arguments",
+            full_name="intersect_sdk.sdk.Request.arguments",
             index=2,
             number=3,
             type=9,
@@ -634,7 +634,7 @@ _REQUEST = _descriptor.Descriptor(
 
 _STATUS = _descriptor.Descriptor(
     name="Status",
-    full_name="intersect.sdk.Status",
+    full_name="intersect_sdk.sdk.Status",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -642,7 +642,7 @@ _STATUS = _descriptor.Descriptor(
     fields=[
         _descriptor.FieldDescriptor(
             name="header",
-            full_name="intersect.sdk.Status.header",
+            full_name="intersect_sdk.sdk.Status.header",
             index=0,
             number=1,
             type=11,
@@ -661,7 +661,7 @@ _STATUS = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="status",
-            full_name="intersect.sdk.Status.status",
+            full_name="intersect_sdk.sdk.Status.status",
             index=1,
             number=2,
             type=14,
@@ -680,7 +680,7 @@ _STATUS = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="detail",
-            full_name="intersect.sdk.Status.detail",
+            full_name="intersect_sdk.sdk.Status.detail",
             index=2,
             number=3,
             type=9,
@@ -736,7 +736,7 @@ Generic = _reflection.GeneratedProtocolMessageType(
     {
         "DESCRIPTOR": _GENERIC,
         "__module__": "demo_pb2"
-        # @@protoc_insertion_point(class_scope:intersect.sdk.Generic)
+        # @@protoc_insertion_point(class_scope:intersect_sdk.sdk.Generic)
     },
 )
 _sym_db.RegisterMessage(Generic)
@@ -747,7 +747,7 @@ Header = _reflection.GeneratedProtocolMessageType(
     {
         "DESCRIPTOR": _HEADER,
         "__module__": "demo_pb2"
-        # @@protoc_insertion_point(class_scope:intersect.sdk.Header)
+        # @@protoc_insertion_point(class_scope:intersect_sdk.sdk.Header)
     },
 )
 _sym_db.RegisterMessage(Header)
@@ -758,7 +758,7 @@ Action = _reflection.GeneratedProtocolMessageType(
     {
         "DESCRIPTOR": _ACTION,
         "__module__": "demo_pb2"
-        # @@protoc_insertion_point(class_scope:intersect.sdk.Action)
+        # @@protoc_insertion_point(class_scope:intersect_sdk.sdk.Action)
     },
 )
 _sym_db.RegisterMessage(Action)
@@ -769,7 +769,7 @@ Request = _reflection.GeneratedProtocolMessageType(
     {
         "DESCRIPTOR": _REQUEST,
         "__module__": "demo_pb2"
-        # @@protoc_insertion_point(class_scope:intersect.sdk.Request)
+        # @@protoc_insertion_point(class_scope:intersect_sdk.sdk.Request)
     },
 )
 _sym_db.RegisterMessage(Request)
@@ -780,7 +780,7 @@ Status = _reflection.GeneratedProtocolMessageType(
     {
         "DESCRIPTOR": _STATUS,
         "__module__": "demo_pb2"
-        # @@protoc_insertion_point(class_scope:intersect.sdk.Status)
+        # @@protoc_insertion_point(class_scope:intersect_sdk.sdk.Status)
     },
 )
 _sym_db.RegisterMessage(Status)

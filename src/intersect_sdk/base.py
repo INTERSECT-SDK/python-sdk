@@ -30,7 +30,7 @@ class Service:
         self.service_name = config.hierarchy.service
         self.identifier = identifier(self.service_name)
 
-        # Connection (intersect.client)
+        # Connection (intersect_sdk.client)
         self.connection = client.Client(self.service_name)
         self.connection.connect(
             (config.broker.host, config.broker.port), config.broker.username, config.broker.password

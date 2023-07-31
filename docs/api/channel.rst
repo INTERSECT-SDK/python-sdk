@@ -3,5 +3,5 @@ Channel
 
 Information about the ``Channel`` class is provided below.
 
-.. autoclass:: intersect.client.Channel
+.. autoclass:: intersect_sdk.client.Channel
    :members:
