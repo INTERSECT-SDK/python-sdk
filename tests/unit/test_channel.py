@@ -4,8 +4,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from intersect import messages
-from intersect.client.channel import Channel
+from intersect_sdk import messages
+from intersect_sdk.client.channel import Channel
 
 mock_broker = Mock()
 

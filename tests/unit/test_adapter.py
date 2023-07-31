@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from intersect import messages
+from intersect_sdk import messages
 
 
 @pytest.fixture

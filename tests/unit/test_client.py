@@ -2,11 +2,11 @@ from unittest.mock import Mock
 
 import httpretty
 
-from intersect.brokers import amqp_client, broker_client, mqtt_client
-from intersect.client import Client
-from intersect.client.channel import Channel
-from intersect.messages import BinaryHandler, JsonHandler
-from intersect.messages.handlers.serialization_handler import SerializationHandler
+from intersect_sdk.brokers import amqp_client, broker_client, mqtt_client
+from intersect_sdk.client import Client
+from intersect_sdk.client.channel import Channel
+from intersect_sdk.messages import BinaryHandler, JsonHandler
+from intersect_sdk.messages.handlers.serialization_handler import SerializationHandler
 
 mock_broker = Mock()
 

@@ -3,7 +3,7 @@ import time
 from sys import exit, stderr
 from typing import Optional, Tuple
 
-from intersect import (
+from intersect_sdk import (
     Adapter,
     IntersectConfig,
     IntersectConfigParseException,

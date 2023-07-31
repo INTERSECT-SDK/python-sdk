@@ -1,5 +1,5 @@
-from intersect.messages import BinaryHandler
-from intersect.messages import demo_pb2 as demo
+from intersect_sdk.messages import BinaryHandler
+from intersect_sdk.messages import demo_pb2 as demo
 
 test_request = demo.Request()
 test_request.arguments = "a"

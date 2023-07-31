@@ -1,5 +1,5 @@
 # project
-from intersect.brokers import message_handler
+from intersect_sdk.brokers import message_handler
 
 
 class ExampleMessageHandler(message_handler.MessageHandler):

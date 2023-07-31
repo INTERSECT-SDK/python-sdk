@@ -1,7 +1,12 @@
 from sys import exit, stderr
 from time import sleep
 
-from intersect import Adapter, IntersectConfig, IntersectConfigParseException, load_config_from_dict
+from intersect_sdk import (
+    Adapter,
+    IntersectConfig,
+    IntersectConfigParseException,
+    load_config_from_dict,
+)
 
 
 class StatusPublisherAdapter(Adapter):

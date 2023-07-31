@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 
-from intersect import IntersectConfigParseException, load_config_from_file
+from intersect_sdk import IntersectConfigParseException, load_config_from_file
 
 # HELPERS ################
 

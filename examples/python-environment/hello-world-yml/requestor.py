@@ -5,7 +5,7 @@ from pathlib import Path
 from sys import exit, stderr
 from time import sleep
 
-from intersect import (
+from intersect_sdk import (
     Adapter,
     IntersectConfig,
     IntersectConfigParseException,

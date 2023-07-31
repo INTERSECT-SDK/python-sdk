@@ -1,7 +1,7 @@
 from google.protobuf import json_format as pb_json
 
-from intersect.messages import JsonHandler
-from intersect.messages import demo_pb2 as demo
+from intersect_sdk.messages import JsonHandler
+from intersect_sdk.messages import demo_pb2 as demo
 
 test_request = demo.Request()
 test_request.arguments = "a"

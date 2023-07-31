@@ -5,6 +5,6 @@ After installing the Python SDK package (which is named ``intersect``) with pip 
 
 .. code-block:: python
 
-   import intersect
+   import intersect_sdk
 
 See the **Examples** section for more information about using the Python SDK for INTERSECT.

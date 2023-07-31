@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from intersect.utils import get_utc, identifier, parse_message_arguments
+from intersect_sdk.utils import get_utc, identifier, parse_message_arguments
 
 
 def test_parse_message_arguments():

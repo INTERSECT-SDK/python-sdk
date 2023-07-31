@@ -1,5 +1,5 @@
 [project]
-name = "intersect"
+name = "intersect-sdk"
 description = "Python SDK to interact with INTERSECT"
 authors = [
     {name = "Matthew Baker", email = "bakermb@ornl.gov"},
@@ -82,7 +82,7 @@ lint = {composite = ["lint-isort", "lint-black", "lint-flake8", "lint-mypy", "li
 lint-black = "black ."
 lint-isort = "isort --filter-files ."
 lint-flake8 = "flake8"
-lint-mypy = "mypy src/intersect/"
+lint-mypy = "mypy src/intersect_sdk/"
 lint-bandit = "bandit -c pyproject.toml -r ."
 
 [tool.pdm.build]
@@ -90,7 +90,7 @@ package-dir = "src"
 
 [tool.pdm.version]
 source = "file"
-path = "src/intersect/version.py"
+path = "src/intersect_sdk/version.py"
 
 [tool.black]
 color = true

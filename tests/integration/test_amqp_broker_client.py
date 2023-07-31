@@ -4,7 +4,7 @@ import unittest
 from time import sleep
 
 # project
-from intersect.brokers import amqp_client
+from intersect_sdk.brokers import amqp_client
 
 # local
 from tests.fixtures.example_message_handler import ExampleMessageHandler

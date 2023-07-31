@@ -6,7 +6,7 @@ from sys import exit, stderr
 from time import sleep
 
 # intersect imports
-from intersect import common, messages
+from intersect_sdk import common, messages
 
 
 class HelloWorldRequestor(common.Adapter):

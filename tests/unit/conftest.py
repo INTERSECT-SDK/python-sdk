@@ -2,9 +2,9 @@ import weakref
 
 import pytest
 
-from intersect import Adapter, BrokerConfig, HierarchyConfig, IntersectConfig
-from intersect.base import Service
-from intersect.client import Channel, Client
+from intersect_sdk import Adapter, BrokerConfig, HierarchyConfig, IntersectConfig
+from intersect_sdk.base import Service
+from intersect_sdk.client import Channel, Client
 
 
 @pytest.fixture(name="mock_config")

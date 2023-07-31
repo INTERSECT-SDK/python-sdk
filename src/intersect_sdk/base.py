@@ -1,7 +1,7 @@
 # Standard
 import time
 
-from intersect import client
+from intersect_sdk import client
 
 # Project
 from .config_models import IntersectConfig
