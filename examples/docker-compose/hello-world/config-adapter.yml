@@ -13,4 +13,4 @@ hierarchy:
   system: "Adapter"
   subsystem: "Adapter"
   # must be unique
-  service: "Adapter"
+  service: "hello-world-adapter"
