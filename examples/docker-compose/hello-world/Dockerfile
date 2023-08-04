@@ -15,5 +15,7 @@ RUN conda install -c conda-forge python=${PYTHON_VERSION} \
 FROM conda_setup as base
 ARG GITLAB_USERNAME
 ARG GITLAB_PASSWORD
+ARG INTERSECT_SDK_VERSION=0.3.0
 RUN python -m pip install pip --upgrade \
-    && python -m pip install -i https://${GITLAB_USERNAME}:${GITLAB_PASSWORD}@code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect
+    && python -m pip install -i https://${GITLAB_USERNAME}:${GITLAB_PASSWORD}@code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect_sdk==${INTERSECT_SDK_VERSION} \
+    && python -m pip install PyYAML

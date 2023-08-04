@@ -13,4 +13,4 @@ hierarchy:
   system: "Requestor"
   subsystem: "Requestor"
   # must be unique
-  service: "Requestor"
+  service: "hello-world-requestor"

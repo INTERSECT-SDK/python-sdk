@@ -5,11 +5,11 @@ from sys import exit, stderr
 from time import sleep
 
 # intersect imports
-from intersect_sdk import common, messages
+from intersect_sdk import adapter, config_functions, exceptions, messages, IntersectConfig
 
 
-class HelloWorldAdapter(common.Adapter):
-    def __init__(self, config: common.IntersectConfig):
+class HelloWorldAdapter(adapter.Adapter):
+    def __init__(self, config: IntersectConfig):
         # Setup base class
         super().__init__(config)
 
@@ -35,15 +35,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=Path,
-        default="config-requestor.yaml",
+        default="config-adapter.yml",
         help="Path to config file",
     )
     args = parser.parse_args()
 
     # -- Config --
     try:
-        config = common.load_config_from_file(args.config)
-    except common.IntersectConfigParseException as ex:
+        config = config_functions.load_config_from_file(args.config)
+    except exceptions.IntersectConfigParseException as ex:
         print(ex.message, file=stderr)
         exit(ex.returnCode)
 
