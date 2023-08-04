@@ -5,7 +5,7 @@ from sys import exit, stderr
 from time import sleep
 
 # intersect imports
-from intersect_sdk import adapter, config_functions, exceptions, messages, IntersectConfig
+from intersect_sdk import IntersectConfig, adapter, config_functions, exceptions, messages
 
 
 class HelloWorldAdapter(adapter.Adapter):
