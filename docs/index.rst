@@ -9,7 +9,7 @@ Python SDK for INTERSECT
 This site provides documentation for INTERSECT's Python SDK. See the getting started section for installation and usage instructions as well as guidelines for contributing to the project. Examples of using the SDK are discussed in the examples section. See the API documentation for more information about the SDK components.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Getting started
 
    installation
@@ -17,7 +17,7 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    contributing
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Examples
 
    examples/hello-world
@@ -25,6 +25,7 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    examples/client-server-counting
 
 .. toctree::
+   :maxdepth: 1
    :caption: API documentation
 
    api/json_handler
