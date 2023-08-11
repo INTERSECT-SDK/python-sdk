@@ -61,4 +61,56 @@ and the output from ``requestor.py`` is
 Using Docker compose
 --------------------
 
-Coming soon.
+This section discusses the ``hello-world`` examples in ``examples/docker-compose/``. The ``hello-world`` example uses YAML configuration files for configuration settings.
+Follow the steps below to run these examples using ``docker compose``.
+
+Add U/XCAMS credentials to authenitcate with GitLab PyPI package repository for SDK.
+
+Create an ``.env`` file with the GitLab credentials that docker compose will use:
+
+.. code-block:: bash
+
+   # inside .env file:
+   GITLAB_USERNAME=(UCAMS ID)
+   GITLAB_PASSWORD=(GitLab token)
+
+Now, start up the broker, adapter and requestor using docker compose:
+
+.. code-block:: bash
+
+   # Build and run via docker compose
+   docker compose --env-file .env build
+   docker compose --env-file .env up
+
+After several seconds, the output from ``hello-world-adapter:`` is
+
+.. code-block:: text
+
+   Waiting to connect to broker...
+   Press Ctrl-C to exit:
+   Adapter Uptime: 6 seconds
+   Adapter Uptime: 11 seconds
+   Received request from Requestor, sending reply...
+   Adapter Uptime: 16 seconds
+   Adapter Uptime: 21 seconds
+
+and the output from ``hello-world-requestor`` is
+
+.. code-block:: text
+
+  Waiting to connect to message broker...
+  Press Ctrl-C to exit:
+  Requestor will send request in 5 seconds...
+  Request sent!
+  Reply from Hello World Adapter:
+  {"message": "Hello, World!"}
+  Requestor Uptime: 11 seconds
+  Requestor Uptime: 16 seconds
+  Requestor Uptime: 21 seconds
+
+When finished, cleanup!
+
+.. code-block:: bash
+
+  # cleanup
+  docker compose down
