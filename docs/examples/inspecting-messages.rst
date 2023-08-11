@@ -116,4 +116,4 @@ The output from ``message_inspector.py`` should look like the following after se
 Using Docker compose
 --------------------
 
-here
+Coming soon.

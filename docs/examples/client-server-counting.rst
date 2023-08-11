@@ -67,4 +67,4 @@ The output from ``client.py`` should look like the following after several secon
 Using Docker compose
 --------------------
 
-Here.
+Coming soon.
