@@ -1,25 +1,53 @@
-Installation
-============
+Installation and usage
+======================
 
-Here
+Install Python via `Anaconda <https://www.anaconda.com>`_ or `Conda <https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html>`_. Anaconda installs Python along with many other graphical tools and scientific packages. Conda is an open-source packaging, dependency, and environment management tool which also installs Python. Notice that Miniconda is a smaller version of Anaconda that includes only Conda and a few dependencies.
 
-Other items that need to be installed for running the examples are discussed below.
+After installing Python, make a folder for your project, then create a virtual environment in that folder and activate the environment as follows:
 
-Docker
-------
+.. code-block:: text
 
-`Docker <https://www.docker.com>`_ is used to create containers for using the Python SDK and to run the examples. Download and install Docker using the instructions provided on their website. See the Authenticating section below to use the GitLab Container registry which contains INTERSECT dependencies.
+   mkdir myproject
+   cd myproject
+
+   python -m venv venv
+   source venv/bin/activate
+
+Next, install the intersect-sdk package into the virtual environment using the command shown below. The ``<token>`` must be replaced with your GitLab token. For example, if your token is ``12345`` then replace ``<token>`` in the URL with ``12345`` then run the command. See the **Authenticating** section below for information on how to generate a token.
+
+.. code-block:: text
+
+   pip install -i https://user:<token>@code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-sdk
+
+You should now be able to import the package in a Python script, notebook, or program using:
+
+.. code-block::
+
+   import intersect_sdk
+
+Use the command shown below to deactivate the virtual environment:
+
+.. code-block:: text
+
+  deactivate
+
+If you would like to run the examples, such as the :doc:`examples/hello-world` example, you may need to install Docker and run a broker service. See the sections below for more information.
 
 Authenticating
 --------------
 
-Some dependencies are stored on private package registries on code.ornl.gov. A personal access token is required in order to install these with either pip or PDM. Create a personal access token on the `Access Tokens page <https://code.ornl.gov/-/profile/personal_access_tokens>`_ in GitLab Preferences with ``read_api`` or ``api`` permissions then save the auto-generated key. This key is only displayed immediately after generating it, so be sure to save it (otherwise a new token will need to be generated).
+Some INTERSECT dependencies are stored on private package registries on code.ornl.gov; therefore, a personal access token is required for installation. Create a personal access token on the `Access Tokens page <https://code.ornl.gov/-/profile/personal_access_tokens>`_ in GitLab Preferences with ``read_api`` or ``api`` permissions then save the auto-generated key. This key is only displayed immediately after generating it, so be sure to save it (otherwise a new token will need to be generated).
 
 For the Docker containers, you need to login to the GitLab Container registry using the command shown below. Then sign in with your UCAMS or XCAMS credentials.
 
 .. code-block::
 
    docker login code.ornl.gov:4567
+
+Docker
+------
+
+`Docker <https://www.docker.com>`_ is used to create containers for using the Python SDK and to run the examples. Download and install Docker using the instructions provided on their website. See the **Authenticating** section below to use the GitLab Container registry which contains INTERSECT dependencies.
 
 Broker
 ------
@@ -35,7 +63,3 @@ Run the broker using the Docker commands shown below. See the previous section r
 
 To expose the management UI as well, add ``-p 15672:15672`` to the command. Then you can navigate to ``localhost:15672`` in your browser. The login credentials will be those found in the broker's `definitions file <https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json>`_.
 
-Conda
------
-
-`Conda <https://docs.conda.io/en/latest/>`_ is an open-source packaging, dependency, and environment management tool. It can be used to install and implement the INTERSECT Python SDK. Install conda from the `Anaconda <https://www.anaconda.com>`_ website or follow the `Conda installation <https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html>`_ steps. Notice that Miniconda is a smaller version of Anaconda that includes only conda and its dependencies. Install Anaconda if you prefer to have conda plus over 7,500 open-source packages; otherwise just install Miniconda.

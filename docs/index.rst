@@ -13,7 +13,6 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    :caption: Getting started
 
    installation
-   usage
    contributing
 
 .. toctree::
