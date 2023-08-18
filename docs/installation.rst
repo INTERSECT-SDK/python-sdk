@@ -1,12 +1,14 @@
 Installation
 ============
 
-Software, developer tools, and other items that need to be installed for using the Python SDK for INTERSECT are discussed below.
+Here
+
+Other items that need to be installed for running the examples are discussed below.
 
 Docker
 ------
 
-`Docker <https://www.docker.com>`_ is used to create containers for using the Python SDK and to run the examples. Download and install Docker using the instructions provided on their website. See the Authenticating section to use the GitLab Container registry which contains INTERSECT dependencies.
+`Docker <https://www.docker.com>`_ is used to create containers for using the Python SDK and to run the examples. Download and install Docker using the instructions provided on their website. See the Authenticating section below to use the GitLab Container registry which contains INTERSECT dependencies.
 
 Authenticating
 --------------
@@ -32,11 +34,6 @@ Run the broker using the Docker commands shown below. See the previous section r
    docker run --rm -p 1883:1883 code.ornl.gov:4567/intersect/sdk/broker/0.2.0
 
 To expose the management UI as well, add ``-p 15672:15672`` to the command. Then you can navigate to ``localhost:15672`` in your browser. The login credentials will be those found in the broker's `definitions file <https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json>`_.
-
-PDM
-------
-
-The `PDM <https://pdm.fming.dev/latest/>`_ packaging and dependency management tool can be used to install the Python SDK. Download and install PDM using the instructions on their website.
 
 Conda
 -----

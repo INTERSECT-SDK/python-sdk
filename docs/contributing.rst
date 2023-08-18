@@ -1,16 +1,41 @@
 Contributing
 ============
 
-This section discusses documentation, testing, linters, formatters, and style guides for developing the INTERSECT Python SDK.
+Read the sections below if you would like to contribute to the development of the INTERSECT Python SDK package.
 
-Environment
------------
+Installing for package development
+----------------------------------
 
-The command shown below uses the ``environment.yml`` file in the python-sdk repository to create a conda environment named ``intersect``. This will install all the dependencies for developing the INTERSECT Python SDK. After running the command, follow the instructions in the terminal to activate the environment.
+Follow the steps discussed in this section to install the intersect-sdk package in a Python development environment. First, install Python and PDM on your local machine. See the :doc:`installation` page for more details. Next, clone the sdk repository as follows:
 
 .. code-block::
 
-   conda env create --file environment.yml
+   git clone https://code.ornl.gov/intersect/sdk/python-sdk/sdk.git
+
+Create a Python virtual environment in the root level of the repository and activate the environment.
+
+.. code-block::
+
+   cd sdk
+   python -m venv venv
+   source venv/bin/activate
+
+Use PDM to install the intersect-sdk package and its dependencies into the virtual environment.
+
+.. code-block::
+
+  pdm install
+
+Check the installation by running one of the examples, such as the :doc:`examples/hello-world` example. Use the command shown below to deactivate the virtual environment:
+
+.. code-block::
+
+  deactivate
+
+PDM
+------
+
+The `PDM <https://pdm.fming.dev/latest/>`_ packaging and dependency management tool is used to install the intersect-sdk package in editable (developer) mode. It is also used to run linter checks, formatter checks, and unit tests. Download and install PDM using the instructions on the PDM website.
 
 Documentation
 -------------
