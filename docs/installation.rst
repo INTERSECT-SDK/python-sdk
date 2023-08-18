@@ -5,18 +5,21 @@ Install Python via `Anaconda <https://www.anaconda.com>`_ or `Conda <https://doc
 
 After installing Python, make a folder for your project, then create a virtual environment in that folder and activate the environment as follows:
 
-.. code-block:: text
+.. code-block:: bash
 
+   # Create a project folder and change to that directory
    mkdir myproject
    cd myproject
 
+   # Create a virtual environment and activate it
    python -m venv venv
    source venv/bin/activate
 
 Next, install the intersect-sdk package into the virtual environment using the command shown below. The ``<token>`` must be replaced with your GitLab token. For example, if your token is ``12345`` then replace ``<token>`` in the URL with ``12345`` then run the command. See the **Authenticating** section below for information on how to generate a token.
 
-.. code-block:: text
+.. code-block:: bash
 
+   # Install the intersect-sdk package into the virtual environment
    pip install -i https://user:<token>@code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-sdk
 
 You should now be able to import the package in a Python script, notebook, or program using:
@@ -27,9 +30,10 @@ You should now be able to import the package in a Python script, notebook, or pr
 
 Use the command shown below to deactivate the virtual environment:
 
-.. code-block:: text
+.. code-block:: bash
 
-  deactivate
+   # Deactivate the virtual environment
+   deactivate
 
 If you would like to run the examples, such as the :doc:`examples/hello-world` example, you may need to install Docker and run a broker service. See the sections below for more information.
 
@@ -40,7 +44,7 @@ Some INTERSECT dependencies are stored on private package registries on code.orn
 
 For the Docker containers, you need to login to the GitLab Container registry using the command shown below. Then sign in with your UCAMS or XCAMS credentials.
 
-.. code-block::
+.. code-block:: bash
 
    docker login code.ornl.gov:4567
 
@@ -56,7 +60,7 @@ A broker configuration for SDK developoment is available on the INTERSECT GitLab
 
 Run the broker using the Docker commands shown below. See the previous section regarding authentication for the login command.
 
-.. code-block::
+.. code-block:: bash
 
    docker login code.ornl.gov:4567
    docker run --rm -p 1883:1883 code.ornl.gov:4567/intersect/sdk/broker/0.2.0

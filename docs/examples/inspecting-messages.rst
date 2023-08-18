@@ -6,25 +6,11 @@ This example demonstrates how to inspect messages with the INTERSECT SDK. The ``
 Using a Python environment
 --------------------------
 
-This section discusses the ``inspecting-messages`` example in the ``examples/python-environment`` directory. Follow the steps below for running the example in a conda environment.
+This section discusses the ``inspecting-messages`` example in the ``examples/python-environment`` directory. Follow the steps below for running the example in a virtual environment which was discussed in the :doc:`../installation` section.
 
 First, if a broker is not already running, run the broker in a separate terminal session as discussed on the :doc:`../installation` page.
 
-Next, in another terminal session, run the following commands to use the ``environment.yml`` file to create a conda environment for this example:
-
-.. code-block:: bash
-
-   # Create the conda environment
-   conda env create --file environment.yml
-
-   # Activate the environment
-   conda activate intersect
-
-   # Install the intersect packages using pip in the conda environment, this will
-   # ask for your username (UCAMS ID) and password (GitLab token)
-   pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-sdk
-
-After activating the conda environment, run the ``status_publisher.py`` in the same terminal session as shown below.
+After starting the broker and activating the virtual environment, run the ``status_publisher.py`` in a terminal session as shown below.
 
 .. code-block:: bash
 

@@ -1,28 +1,16 @@
 Hello world
 ===========
 
-This is a basic example to demonstrate how to communicate with the INTERSECT SDK. The ``adapter.py`` subscribes to ``Request`` INTERSECT messages of the ``DETAIL`` subtype. The adapter will respond with a "Hello, World!" message in its reply. The ``requestor.py`` publishes ``Status`` INTERSECT messages of the ``GENERAL`` subtype. See the sections below for running the example using Docker compose or from within a Python environment.
+This is a basic example on how to communicate with the INTERSECT SDK. The ``adapter.py`` subscribes to ``Request`` INTERSECT messages of the ``DETAIL`` subtype. The adapter will respond with a "Hello, World!" message in its reply. The ``requestor.py`` publishes ``Status`` INTERSECT messages of the ``GENERAL`` subtype. See the sections below for running the example using Docker compose or from within a Python environment.
 
 Using a Python environment
 --------------------------
 
-This section discusses the ``hello-world`` examples in ``examples/python-environment/``. The ``hello-world-dict`` example uses a dictionary for configuration settings while the example in ``hello-world-yml`` uses a YAML configuration file. Follow the steps below to run these examples using a conda environment.
+This section discusses the ``hello-world`` examples in ``examples/python-environment/``. The ``hello-world-dict`` example uses a dictionary for configuration settings while the example in ``hello-world-yml`` uses a YAML configuration file. Run the examples in a Python virtual environment which was discussed in the :doc:`../installation` section.
 
-Run the following commands to use the ``environment.yml`` file to create a conda environment for this example:
+First, if a broker is not already running, run the broker in a separate terminal session as discussed on the :doc:`../installation` page.
 
-.. code-block:: bash
-
-   # Create the conda environment
-   conda env create --file environment.yml
-
-   # Activate the environment
-   conda activate intersect
-
-   # Install the intersect packages using pip in the conda environment, this will
-   # ask for your username (UCAMS ID) and password (GitLab token)
-   pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-sdk
-
-After starting the broker and activating the conda environment, run the adapter and requestor as follows in separate terminal sessions:
+After starting the broker and activating the virtual environment, run the adapter and requestor as follows in separate terminal sessions:
 
 .. code-block:: bash
 

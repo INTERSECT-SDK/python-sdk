@@ -8,29 +8,31 @@ Installing for package development
 
 Follow the steps discussed in this section to install the intersect-sdk package in a Python development environment. First, install Python and PDM on your local machine. See the :doc:`installation` page for more details. Next, clone the sdk repository as follows:
 
-.. code-block::
+.. code-block:: bash
 
    git clone https://code.ornl.gov/intersect/sdk/python-sdk/sdk.git
 
 Create a Python virtual environment in the root level of the repository and activate the environment.
 
-.. code-block::
+.. code-block:: bash
 
+   # Create a virtual environment and activate it
    cd sdk
    python -m venv venv
    source venv/bin/activate
 
 Use PDM to install the intersect-sdk package and its dependencies into the virtual environment.
 
-.. code-block::
+.. code-block:: bash
 
-  pdm install
+   # Install the intersect-sdk package into the virtual environment using PDM
+   pdm install
 
 Check the installation by running one of the examples, such as the :doc:`examples/hello-world` example. Use the command shown below to deactivate the virtual environment:
 
-.. code-block::
+.. code-block:: bash
 
-  deactivate
+   deactivate
 
 PDM
 ------

@@ -6,25 +6,11 @@ This is an example of client-server adapters running a background counter proces
 Using a Python environment
 --------------------------
 
-This section discusses the ``client-server-counting`` example in the ``examples/python-environment`` directory. Follow the steps below for running the example in a conda environment.
+This section discusses the ``client-server-counting`` example in the ``examples/python-environment`` directory. Follow the steps below for running the example in a virtual environment which was discussed in the :doc:`../installation` section.
 
 First, if a broker is not already running, run the broker in a separate terminal session as discussed on the :doc:`../installation` page.
 
-Next, in another terminal session, run the following commands to use the ``environment.yml`` file to create a conda environment for this example:
-
-.. code-block:: bash
-
-   # Create the conda environment
-   conda env create --file environment.yml
-
-   # Activate the environment
-   conda activate intersect
-
-   # Install the intersect packages using pip in the conda environment, this will
-   # ask for your username (UCAMS ID) and password (GitLab token)
-   pip install -i https://code.ornl.gov/api/v4/groups/5609/-/packages/pypi/simple intersect-sdk
-
-After activating the conda environment, run the ``server.py`` in the same terminal session as shown below. The server will begin outputting status messages while measuring its uptime and incrementing a count up from 0 every second.
+After starting the broker and activating the virtual environment, run the ``server.py`` in a terminal session as shown below. The server will begin outputting status messages while measuring its uptime and incrementing a count up from 0 every second.
 
 .. code-block:: bash
 
@@ -44,7 +30,7 @@ The output from ``server.py`` should look like the following after several secon
    Received request from example-client, sending reply...
    Received request from example-client, sending reply...
 
-Next, run the ``client.py`` in yet another terminal session. Don't forget to activate the conda environment in this terminal session too. Once run, the client will begin to stop and start the server's count while also requesting its current value.
+Next, run the ``client.py`` in another terminal session. Don't forget to activate the conda environment in this terminal session too. Once run, the client will begin to stop and start the server's count while also requesting its current value.
 
 .. code-block:: bash
 
