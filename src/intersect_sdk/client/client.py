@@ -1,7 +1,7 @@
 import json
+import urllib.parse
+import urllib.request
 from typing import Optional
-
-import urllib3
 
 from ..brokers import broker_client
 from ..messages import JsonHandler
@@ -76,16 +76,27 @@ class Client:
             _create_broker_client()), the second is the broker's address, and
             the third is the broker's port number.
         """
-        try:
-            http = urllib3.PoolManager()
-            r = http.request("GET", address + "/v0.1/" + self._broker_endpoint)
-            broker_info = json.loads(r.data.decode("utf-8"))
-            endpoint = broker_info["endpoint"]
-            backend_name = broker_info["backendName"]
-            address, port = endpoint.split(":", 1)
-            return backend_name, address, port
-        except Exception as e:
-            raise Exception("cannot discover broker service") from e
+        url = address + "/v0.1/" + self._broker_endpoint
+
+        scheme = urllib.parse.urlparse(url).scheme
+
+        if scheme != "http" or scheme != "https":
+            url = "http://" + address + "/v0.1/" + self._broker_endpoint
+
+        if url.lower().startswith("http") or url.lower().startswith("https"):
+            request = urllib.request.Request(url)
+        else:
+            raise ValueError("Url must begin with http or https protocol")
+
+        with urllib.request.urlopen(request) as response:  # nosec
+            body = response.read()
+
+        broker_info = json.loads(body.decode("utf-8"))
+        endpoint = broker_info["endpoint"]
+        backend_name = broker_info["backendName"]
+        address, port = endpoint.split(":", 1)
+
+        return backend_name, address, port
 
     def connect(self, connection: tuple, username, password):
         """Connect to a broker.
