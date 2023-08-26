@@ -78,16 +78,18 @@ class Client:
         """
         url = address + "/v0.1/" + self._broker_endpoint
 
+        # Get scheme associated with the `url` string
         scheme = urllib.parse.urlparse(url).scheme
 
-        if scheme != "http" or scheme != "https":
-            url = "http://" + address + "/v0.1/" + self._broker_endpoint
-
-        if url.lower().startswith("http") or url.lower().startswith("https"):
-            request = urllib.request.Request(url)
+        # Only accept `http` and `https` schemes, otherwise raise error
+        if scheme != "http" and scheme != "https":
+            raise ValueError(f"URL scheme is {scheme}, only http or https schemes are accepted")
         else:
-            raise ValueError("Url must begin with http or https protocol")
+            request = urllib.request.Request(url)
 
+        # Get the body of the request, the `# nosec` is used here because
+        # bandit flags `urllib` for allowing various schemes such as `file`
+        # but this is restricted above to `http` and `https` schemes
         with urllib.request.urlopen(request) as response:  # nosec
             body = response.read()
 

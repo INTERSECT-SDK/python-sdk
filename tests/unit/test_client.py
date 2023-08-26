@@ -50,7 +50,7 @@ def test_connect_calls_discovery_service() -> None:
     client = Client("test_clien_test_connect_calls_discovery_service")
     client._create_broker_client = mock_function_amqp
 
-    client.connect(("discovery_address", "", True), "username", "passwd")
+    client.connect(("http://discovery_address", "", True), "username", "passwd")
 
     mock_broker.connect.assert_called_with("ip", "port", "username", "passwd")
     mock_broker.reset_mock()
@@ -68,7 +68,7 @@ def test_connect_can_use_another_endpoint() -> None:
     client._broker_endpoint = "intersect-broker-mqtt"
     client._create_broker_client = mock_function_mqtt
 
-    client.connect(("discovery_address", "", True, "intersect-broker-mqtt"), "username", "passwd")
+    client.connect(("http://discovery_address", "", True, "intersect-broker-mqtt"), "username", "passwd")
 
     mock_broker.connect.assert_called_with("ip", "port", "username", "passwd")
     mock_broker.reset_mock()
