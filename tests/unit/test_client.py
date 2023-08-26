@@ -68,7 +68,9 @@ def test_connect_can_use_another_endpoint() -> None:
     client._broker_endpoint = "intersect-broker-mqtt"
     client._create_broker_client = mock_function_mqtt
 
-    client.connect(("http://discovery_address", "", True, "intersect-broker-mqtt"), "username", "passwd")
+    client.connect(
+        ("http://discovery_address", "", True, "intersect-broker-mqtt"), "username", "passwd"
+    )
 
     mock_broker.connect.assert_called_with("ip", "port", "username", "passwd")
     mock_broker.reset_mock()
