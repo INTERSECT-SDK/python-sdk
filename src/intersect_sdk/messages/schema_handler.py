@@ -1,8 +1,7 @@
-import json
 from jsonschema import ValidationError, validate, Validator
 
 class SchemaHandler:
-    def load_schema(schema, schemaValidator = None):
+    def __init__(self, schema, schemaValidator = None) -> None:
         SchemaHandler.schema = schema
         SchemaHandler.validator = schemaValidator if schemaValidator is not None else Validator
 
@@ -10,8 +9,4 @@ class SchemaHandler:
         SchemaHandler.validator.check_schema(SchemaHandler.schema)
     
     def is_valid(arguments):
-        try:
-            SchemaHandler.validator(arguments, SchemaHandler.schema)
-            return True
-        except ValidationError:
-            return False
+        SchemaHandler.validator(arguments, SchemaHandler.schema)

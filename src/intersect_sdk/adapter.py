@@ -5,6 +5,7 @@ import threading
 import time
 import weakref
 from builtins import list
+from jsonschema import ValidationError
 from typing import Any, Callable, Dict, List, Optional, Union
 
 # Project import
@@ -448,7 +449,7 @@ class Adapter(base.Service):
         )
         return msg
     
-    def generate_custom_message(self, destination=None, arguments=None) -> messages.Custom:
+    def generate_custom_message(self, destination=None, arguments=None, schema=schema_handler) -> messages.Custom:
         """Create a Custom Domain Message
 
         Args:
@@ -457,7 +458,10 @@ class Adapter(base.Service):
         Returns:
             A Custom message with sensible default values
         """
+
+        #validate arguments against schema if it exists
         arguments = arguments if arguments is not None else {}
+        schema.validate(arguments)
         tmp = messages.Request()
         tmp.header.source = self.service_name
         tmp.header.destination = destination
@@ -808,6 +812,38 @@ class Adapter(base.Service):
             handler(message, messages.Status, message.status, payload)
         return True
 
+    def resolve_custom_receive(self, message: messages.Custom) -> bool:
+        """Handle a Custom message.
+
+        Delegates messages to the appropriate handler.
+
+        Args:
+            message: The Status message to handle.
+        Returns:
+            True if the message was handled correctly.
+        """
+
+        # FIXME is it correct to only look for systems the have
+        # this system as a prefix or should this check for equality
+        # Ignore messages not addressed to us.
+        if not message.header.destination.startswith(self.service_name):
+            return True
+
+        # FIXME Decide how to determine when to load data from the message
+        # instead of hardcoding in never to do it. Only parse the payload once
+        payload = parse_message_arguments(message.detail, False)
+
+        subtypes = self.types_to_handlers.get(messages.Custom, {})
+        handlers = subtypes.get(message.custom, [])
+
+        for handler in handlers:
+            try:
+                handler[1].is_valid(message)
+                handler[0](message, messages.Status, message.status, payload)
+            except ValidationError:
+                continue
+        return True
+    
     def register_message_handler(self, handler: Callable, types_: HandlerConfig, schema_handler: schema_handler.SchemaHandler = None):
         """Register a message handler callable to be run.
 
