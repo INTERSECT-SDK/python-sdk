@@ -16,6 +16,7 @@ from .config_models import IntersectConfig
 from .exceptions import IntersectWarning
 from .logger import logger
 from .utils import get_utc, identifier, parse_message_arguments
+from .messages import schema_handler
 
 MessageType = Union[messages.Action, messages.Request, messages.Status]
 HandlerConfig = Dict[MessageType, List[int]]
@@ -446,6 +447,28 @@ class Adapter(base.Service):
             request=messages.Request.TYPE, destination=destination, arguments=arguments
         )
         return msg
+    
+    def generate_custom_message(self, destination=None, arguments=None) -> messages.Custom:
+        """Create a Custom Domain Message
+
+        Args:
+            destination: Remote system name string to address the message to.
+            arguments: Detail portion of Custom message
+        Returns:
+            A Custom message with sensible default values
+        """
+        arguments = arguments if arguments is not None else {}
+        tmp = messages.Request()
+        tmp.header.source = self.service_name
+        tmp.header.destination = destination
+        tmp.header.message_id = next(self.identifier)
+        tmp.header.created = get_utc()
+        tmp.request = messages.Custom
+
+        # Add system information to user provided details
+        tmp.arguments = json.dumps({**self.hierarchy, **arguments})
+
+        return tmp
 
     def generate_request_uptime(self, destination=None, arguments=None) -> messages.Request:
         """Create an UPTIME Request message.
@@ -785,7 +808,7 @@ class Adapter(base.Service):
             handler(message, messages.Status, message.status, payload)
         return True
 
-    def register_message_handler(self, handler: Callable, types_: HandlerConfig):
+    def register_message_handler(self, handler: Callable, types_: HandlerConfig, schema_handler: schema_handler.SchemaHandler = None):
         """Register a message handler callable to be run.
 
         Register the handler so that it will be run whenever
@@ -802,9 +825,10 @@ class Adapter(base.Service):
             subtypes: dict = self.types_to_handlers.setdefault(message_type, {})
             for item in message_subtypes:
                 handlers = subtypes.setdefault(item, [])
-                if handler in handlers:
-                    continue
-                handlers.append(handler)
+                for entry in handlers:
+                    if entry[0] is handler:
+                        continue
+                handlers.append((handler, schema_handler))
 
     def unregister_message_handler(self, handler: Callable):
         """Unregister a message handler.
@@ -816,7 +840,4 @@ class Adapter(base.Service):
         """
         for message_subtypes in self.types_to_handlers.values():
             for handlers in message_subtypes.values():
-                try:
-                    handlers.remove(handler)
-                except ValueError:
-                    pass
+                handlers = filter(handlers, lambda x: x[0] is not handler)
