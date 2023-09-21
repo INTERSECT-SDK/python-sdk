@@ -845,10 +845,10 @@ class Adapter(base.Service):
             payload = json.loads(message.payload)
             try:
                 handler[1].is_valid(payload)
-                if handler[1].filter is None:
+                if handler[1].screen is None:
                     handler[0](message, messages.Custom, message.custom, payload)
-                elif handler[1].filter in payload:
-                    handler[0](message, messages.Custom, message.custom, payload[handler[1].filter])
+                elif handler[1].screen in payload:
+                    handler[0](message, messages.Custom, message.custom, payload[handler[1].screen])
             except ValidationError:
                 continue
         return True

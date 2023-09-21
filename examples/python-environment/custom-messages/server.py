@@ -28,13 +28,13 @@ class MicroscopyCustomMessageAdapter(Adapter):
         self.register_message_handler(
             self.handle_em_activity_messages,
             {Custom: [Custom.ALL]},
-            schema_handler.SchemaHandler(schema, filter="EM_Activity"),
+            schema_handler.SchemaHandler(schema, screen="EM_Activity"),
         )
 
         self.register_message_handler(
             self.handle_system_status_messages,
             {Custom: [Custom.ALL]},
-            schema_handler.SchemaHandler(schema, filter="SystemStatus"),
+            schema_handler.SchemaHandler(schema, screen="SystemStatus"),
         )
 
     def handle_all_custom_messages(self, message, type_, subtype, payload):
