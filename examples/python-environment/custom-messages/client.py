@@ -8,7 +8,10 @@ from intersect_sdk import (
     IntersectConfig,
     IntersectConfigParseException,
     load_config_from_dict,
-    messages
+)
+from intersect_sdk.messages import (
+    Custom,
+    schema_handler
 )
 
 good_em_activity_msg = {
@@ -165,11 +168,12 @@ class Client(Adapter):
         # Generate and publish start message
         self.status_channel.publish(self.generate_status_starting())
 
-    schemaHandler = messages.schema_handler(schema)
+    with open('./FSI_MessagingStandard.json') as schemaf:
+      schemaHandler = schema_handler.SchemaHandler(json.loads('\n'.join(schemaf.readlines())))
 
     def send_message(self, destination, msg):
         try:
-          self.send(self.generate_custom_message(self, destination, msg, self.schemaHandler))
+          self.send(self.generate_custom_message(destination, msg, self.schemaHandler))
         except ValidationError:
           print("Sending message failed due to validation.")
 

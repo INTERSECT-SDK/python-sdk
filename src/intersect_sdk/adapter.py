@@ -105,6 +105,7 @@ class Adapter(base.Service):
         # Set relevant channels
         self.action_channel: Channel = self.connection.channel(f"{self.service_name}/action")
         self.status_channel: Channel = self.connection.channel(f"{self.service_name}/status")
+        self.custom_channel: Channel = self.connection.channel(f"{self.service_name}/custom")
         self.request_channel = self.connection.channel(f"{self.service_name}/request")
         self.reply_channel = self.connection.channel(f"{self.service_name}/reply")
 
@@ -113,6 +114,7 @@ class Adapter(base.Service):
         self.request_channel.subscribe(self.resolve_request_receive)
         self.reply_channel.subscribe(self.resolve_status_receive)
         self.status_channel.subscribe(self.resolve_status_receive)
+        self.custom_channel.subscribe(self.resolve_custom_receive)
 
         # Set attributes for regular status outputs
         self.status = messages.Status.AVAILABLE
@@ -449,30 +451,6 @@ class Adapter(base.Service):
         )
         return msg
     
-    def generate_custom_message(self, destination=None, arguments=None, schema=schema_handler) -> messages.Custom:
-        """Create a Custom Domain Message
-
-        Args:
-            destination: Remote system name string to address the message to.
-            arguments: Detail portion of Custom message
-        Returns:
-            A Custom message with sensible default values
-        """
-
-        #validate arguments against schema if it exists
-        arguments = arguments if arguments is not None else {}
-        schema.validate(arguments)
-        tmp = messages.Request()
-        tmp.header.source = self.service_name
-        tmp.header.destination = destination
-        tmp.header.message_id = next(self.identifier)
-        tmp.header.created = get_utc()
-        tmp.request = messages.Custom
-
-        # Add system information to user provided details
-        tmp.arguments = json.dumps({**self.hierarchy, **arguments})
-
-        return tmp
 
     def generate_request_uptime(self, destination=None, arguments=None) -> messages.Request:
         """Create an UPTIME Request message.
@@ -489,6 +467,31 @@ class Adapter(base.Service):
         )
         return msg
 
+    def generate_custom_message(self, destination=None, arguments=None, schema=None) -> messages.Custom:
+        """Create a Custom Domain Message
+
+        Args:
+            destination: Remote system name string to address the message to.
+            arguments: Detail portion of Custom message
+        Returns:
+            A Custom message with sensible default values
+        """
+
+        #validate arguments against schema if it exists
+        arguments = arguments if arguments is not None else {}
+        if schema is not None:
+            schema.is_valid(arguments)
+        tmp = messages.Custom()
+        tmp.header.source = self.service_name
+        tmp.header.destination = destination
+        tmp.header.message_id = next(self.identifier)
+        tmp.header.created = get_utc()
+        tmp.custom = messages.Custom.ALL
+
+        tmp.payload = json.dumps(arguments)
+
+        return tmp
+    
     def generate_status(
         self,
         status: messages.Status,
@@ -685,6 +688,8 @@ class Adapter(base.Service):
             self.connection.channel(message.header.destination + "/action").publish(message)
         elif isinstance(message, messages.Request):
             self.connection.channel(message.header.destination + "/request").publish(message)
+        elif isinstance(message, messages.Custom):
+            self.connection.channel(message.header.destination + "/custom").publish(message)
 
     def status_ticker(self):
         """Periodically sends Status messages showing the Server's state."""
@@ -752,7 +757,7 @@ class Adapter(base.Service):
         handlers = subtypes.get(message.action, [])
 
         for handler in handlers:
-            handler(message, messages.Action, message.action, payload)
+            handler[0](message, messages.Action, message.action, payload)
         return True
 
     def resolve_request_receive(self, message: messages.Request) -> bool:
@@ -781,7 +786,7 @@ class Adapter(base.Service):
         handlers = subtypes.get(message.request, [])
 
         for handler in handlers:
-            handler(message, messages.Request, message.request, payload)
+            handler[0](message, messages.Request, message.request, payload)
         return True
 
     def resolve_status_receive(self, message: messages.Status) -> bool:
@@ -809,7 +814,7 @@ class Adapter(base.Service):
         handlers = subtypes.get(message.status, [])
 
         for handler in handlers:
-            handler(message, messages.Status, message.status, payload)
+            handler[0](message, messages.Status, message.status, payload)
         return True
 
     def resolve_custom_receive(self, message: messages.Custom) -> bool:
@@ -831,20 +836,23 @@ class Adapter(base.Service):
 
         # FIXME Decide how to determine when to load data from the message
         # instead of hardcoding in never to do it. Only parse the payload once
-        payload = parse_message_arguments(message.detail, False)
-
+        payload = parse_message_arguments(message.payload, False)
         subtypes = self.types_to_handlers.get(messages.Custom, {})
         handlers = subtypes.get(message.custom, [])
 
         for handler in handlers:
+            payload = json.loads(message.payload)
             try:
-                handler[1].is_valid(message)
-                handler[0](message, messages.Status, message.status, payload)
+                handler[1].is_valid(payload)
+                if handler[1].filter is None:
+                    handler[0](message, messages.Custom, message.custom, payload)
+                elif handler[1].filter in payload:
+                    handler[0](message, messages.Custom, message.custom, payload[handler[1].filter])
             except ValidationError:
                 continue
         return True
     
-    def register_message_handler(self, handler: Callable, types_: HandlerConfig, schema_handler: schema_handler.SchemaHandler = None):
+    def register_message_handler(self, handler: Callable, types_: HandlerConfig, schema_handler = None):
         """Register a message handler callable to be run.
 
         Register the handler so that it will be run whenever

@@ -3,41 +3,56 @@ import time
 from sys import exit, stderr
 from typing import Tuple
 
-import custom_microscopy_messages
-
 from intersect_sdk import (
     Adapter,
     IntersectConfig,
     IntersectConfigParseException,
     load_config_from_dict,
-    messages,
 )
-
+from intersect_sdk.messages import (
+    Custom,
+    schema_handler
+)
 
 class MicroscopyCustomMessageAdapter(Adapter):
 
     def __init__(self, config: IntersectConfig):
         super().__init__(config)
 
+
+        with open('./FSI_MessagingStandard.json') as schemaf:
+            schema = json.loads('\n'.join(schemaf.readlines()))
+
         # Register message handlers
         self.register_message_handler(
-            self.handle_start,
-            {messages.Action: [messages.Action.START, messages.Action.RESTART]},
+            self.handle_all_custom_messages,
+            {Custom: [Custom.ALL]},
+            schema_handler.SchemaHandler(schema)
         )
-        custom_microscopy_messages.CustomMicroscopyMessages.load_schema()
-        custom_microscopy_messages.CustomMicroscopyMessages.check_schema()
 
-    def handle_start(self, message, type_, subtype, payload):
-        arguments = json.loads(message.arguments)
-        if not custom_microscopy_messages.CustomMicroscopyMessages.is_valid(arguments):
-            print("Received invalid message.")
-        else:
-            if "EM_Activity" in arguments:
-                print("EM Activity message received")
-            if "SystemStatus" in arguments:
-                print("SystemStatus message received")
-        print(arguments)
-        return True
+        self.register_message_handler(
+            self.handle_em_activity_messages,
+            {Custom: [Custom.ALL]},
+            schema_handler.SchemaHandler(schema, filter="EM_Activity")
+        )
+
+        self.register_message_handler(
+            self.handle_system_status_messages,
+            {Custom: [Custom.ALL]},
+            schema_handler.SchemaHandler(schema, filter="SystemStatus")
+        )
+
+    def handle_all_custom_messages(self, message, type_, subtype, payload):
+        print("Custom message received")
+
+    def handle_em_activity_messages(self, message, type_, subtype, payload):
+        print("em activity message received")
+        print(payload)
+
+    def handle_system_status_messages(self, message, type_, subtype, payload):
+        print("system status message received")
+        print(payload)
+
 
 if __name__ == "__main__":
     config_dict = {
