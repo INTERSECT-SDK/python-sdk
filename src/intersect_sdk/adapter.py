@@ -5,8 +5,9 @@ import threading
 import time
 import weakref
 from builtins import list
-from jsonschema import ValidationError
 from typing import Any, Callable, Dict, List, Optional, Union
+
+from jsonschema import ValidationError
 
 # Project import
 from . import base, messages
@@ -17,7 +18,6 @@ from .config_models import IntersectConfig
 from .exceptions import IntersectWarning
 from .logger import logger
 from .utils import get_utc, identifier, parse_message_arguments
-from .messages import schema_handler
 
 MessageType = Union[messages.Action, messages.Request, messages.Status]
 HandlerConfig = Dict[MessageType, List[int]]
@@ -450,7 +450,6 @@ class Adapter(base.Service):
             request=messages.Request.TYPE, destination=destination, arguments=arguments
         )
         return msg
-    
 
     def generate_request_uptime(self, destination=None, arguments=None) -> messages.Request:
         """Create an UPTIME Request message.
@@ -467,7 +466,9 @@ class Adapter(base.Service):
         )
         return msg
 
-    def generate_custom_message(self, destination=None, arguments=None, schema=None) -> messages.Custom:
+    def generate_custom_message(
+        self, destination=None, arguments=None, schema=None
+    ) -> messages.Custom:
         """Create a Custom Domain Message
 
         Args:
@@ -477,7 +478,7 @@ class Adapter(base.Service):
             A Custom message with sensible default values
         """
 
-        #validate arguments against schema if it exists
+        # validate arguments against schema if it exists
         arguments = arguments if arguments is not None else {}
         if schema is not None:
             schema.is_valid(arguments)
@@ -491,7 +492,7 @@ class Adapter(base.Service):
         tmp.payload = json.dumps(arguments)
 
         return tmp
-    
+
     def generate_status(
         self,
         status: messages.Status,
@@ -851,8 +852,10 @@ class Adapter(base.Service):
             except ValidationError:
                 continue
         return True
-    
-    def register_message_handler(self, handler: Callable, types_: HandlerConfig, schema_handler = None):
+
+    def register_message_handler(
+        self, handler: Callable, types_: HandlerConfig, schema_handler=None
+    ):
         """Register a message handler callable to be run.
 
         Register the handler so that it will be run whenever

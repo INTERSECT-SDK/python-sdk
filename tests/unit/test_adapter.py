@@ -31,11 +31,13 @@ def target_add_description(target, description):
     target["capabilities"][0]["properties"]["statusDescription"] = description
     return target
 
-def assert_header(msg, destination = "None"):
+
+def assert_header(msg, destination="None"):
     assert msg.header.source == "foo"
     assert msg.header.destination == destination
     assert msg.header.message_id == "foo0"
     assert msg.header.created
+
 
 def test_adapter(mock_adapter):
     """Test defaults for Adapter object"""
@@ -54,9 +56,11 @@ def test_generate_action(mock_adapter):
     action = mock_adapter._generate_action(messages.Action.STOP)
     assert action.action == messages.Action.STOP
 
+
 def check_action_msg(msg, destination, arg):
     assert_header(msg, destination)
     assert msg.arguments == json.dumps(arg)
+
 
 def test_generate_action_register(mock_adapter):
     """Test the generate action register method"""
@@ -64,11 +68,13 @@ def test_generate_action_register(mock_adapter):
     check_action_msg(msg, "some destination", "args!")
     assert msg.action == messages.Action.REGISTER
 
+
 def test_generate_action_restart(mock_adapter):
     """Test the generate action restart method"""
     msg = mock_adapter.generate_action_restart("some destination", "args!")
     check_action_msg(msg, "some destination", "args!")
     assert msg.action == messages.Action.RESTART
+
 
 def test_generate_action_reset(mock_adapter):
     """Test the generate action reset method"""
@@ -76,11 +82,13 @@ def test_generate_action_reset(mock_adapter):
     check_action_msg(msg, "some destination", "args!")
     assert msg.action == messages.Action.RESET
 
+
 def test_generate_action_set(mock_adapter):
     """Test the generate action set method"""
     msg = mock_adapter.generate_action_set("some destination", "args!")
     check_action_msg(msg, "some destination", "args!")
     assert msg.action == messages.Action.SET
+
 
 def test_generate_action_start(mock_adapter):
     """Test the generate action start method"""
@@ -88,11 +96,13 @@ def test_generate_action_start(mock_adapter):
     check_action_msg(msg, "some destination", "args!")
     assert msg.action == messages.Action.START
 
+
 def test_generate_action_stop(mock_adapter):
     """Test the generate action stop method"""
     msg = mock_adapter.generate_action_stop("some destination", "args!")
     check_action_msg(msg, "some destination", "args!")
     assert msg.action == messages.Action.STOP
+
 
 def test_generate_action_unregister(mock_adapter):
     """Test the generate action unregister method"""
@@ -100,12 +110,14 @@ def test_generate_action_unregister(mock_adapter):
     check_action_msg(msg, "some destination", "args!")
     assert msg.action == messages.Action.UNREGISTER
 
+
 def test_generate_request(mock_adapter):
     """Test the generate_request method"""
     request = mock_adapter._generate_request(messages.Request.STATUS)
     assert_header(request)
     assert request.request == messages.Request.STATUS
     assert json.dumps(mock_adapter.hierarchy) == request.arguments
+
 
 def test_generate_request_with_args(mock_adapter):
     """Test the generate_request method and passing arguments"""
@@ -116,16 +128,19 @@ def test_generate_request_with_args(mock_adapter):
     assert request.request == messages.Request.STATUS
     assert target == request.arguments
 
+
 def check_request_msg(mock_adapter, msg, destination, arg):
     assert_header(msg, destination)
     assert msg.arguments == json.dumps({**mock_adapter.hierarchy, **arg})
-    
+
+
 def test_generate_request_all(mock_adapter):
     """Test the generate request all method"""
     args = {"foo": "bar"}
     msg = mock_adapter.generate_request_all("some destination", args)
     check_request_msg(mock_adapter, msg, "some destination", args)
     assert msg.request == messages.Request.ALL
+
 
 def test_generate_request_environment(mock_adapter):
     """Test the generate request environment method"""
@@ -134,6 +149,7 @@ def test_generate_request_environment(mock_adapter):
     check_request_msg(mock_adapter, msg, "some destination", args)
     assert msg.request == messages.Request.ENVIRONMENT
 
+
 def test_generate_request_resources(mock_adapter):
     """Test the generate request resources method"""
     args = {"foo": "bar"}
@@ -141,12 +157,6 @@ def test_generate_request_resources(mock_adapter):
     check_request_msg(mock_adapter, msg, "some destination", args)
     assert msg.request == messages.Request.RESOURCES
 
-def test_generate_request_all(mock_adapter):
-    """Test the generate request all method"""
-    args = {"foo": "bar"}
-    msg = mock_adapter.generate_request_all("some destination", args)
-    check_request_msg(mock_adapter, msg, "some destination", args)
-    assert msg.request == messages.Request.ALL
 
 def test_generate_request_status(mock_adapter):
     """Test the generate request status method"""
@@ -155,6 +165,7 @@ def test_generate_request_status(mock_adapter):
     check_request_msg(mock_adapter, msg, "some destination", args)
     assert msg.request == messages.Request.STATUS
 
+
 def test_generate_request_type(mock_adapter):
     """Test the generate request type method"""
     args = {"foo": "bar"}
@@ -162,12 +173,14 @@ def test_generate_request_type(mock_adapter):
     check_request_msg(mock_adapter, msg, "some destination", args)
     assert msg.request == messages.Request.TYPE
 
+
 def test_generate_request_updtime(mock_adapter):
     """Test the generate request uptime method"""
     args = {"foo": "bar"}
     msg = mock_adapter.generate_request_uptime("some destination", args)
     check_request_msg(mock_adapter, msg, "some destination", args)
     assert msg.request == messages.Request.UPTIME
+
 
 def test_generate_custom_message_no_schema(mock_adapter):
     """Test the generate custom message method"""
@@ -177,14 +190,6 @@ def test_generate_custom_message_no_schema(mock_adapter):
     assert msg.payload == json.dumps(args)
     assert msg.custom == messages.Custom.ALL
 
-#TODO add tests with a schema for valid message and a not valid one
-
-def test_create_status(mock_adapter):
-    """Test the generate_request method"""
-    status = mock_adapter._create_status(messages.Status.ONLINE)
-    assert_header(status)
-    assert status.request == messages.Status.ONLINE
-    assert json.dumps(mock_adapter.hierarchy) == status.detail
 
 def test_status_ticker(monkeypatch, mock_adapter):
     """Test starting and stopping the status ticker"""

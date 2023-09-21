@@ -1,7 +1,6 @@
 import json
 import time
 from sys import exit, stderr
-from typing import Tuple
 
 from intersect_sdk import (
     Adapter,
@@ -9,16 +8,12 @@ from intersect_sdk import (
     IntersectConfigParseException,
     load_config_from_dict,
 )
-from intersect_sdk.messages import (
-    Custom,
-    schema_handler
-)
+from intersect_sdk.messages import Custom, schema_handler
+
 
 class MicroscopyCustomMessageAdapter(Adapter):
-
     def __init__(self, config: IntersectConfig):
         super().__init__(config)
-
 
         with open('./FSI_MessagingStandard.json') as schemaf:
             schema = json.loads('\n'.join(schemaf.readlines()))
@@ -27,19 +22,19 @@ class MicroscopyCustomMessageAdapter(Adapter):
         self.register_message_handler(
             self.handle_all_custom_messages,
             {Custom: [Custom.ALL]},
-            schema_handler.SchemaHandler(schema)
+            schema_handler.SchemaHandler(schema),
         )
 
         self.register_message_handler(
             self.handle_em_activity_messages,
             {Custom: [Custom.ALL]},
-            schema_handler.SchemaHandler(schema, filter="EM_Activity")
+            schema_handler.SchemaHandler(schema, filter="EM_Activity"),
         )
 
         self.register_message_handler(
             self.handle_system_status_messages,
             {Custom: [Custom.ALL]},
-            schema_handler.SchemaHandler(schema, filter="SystemStatus")
+            schema_handler.SchemaHandler(schema, filter="SystemStatus"),
         )
 
     def handle_all_custom_messages(self, message, type_, subtype, payload):
