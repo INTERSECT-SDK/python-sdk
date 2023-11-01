@@ -10,6 +10,13 @@ def get_fixture_path(fixture):
     return Path(__file__).absolute().parents[1] / "fixtures" / fixture
 
 
+def get_property_errors(errlines: List[str]) -> List[str]:
+    """
+    returns all of the Pydantic property errors (i.e. hierarchy.service, broker.username, ...)
+    """
+    return list(filter(lambda y: not y.startswith(" "), errlines))[1:]
+
+
 def get_schema_errors(errlines: List[str]) -> List[str]:
     """
     schema errors will always have the same space indentations
@@ -50,7 +57,20 @@ def test_invalid_config():
     except IntersectConfigParseException as ex:
         assert ex.returnCode == 65
         lines = ex.message.splitlines()
-        assert "6 validation errors" in lines[0]
+        assert "9 validation errors" in lines[0]
+        property_errors = get_property_errors(lines)
+        for property_err in [
+            'hierarchy.service',
+            'hierarchy.subsystem',
+            'hierarchy.system',
+            'hierarchy.facility',
+            'broker.username',
+            'broker.password',
+            'broker.port',
+            'id_counter_init',
+            'argument_schema',
+        ]:
+            assert property_err in property_errors
         schema_errors = get_schema_errors(lines)
         assert len(schema_errors) == 3
         assert "$.properties" in schema_errors
@@ -65,7 +85,20 @@ def test_invalid_config_2():
     except IntersectConfigParseException as ex:
         assert ex.returnCode == 65
         lines = ex.message.splitlines()
-        assert "6 validation errors" in lines[0]
+        assert "9 validation errors" in lines[0]
+        property_errors = get_property_errors(lines)
+        for property_err in [
+            'hierarchy.service',
+            'hierarchy.subsystem',
+            'hierarchy.system',
+            'hierarchy.facility',
+            'broker.username',
+            'broker.password',
+            'broker.port',
+            'id_counter_init',
+            'argument_schema',
+        ]:
+            assert property_err in property_errors
         schema_errors = get_schema_errors(lines)
         assert len(schema_errors) == 3
         assert "$.properties.weapon.type" in schema_errors

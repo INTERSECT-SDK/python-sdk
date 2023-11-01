@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, validator
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, field_validator
 
 
 class HierarchyConfig(BaseModel):
@@ -118,7 +118,7 @@ class IntersectConfig(BaseModel):
     (which already gets passed in messages), leave this field blank.
     """
 
-    @validator("argument_schema")
+    @field_validator("argument_schema")
     def _valid_json_schema(cls, schema: Optional[Dict]):
         if schema is not None:
             from jsonschema import Draft202012Validator as SchemaValidator

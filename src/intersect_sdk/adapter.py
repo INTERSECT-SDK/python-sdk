@@ -119,7 +119,7 @@ class Adapter(base.Service):
         self.message_id_counter = identifier(self.service_name, self.id_counter_init)
 
         # Setup the Adapter's hierarchy
-        self.hierarchy = config.hierarchy.dict()
+        self.hierarchy = config.hierarchy.model_dump()
         self.argument_schema = config.argument_schema
 
         # weakref to allow garbage collection
