@@ -10,7 +10,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100 \
-    PDM_VERSION=2.7.4 \
+    PDM_VERSION=2.10.0 \
     PDM_HOME=/usr/local
 # uncomment to allow prereleases to be installed
 #ENV PDM_PRERELEASE=1
