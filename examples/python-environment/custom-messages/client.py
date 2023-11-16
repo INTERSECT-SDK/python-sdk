@@ -113,8 +113,8 @@ class Client(Adapter):
         # Generate and publish start message
         self.status_channel.publish(self.generate_status_starting())
 
-    with open('./FSI_MessagingStandard.json') as schemaf:
-        schemaHandler = schema_handler.SchemaHandler(json.loads('\n'.join(schemaf.readlines())))
+        with open('./FSI_MessagingStandard.json') as schemaf:
+            self.schemaHandler = schema_handler.SchemaHandler(json.loads('\n'.join(schemaf.readlines())))
 
     def send_message(self, destination, msg):
         try:
