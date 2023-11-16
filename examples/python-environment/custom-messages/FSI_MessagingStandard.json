@@ -1,0 +1,1478 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "id": "https://www.ornl.gov/intersect#",
+    "definitions": {
+        "ID_Type": {
+            "type": "object",
+            "required": ["UUID"],
+            "properties": {
+                "UUID": {"type": "string"},
+                "DescriptiveLabel": {"type": "string"}
+            }
+        },
+        "SystemID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "SoftwareServiceID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "SoftwareServiceVersion": {"type": "string"}
+                    }
+                }
+            ]
+        },
+        "HeaderType": {
+            "type": "object",
+            "required": [
+                "SystemID",
+                "Timestamp",
+                "SchemaVersion"
+            ],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "Timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "SchemaVersion": {"type": "string"},
+                "Mode": {"$ref": "#/definitions/MessageModeEnum"},
+                "SoftwareServiceID": {"$ref": "#/definitions/SoftwareServiceID_Type"}
+            }
+        },
+        "MessageType": {
+            "type": "object",
+            "required": ["Header"],
+            "properties": {
+                "Header": {"$ref": "#/definitions/HeaderType"}
+            }
+        },
+        "SubsystemID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "ActivityID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "CapabilityID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "RankingType": {
+            "type": "object",
+            "required": [
+                "Precedence",
+                "Priority"
+            ],
+            "properties": {
+                "Precedence": {"type": "integer"},
+                "Priority": {"type": "integer"}
+            }
+        },
+        "CannotComplyType": {
+            "type": "object",
+            "required": ["Reason"],
+            "properties": {
+                "Reason": {"$ref": "#/definitions/CannotComplyEnum"},
+                "Description": {"type": "string"},
+                "AssociatedID": {"$ref": "#/definitions/ID_Type"}
+            }
+        },
+        "TaskID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "TaskVersion": {"type": "integer"}
+                    }
+                }
+            ]
+        },
+        "CapabilityCommandID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "ActivitySourceType": {
+            "type": "object",
+            "required": [
+                "TaskID",
+                "CapabilityCommandID"
+            ],
+            "properties": {
+                "TaskID": {"$ref": "#/definitions/TaskID_Type"},
+                "CapabilityCommandID": {"$ref": "#/definitions/CapabilityCommandID_Type"}
+            }
+        },
+        "ActivityBaseType": {
+            "type": "object",
+            "required": [
+                "ActivityID",
+                "CapabilityID",
+                "ActivityRank",
+                "Interactive",
+                "ActivityState"
+            ],
+            "properties": {
+                "ActivityID": {"$ref": "#/definitions/ActivityID_Type"},
+                "CapabilityID": {"$ref": "#/definitions/CapabilityID_Type"},
+                "ActivityRank": {"$ref": "#/definitions/RankingType"},
+                "Interactive": {"type": "boolean"},
+                "ActivityState": {"$ref": "#/definitions/ActivityStateEnum"},
+                "UnavailableReason": {"$ref": "#/definitions/CannotComplyType"},
+                "Source": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/ActivitySourceType"},
+                    "minItems": 0
+                },
+                "EstimatedCompletionTime": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "EstimatedPercentComplete": {"type": "number"}
+            }
+        },
+        "RepetitionPeriodicType": {
+            "type": "object",
+            "required": ["RepetitionInterval"],
+            "properties": {
+                "RepetitionInterval": {"type": "string"}
+            }
+        },
+        "RepetitionFiniteType": {
+            "type": "object",
+            "required": ["RepetitionAttempts"],
+            "properties": {
+                "RepetitionAttempts": {"type": "integer"},
+                "RepetitionInterval": {"type": "string"}
+            }
+        },
+        "RepetitionContinuousType": {
+            "type": "object",
+            "properties": {
+                "MaximumInterruptDuration": {"type": "string"}
+            }
+        },
+        "CommandRepetitionType": {
+            "type": "object",
+            "required": [
+                "Periodic",
+                "Finite",
+                "Continuous"
+            ],
+            "properties": {
+                "Periodic": {"$ref": "#/definitions/RepetitionPeriodicType"},
+                "Finite": {"$ref": "#/definitions/RepetitionFiniteType"},
+                "Continuous": {"$ref": "#/definitions/RepetitionContinuousType"}
+            }
+        },
+        "EM_ActivityType": {
+            "allOf": [
+                {"$ref": "#/definitions/ActivityBaseType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "Repetition": {"$ref": "#/definitions/CommandRepetitionType"},
+                        "ConsentRequired": {"type": "boolean"},
+                        "ConsentState": {"$ref": "#/definitions/ConsentEnum"}
+                    }
+                }
+            ]
+        },
+        "EM_ActivityMDT": {
+            "type": "object",
+            "required": [
+                "SubsystemID",
+                "Activity"
+            ],
+            "properties": {
+                "SubsystemID": {"$ref": "#/definitions/SubsystemID_Type"},
+                "Activity": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/EM_ActivityType"},
+                    "minItems": 1
+                }
+            }
+        },
+        "EM_ActivityMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/EM_ActivityMDT"}
+                    }
+                }
+            ]
+        },
+        "UserID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "SystemStatusMDT": {
+            "type": "object",
+            "required": [
+                "SystemID",
+                "SystemState"
+            ],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "SystemState": {"$ref": "#/definitions/SystemStateEnum"},
+                "Model": {"type": "string"},
+                "UserID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/UserID_Type"},
+                    "minItems": 0
+                },
+                "SubsystemID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/SubsystemID_Type"},
+                    "minItems": 0
+                },
+                "SoftwareServiceID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/SoftwareServiceID_Type"},
+                    "minItems": 0
+                }
+            }
+        },
+        "SystemStatusMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/SystemStatusMDT"}
+                    }
+                }
+            ]
+        },
+        "ControlStatusExperimentControlType": {
+            "type": "object",
+            "required": ["ControllerSystemID"],
+            "properties": {
+                "ControllerSystemID": {"$ref": "#/definitions/SystemID_Type"}
+            }
+        },
+        "PrimaryControllerType": {
+            "type": "object",
+            "required": [
+                "SystemID",
+                "SoftwareServiceID"
+            ],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "SoftwareServiceID": {"$ref": "#/definitions/SoftwareServiceID_Type"}
+            }
+        },
+        "SecondaryControllerType": {
+            "type": "object",
+            "required": [
+                "SystemID",
+                "SoftwareServiceID"
+            ],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "SoftwareServiceID": {"$ref": "#/definitions/SoftwareServiceID_Type"}
+            }
+        },
+        "CapabilityManagerType": {
+            "type": "object",
+            "required": [
+                "SystemID",
+                "SoftwareServiceID"
+            ],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "SoftwareServiceID": {"$ref": "#/definitions/SoftwareServiceID_Type"}
+            }
+        },
+        "ControlStatusCapabilityControlType": {
+            "type": "object",
+            "required": ["CapabilityID"],
+            "properties": {
+                "CapabilityID": {"$ref": "#/definitions/CapabilityID_Type"},
+                "PrimaryController": {"$ref": "#/definitions/PrimaryControllerType"},
+                "SecondaryController": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/SecondaryControllerType"},
+                    "minItems": 0
+                },
+                "CapabilityManager": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/CapabilityManagerType"},
+                    "minItems": 0
+                },
+                "AcceptedInterface": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/CapabilityControlInterfacesEnum"},
+                    "maxItems": 7,
+                    "minItems": 0
+                }
+            }
+        },
+        "ControlStatusControlType": {
+            "type": "object",
+            "required": ["ExperimentControl"],
+            "properties": {
+                "ExperimentControl": {"$ref": "#/definitions/ControlStatusExperimentControlType"},
+                "CapabilityControl": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/ControlStatusCapabilityControlType"},
+                    "minItems": 0
+                }
+            }
+        },
+        "ControlStatusMDT": {
+            "type": "object",
+            "required": [
+                "SystemID",
+                "ControlType"
+            ],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "ControlType": {"$ref": "#/definitions/ControlStatusControlType"}
+            }
+        },
+        "ControlStatusMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/ControlStatusMDT"}
+                    }
+                }
+            ]
+        },
+        "ResultingActivityType": {
+            "type": "object",
+            "required": [
+                "ActivityID",
+                "NewActivity"
+            ],
+            "properties": {
+                "ActivityID": {"$ref": "#/definitions/ActivityID_Type"},
+                "NewActivity": {"type": "boolean"}
+            }
+        },
+        "CapabilityCommandStatusMDT": {
+            "type": "object",
+            "required": [
+                "CommandID",
+                "State"
+            ],
+            "properties": {
+                "CommandID": {"$ref": "#/definitions/CapabilityCommandID_Type"},
+                "State": {"$ref": "#/definitions/CommandStateEnum"},
+                "StateReason": {"$ref": "#/definitions/CannotComplyType"},
+                "Activity": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/ResultingActivityType"},
+                    "minItems": 0
+                }
+            }
+        },
+        "EM_CommandStatusMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/CapabilityCommandStatusMDT"}
+                    }
+                }
+            ]
+        },
+        "SoftwareServiceSettingsParameterType": {
+            "type": "object",
+            "required": ["ParameterNumber"],
+            "properties": {
+                "ParameterNumber": {"type": "integer"},
+                "DescriptiveLabel": {"type": "string"}
+            }
+        },
+        "SoftwareServiceSettingType": {
+            "type": "object",
+            "required": ["SoftwareServiceSetting"],
+            "properties": {
+                "SoftwareServiceSetting": {"$ref": "#/definitions/SoftwareServiceSettingEnum"},
+                "SoftwareServiceSettingParameter": {"$ref": "#/definitions/SoftwareServiceSettingsParameterType"},
+                "EventSeverityClass": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/EventSeverityEnum"},
+                    "maxItems": 4,
+                    "minItems": 0
+                }
+            }
+        },
+        "SoftwareServiceStatusMDT": {
+            "type": "object",
+            "required": [
+                "SoftwareServiceID",
+                "TimeUp",
+                "Status"
+            ],
+            "properties": {
+                "SoftwareServiceID": {"$ref": "#/definitions/SoftwareServiceID_Type"},
+                "TimeUp": {"type": "string"},
+                "Status": {"$ref": "#/definitions/SoftwareServiceStatusEnum"},
+                "StatusDetail": {"type": "string"},
+                "EnabledSettings": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/SoftwareServiceSettingType"},
+                    "minItems": 0
+                },
+                "SupportedSettings": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/SoftwareServiceSettingType"},
+                    "minItems": 0
+                }
+            }
+        },
+        "SoftwareServiceStatusMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/SoftwareServiceStatusMDT"}
+                    }
+                }
+            ]
+        },
+        "ApprovalRequestID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "ApprovalRequestStatusMDT": {
+            "type": "object",
+            "required": [
+                "ApprovalRequestID",
+                "ApprovalState"
+            ],
+            "properties": {
+                "ApprovalRequestID": {"$ref": "#/definitions/ApprovalRequestID_Type"},
+                "ApprovalState": {"$ref": "#/definitions/ApprovalEnum"}
+            }
+        },
+        "ApprovalRequestStatusMT": {
+            "required": ["MessageData"],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageData": {"$ref": "#/definitions/ApprovalRequestStatusMDT"}
+                    }
+                }
+            ]
+        },
+        "ForeignKeyType": {
+            "type": "object",
+            "required": [
+                "Key",
+                "SystemName"
+            ],
+            "properties": {
+                "Key": {"type": "string"},
+                "SystemName": {"type": "string"}
+            }
+        },
+        "FileFormatType": {
+            "type": "object",
+            "required": [
+                "MIME",
+                "NonMIME"
+            ],
+            "properties": {
+                "MIME": {"type": "string"},
+                "NonMIME": {"$ref": "#/definitions/ForeignKeyType"}
+            }
+        },
+        "ProductOutputType": {
+            "type": "object",
+            "required": [
+                "ProductType",
+                "ProductFormat"
+            ],
+            "properties": {
+                "ProductType": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/ProductTypeEnum"},
+                    "maxItems": 3,
+                    "minItems": 1
+                },
+                "ProcessingType": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/ProcessingTypeEnum"},
+                    "maxItems": 11,
+                    "minItems": 0
+                },
+                "ProductFormat": {"$ref": "#/definitions/FileFormatType"}
+            }
+        },
+        "EM_CapabilityType": {
+            "type": "object",
+            "required": [
+                "CapabilityID",
+                "CapabilityType",
+                "AcceptedInterface"
+            ],
+            "properties": {
+                "CapabilityID": {"$ref": "#/definitions/CapabilityID_Type"},
+                "CapabilityType": {
+                    "allOf": [
+                        {"type": "string"},
+                        {
+                            "enum": [
+                                "4D-STEM",
+                                "EM_OTHER"
+                            ]
+                        }
+                    ]
+                },
+                "AcceptedInterface": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/CapabilityControlInterfacesEnum"},
+                    "maxItems": 3,
+                    "minItems": 1
+                },
+                "InterruptOtherActivities": {"type": "boolean"},
+                "ProductOutput": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/ProductOutputType"},
+                    "minItems": 0
+                }
+            }
+        },
+        "EM_CapabilityMDT": {
+            "type": "object",
+            "required": ["Capability"],
+            "properties": {
+                "Capability": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/EM_CapabilityType"},
+                    "minItems": 1
+                }
+            }
+        },
+        "EM_CapabilityMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/EM_CapabilityMDT"}
+                    }
+                }
+            ]
+        },
+        "SystemApproverType": {
+            "type": "object",
+            "required": ["SystemID"],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "ServiceID": {"$ref": "#/definitions/SoftwareServiceID_Type"}
+            }
+        },
+        "ApprovalPolicyID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "ExperimentPlanID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {}
+                }
+            ]
+        },
+        "ApprovalRequestTaskItemType": {
+            "type": "object",
+            "required": ["TaskID"],
+            "properties": {
+                "TaskID": {"$ref": "#/definitions/TaskID_Type"}
+            }
+        },
+        "ApprovalRequestCommandItemType": {
+            "type": "object",
+            "required": ["ActivityID"],
+            "properties": {
+                "ActivityID": {"$ref": "#/definitions/ActivityID_Type"}
+            }
+        },
+        "ApprovalRequestItemReferenceType": {
+            "type": "object",
+            "required": [
+                "AllocationExperimentPlanID",
+                "TaskApproval",
+                "ActivityActivation"
+            ],
+            "properties": {
+                "AllocationExperimentPlanID": {"$ref": "#/definitions/ExperimentPlanID_Type"},
+                "TaskApproval": {"$ref": "#/definitions/ApprovalRequestTaskItemType"},
+                "ActivityActivation": {"$ref": "#/definitions/ApprovalRequestCommandItemType"}
+            }
+        },
+        "ApprovalRequestPolicyReferenceType": {
+            "type": "object",
+            "required": [
+                "ApprovalPolicyID",
+                "ApprovalItem"
+            ],
+            "properties": {
+                "ApprovalPolicyID": {"$ref": "#/definitions/ApprovalPolicyID_Type"},
+                "ApprovalItem": {"$ref": "#/definitions/ApprovalRequestItemReferenceType"}
+            }
+        },
+        "ApprovalRequestMDT": {
+            "type": "object",
+            "required": [
+                "ApprovalRequestID",
+                "Approver",
+                "ApprovalReferences",
+                "RespondBy"
+            ],
+            "properties": {
+                "ApprovalRequestID": {"$ref": "#/definitions/ApprovalRequestID_Type"},
+                "Approver": {"$ref": "#/definitions/SystemApproverType"},
+                "ApprovalReferences": {"$ref": "#/definitions/ApprovalRequestPolicyReferenceType"},
+                "RespondBy": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "ApprovalRequestMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/ApprovalRequestMDT"}
+                    }
+                }
+            ]
+        },
+        "DependentTaskType": {
+            "type": "object",
+            "required": [
+                "DependentTaskID",
+                "TaskRequired"
+            ],
+            "properties": {
+                "DependentTaskID": {"$ref": "#/definitions/TaskID_Type"},
+                "MinRelativeTime": {"type": "string"},
+                "MaxRelativeTime": {"type": "string"},
+                "TaskRequired": {"type": "boolean"}
+            }
+        },
+        "OffsetTimeType": {
+            "type": "object",
+            "properties": {
+                "Before": {"type": "string"},
+                "After": {"type": "string"}
+            }
+        },
+        "ConcurrentTaskReferenceType": {
+            "type": "object",
+            "required": [
+                "ConcurrentTaskID",
+                "TaskRequired"
+            ],
+            "properties": {
+                "ConcurrentTaskID": {"$ref": "#/definitions/TaskID_Type"},
+                "RelativeStartTime": {"$ref": "#/definitions/OffsetTimeType"},
+                "RelativeCompletionTime": {"$ref": "#/definitions/OffsetTimeType"},
+                "TaskRequired": {"type": "boolean"}
+            }
+        },
+        "TaskAllocationConstraintType": {
+            "type": "object",
+            "required": ["SystemID"],
+            "properties": {
+                "SystemID": {"$ref": "#/definitions/SystemID_Type"},
+                "CapabilityID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/CapabilityID_Type"},
+                    "minItems": 0
+                }
+            }
+        },
+        "TaskAllocationParametersType": {
+            "type": "object",
+            "properties": {
+                "Ranking": {"$ref": "#/definitions/RankingType"},
+                "RequiredAllocation": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/TaskAllocationConstraintType"},
+                    "minItems": 0
+                }
+            }
+        },
+        "DateTimeRangeType": {
+            "type": "object",
+            "properties": {
+                "Begin": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "End": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "TimingConstraintsType": {
+            "type": "object",
+            "properties": {
+                "Range": {"$ref": "#/definitions/DateTimeRangeType"},
+                "Duration": {"type": "string"}
+            }
+        },
+        "TaskBaseType": {
+            "type": "object",
+            "required": [
+                "TaskID",
+                "AllocationConstraint",
+                "ExecutionApprovalRequired"
+            ],
+            "properties": {
+                "TaskID": {"$ref": "#/definitions/TaskID_Type"},
+                "DependentTask": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/DependentTaskType"},
+                    "minItems": 0
+                },
+                "ConcurrentTask": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/ConcurrentTaskReferenceType"},
+                    "minItems": 0
+                },
+                "AllocationConstraint": {"$ref": "#/definitions/TaskAllocationParametersType"},
+                "ExecutionApprovalRequired": {"type": "boolean"},
+                "TimingConstraints": {"$ref": "#/definitions/TimingConstraintsType"},
+                "Source": {"$ref": "#/definitions/CreationSourceEnum"}
+            }
+        },
+        "EM_TaskMDT": {
+            "required": ["CapabilityType"],
+            "allOf": [
+                {"$ref": "#/definitions/TaskBaseType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "CapabilityType": {
+                            "allOf": [
+                                {"type": "string"},
+                                {
+                                    "enum": [
+                                        "4D-STEM",
+                                        "EM_OTHER"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "EM_TaskMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/EM_TaskMDT"}
+                    }
+                }
+            ]
+        },
+        "CapabilityCommandRankingType": {
+            "type": "object",
+            "required": ["Rank"],
+            "properties": {
+                "Rank": {"$ref": "#/definitions/RankingType"},
+                "InterruptOtherActivities": {"type": "boolean"},
+                "CapabilityPrecedenceOverride": {"type": "integer"}
+            }
+        },
+        "TraceabilityType": {
+            "type": "object",
+            "properties": {
+                "CommandID": {"$ref": "#/definitions/CapabilityCommandID_Type"},
+                "TaskID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/TaskID_Type"},
+                    "minItems": 0
+                }
+            }
+        },
+        "CapabilityCommandBaseType": {
+            "type": "object",
+            "required": [
+                "CommandID",
+                "CommandState",
+                "CapabilityID",
+                "Ranking"
+            ],
+            "properties": {
+                "CommandID": {"$ref": "#/definitions/CapabilityCommandID_Type"},
+                "CommandState": {"$ref": "#/definitions/MessageStateEnum"},
+                "CapabilityID": {"$ref": "#/definitions/CapabilityID_Type"},
+                "Ranking": {"$ref": "#/definitions/CapabilityCommandRankingType"},
+                "OverrideRejection": {"type": "boolean"},
+                "Traceability": {"$ref": "#/definitions/TraceabilityType"}
+            }
+        },
+        "EM_CapabilityCommandType": {
+            "required": ["TODO_Add_Command_Details"],
+            "allOf": [
+                {"$ref": "#/definitions/CapabilityCommandBaseType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "TODO_Add_Command_Details": {"type": "boolean"},
+                        "Repetition": {"$ref": "#/definitions/CommandRepetitionType"}
+                    }
+                }
+            ]
+        },
+        "ActivityCommandBaseType": {
+            "type": "object",
+            "required": [
+                "CommandID",
+                "CommandState",
+                "ActivityID"
+            ],
+            "properties": {
+                "CommandID": {"$ref": "#/definitions/CapabilityCommandID_Type"},
+                "CommandState": {"$ref": "#/definitions/MessageStateEnum"},
+                "ActivityID": {"$ref": "#/definitions/ActivityID_Type"},
+                "ChangeActivityRank": {"$ref": "#/definitions/RankingType"},
+                "ChangeActivityState": {"$ref": "#/definitions/CapabilityStateCommandEnum"},
+                "DeleteActivity": {"type": "boolean"},
+                "UnassignActivity": {"type": "boolean"}
+            }
+        },
+        "EM_ActivityCommandType": {
+            "allOf": [
+                {"$ref": "#/definitions/ActivityCommandBaseType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "TODO_ChangeSettings": {"type": "boolean"}
+                    }
+                }
+            ]
+        },
+        "EM_CommandType": {
+            "type": "object",
+            "required": [
+                "Capability",
+                "Activity"
+            ],
+            "properties": {
+                "Capability": {"$ref": "#/definitions/EM_CapabilityCommandType"},
+                "Activity": {"$ref": "#/definitions/EM_ActivityCommandType"}
+            }
+        },
+        "EM_CommandMDT": {
+            "type": "object",
+            "required": ["Command"],
+            "properties": {
+                "Command": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/EM_CommandType"},
+                    "minItems": 1
+                }
+            }
+        },
+        "EM_CommandMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/EM_CommandMDT"}
+                    }
+                }
+            ]
+        },
+        "AvailabilityInfoType": {
+            "type": "object",
+            "required": ["Availability"],
+            "properties": {
+                "Availability": {"$ref": "#/definitions/CapabilityAvailabilityEnum"},
+                "UnavailabilityReason": {"$ref": "#/definitions/CannotComplyType"},
+                "NextAvailableWindow": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "CapabilityStatusType": {
+            "type": "object",
+            "required": [
+                "CapabilityID",
+                "AvailabilityInfo"
+            ],
+            "properties": {
+                "CapabilityID": {"$ref": "#/definitions/CapabilityID_Type"},
+                "AvailabilityInfo": {"$ref": "#/definitions/AvailabilityInfoType"},
+                "CapabilityPrecedence": {"type": "integer"}
+            }
+        },
+        "JPEG_WaveletTransformType": {
+            "type": "object",
+            "required": [
+                "Type",
+                "Level"
+            ],
+            "properties": {
+                "Type": {"$ref": "#/definitions/JPEG_WaveletTypeEnum"},
+                "Level": {"type": "integer"}
+            }
+        },
+        "JPEG_SettingsType": {
+            "type": "object",
+            "properties": {
+                "CompressionRatio": {"type": "number"},
+                "PeakSNR": {"type": "number"},
+                "RateDistortionSlope": {"type": "number"},
+                "WaveletTransform": {"$ref": "#/definitions/JPEG_WaveletTransformType"}
+            }
+        },
+        "EM_CapabilityStatusMDT": {
+            "type": "object",
+            "required": ["CapabilityStatus"],
+            "properties": {
+                "CapabilityStatus": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/CapabilityStatusType"},
+                    "minItems": 1
+                },
+                "DefaultJPEG_Settings": {"$ref": "#/definitions/JPEG_SettingsType"}
+            }
+        },
+        "EM_CapabilityStatusMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/EM_CapabilityStatusMDT"}
+                    }
+                }
+            ]
+        },
+        "AboutType": {
+            "type": "object",
+            "required": ["Model"],
+            "properties": {
+                "Model": {"type": "string"},
+                "SerialNumber": {"type": "string"},
+                "SoftwareVersion": {"type": "string"}
+            }
+        },
+        "SubsystemStatusMDT": {
+            "type": "object",
+            "required": [
+                "SubsystemID",
+                "SubsystemState",
+                "SubsystemSetting"
+            ],
+            "properties": {
+                "SubsystemID": {"$ref": "#/definitions/SubsystemID_Type"},
+                "SubsystemState": {"$ref": "#/definitions/SubsystemStateEnum"},
+                "SubsystemStateDescription": {"type": "string"},
+                "SubsystemSetting": {"$ref": "#/definitions/SubsystemSettingEnum"},
+                "About": {"$ref": "#/definitions/AboutType"},
+                "CapabilityID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/CapabilityID_Type"},
+                    "minItems": 0
+                },
+                "SoftwareServiceID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/SoftwareServiceID_Type"},
+                    "minItems": 0
+                }
+            }
+        },
+        "SubsystemStatusMT": {
+            "required": [
+                "MessageState",
+                "MessageData"
+            ],
+            "allOf": [
+                {"$ref": "#/definitions/MessageType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "MessageState": {"$ref": "#/definitions/MessageStateEnum"},
+                        "MessageData": {"$ref": "#/definitions/SubsystemStatusMDT"}
+                    }
+                }
+            ]
+        },
+        "AllocatedTaskType": {
+            "type": "object",
+            "required": ["TaskID"],
+            "properties": {
+                "TaskID": {"$ref": "#/definitions/TaskID_Type"},
+                "RequiredExecutionTime": {"$ref": "#/definitions/DateTimeRangeType"},
+                "PlannedCapabilityID": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/CapabilityID_Type"},
+                    "minItems": 0
+                }
+            }
+        },
+        "AllocatedTaskConstraintType": {
+            "allOf": [
+                {"$ref": "#/definitions/AllocatedTaskType"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "AllocationConstraintOverride": {"$ref": "#/definitions/TaskAllocationParametersType"}
+                    }
+                }
+            ]
+        },
+        "ExperimentID_Type": {
+            "allOf": [
+                {"$ref": "#/definitions/ID_Type"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "ExperimentVersion": {"type": "integer"}
+                    }
+                }
+            ]
+        },
+        "MessageModeEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "LIVE",
+                        "SIMULATION"
+                    ]
+                }
+            ]
+        },
+        "MessageStateEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "NEW",
+                        "UPDATE",
+                        "REMOVE"
+                    ]
+                }
+            ]
+        },
+        "ActivityStateEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "DISABLED",
+                        "ENABLED",
+                        "ACTIVE_UNCONSTRAINED",
+                        "ACTIVE_PARTIALLY_CONSTRAINED",
+                        "ACTIVE_FULLY_CONSTRAINED",
+                        "COMPLETED",
+                        "FAILED",
+                        "DELETED"
+                    ]
+                }
+            ]
+        },
+        "CannotComplyEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "SYSTEM_UNAVAILABLE",
+                        "SYSTEM_FAULT",
+                        "SYSTEM_CONFLICT",
+                        "SUBSYSTEM_UNAVAILABLE",
+                        "SUBSYSTEM_FAULT",
+                        "CAPABILITY_FAULT",
+                        "CAPABILITY_UNAVAILABLE",
+                        "INSUFFICIENT_CAPABILITYS",
+                        "UNKNOWN_ID",
+                        "INVALID_INPUT_PARAMETER",
+                        "CANCELLED",
+                        "OTHER",
+                        "UNKNOWN",
+                        "ABORTED"
+                    ]
+                }
+            ]
+        },
+        "ConsentEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "INITIAL",
+                        "REQUESTED",
+                        "APPROVED",
+                        "REJECTED"
+                    ]
+                }
+            ]
+        },
+        "SystemStateEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "OPERATIONAL",
+                        "DEGRADED",
+                        "FAILED",
+                        "INACTIVE"
+                    ]
+                }
+            ]
+        },
+        "CapabilityControlInterfacesEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "CAPABILITY_COMMAND",
+                        "EXPERIMENT_PLAN_TASK"
+                    ]
+                }
+            ]
+        },
+        "CommandStateEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "RECEIVED",
+                        "ACCEPTED",
+                        "REJECTED",
+                        "REMOVED"
+                    ]
+                }
+            ]
+        },
+        "SoftwareServiceStatusEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "INITIALIZING",
+                        "NORMAL",
+                        "DEGRADED",
+                        "PAUSED",
+                        "INOPERABLE"
+                    ]
+                }
+            ]
+        },
+        "SoftwareServiceSettingEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "AUDIT_LOGGING",
+                        "DEBUG_REPORTING"
+                    ]
+                }
+            ]
+        },
+        "EventSeverityEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "CRITICAL",
+                        "ERROR",
+                        "INFORMATIONAL",
+                        "WARNING"
+                    ]
+                }
+            ]
+        },
+        "ApprovalEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "APPROVED",
+                        "REJECTED",
+                        "PENDING",
+                        "DELETED"
+                    ]
+                }
+            ]
+        },
+        "ProductTypeEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "OPTICAL_IMAGE",
+                        "OPTICAL_VIDEO_STREAM",
+                        "OTHER"
+                    ]
+                }
+            ]
+        },
+        "ProcessingTypeEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "VISIBLE",
+                        "INFRARED",
+                        "MULTISPECTRAL",
+                        "HYPERSPECTRAL",
+                        "CLIP",
+                        "STILL",
+                        "AMPLITUDE_CHANGE_DETECTION",
+                        "ENHANCED_CHANGE_DETECTION",
+                        "ANNOTATED",
+                        "AUGMENTATION",
+                        "OTHER"
+                    ]
+                }
+            ]
+        },
+        "CreationSourceEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "EXTERNAL",
+                        "CAPABILITY",
+                        "OPERATOR",
+                        "SUBSYSTEM",
+                        "OTHER"
+                    ]
+                }
+            ]
+        },
+        "CapabilityStateCommandEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "DISABLE",
+                        "ENABLE",
+                        "RESET"
+                    ]
+                }
+            ]
+        },
+        "CapabilityAvailabilityEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "AVAILABLE",
+                        "UNAVAILABLE",
+                        "TEMPORARILY_UNAVAILABLE",
+                        "EXPENDED",
+                        "DISABLED",
+                        "FAULTED"
+                    ]
+                }
+            ]
+        },
+        "JPEG_WaveletTypeEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "REVERSIBLE",
+                        "IRREVERSIBLE"
+                    ]
+                }
+            ]
+        },
+        "SubsystemStateEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "UNKNOWN",
+                        "NOT_INSTALLED",
+                        "OFF",
+                        "PRE_INITIALIZATION",
+                        "INITIALIZATION",
+                        "STANDBY",
+                        "OPERATE",
+                        "MAINTENANCE",
+                        "CALIBRATION",
+                        "SHUTDOWN",
+                        "DEGRADED"
+                    ]
+                }
+            ]
+        },
+        "SubsystemSettingEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "LIVE",
+                        "SIMULATION",
+                        "TEST",
+                        "TEST_INSTRUMENTATION",
+                        "DATA_RECORDING",
+                        "DEBUG_REPORTING"
+                    ]
+                }
+            ]
+        },
+        "ProcessingStatusEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "QUEUED",
+                        "PROCESSING",
+                        "COMPLETED",
+                        "FAILED"
+                    ]
+                }
+            ]
+        },
+        "StateTransitionStatusEnum": {
+            "allOf": [
+                {"type": "string"},
+                {
+                    "enum": [
+                        "NOT_TRANSITIONING",
+                        "SHUTTING_DOWN",
+                        "TRANSITIONING"
+                    ]
+                }
+            ]
+        }
+    },
+    "type": "object",
+    "properties": {
+    	"EM_Activity": {"$ref": "#/definitions/EM_ActivityMT"},
+        "SystemStatus": {"$ref": "#/definitions/SystemStatusMT"},
+        "ControlStatus": {"$ref": "#/definitions/ControlStatusMT"},
+        "EM_CommandStatus": {"$ref": "#/definitions/EM_CommandStatusMT"},
+        "SoftwareServiceStatus": {"$ref": "#/definitions/SoftwareServiceStatusMT"},
+        "ApprovalRequestStatus": {"$ref": "#/definitions/ApprovalRequestStatusMT"},
+        "EM_Capability": {"$ref": "#/definitions/EM_CapabilityMT"},
+        "ApprovalRequest": {"$ref": "#/definitions/ApprovalRequestMT"},
+        "EM_Task": {"$ref": "#/definitions/EM_TaskMT"},
+        "EM_Command": {"$ref": "#/definitions/EM_CommandMT"},
+        "EM_CapabilityStatus": {"$ref": "#/definitions/EM_CapabilityStatusMT"},
+        "SubsystemStatus": {"$ref": "#/definitions/SubsystemStatusMT"}
+    },
+    "minProperties": 1,
+    "additionalProperties": false
+
+
+}

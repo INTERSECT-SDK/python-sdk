@@ -4,12 +4,13 @@ import sys as _sys
 
 from . import handlers as _handlers
 from . import pb_derivatives as _pb_derivatives
+from . import schema_handler
 
 # Default serializer/de-serializers that can be called
 serialize = _handlers.JsonHandler.serialize
 deserialize = _handlers.JsonHandler.deserialize
 
-__all__ = ["serialize", "deserialize"]
+__all__ = ["serialize", "deserialize", "schema_handler"]
 
 # Add all of the message types to the package namespace.
 # Need a pointer to the module itself which can be used when calling setattr()
