@@ -5,29 +5,32 @@ from sys import exit, stderr
 from time import sleep
 
 from intersect_sdk import (
-    Adapter,
     IntersectConfig,
     IntersectConfigParseException,
     load_config_from_file,
-    messages,
+    service
 )
 
+from definitions import capabilities
 
-class HelloWorldAdapter(Adapter):
+class HelloWorldAdapter(service.IntersectService):
     def __init__(self, config: IntersectConfig):
         # Setup base class
         super().__init__(config)
 
+        self.load_capabilities(capabilities)
         # Register request for "Hello, World!" message handler
-        self.register_message_handler(
-            self.handle_hello_world_request, {messages.Request: [messages.Request.DETAIL]}
-        )
 
-    def handle_hello_world_request(self, message, type_, subtype, payload):
-        print(f"Received request from {message.header.source}, sending reply...", flush=True)
-        reply = self.generate_status_general(detail={"message": "Hello, World!"})
-        reply.header.destination = message.header.source
-        self.send(reply)
+        hello_world = self.get_capability("HelloWorld")
+        self.register_interaction_handler(hello_world, hello_world.getInteraction("HelloRequest"), self.handle_hello_world_request)
+
+    def handle_hello_world_request(self, message, args):
+        print(
+            f"Received request from {message.header.source}, sending reply...",
+            flush=True,
+        )
+        self.invoke_interaction(self.get_capability("HelloWorld").getInteraction("HelloReply"), message.header.source, {"message": "Hello, World!"})
+        return True
         return True
 
 
@@ -70,7 +73,6 @@ if __name__ == "__main__":
     # Run until the process is killed externally
     print("Press Ctrl-C to exit:")
     try:
-        adapter.start_status_ticker()
         while True:
             # Print the uptime every second.
             sleep(5.0)

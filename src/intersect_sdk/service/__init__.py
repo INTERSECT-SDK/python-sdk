@@ -1,5 +1,6 @@
 from .service import (
-    IntersectService, 
+    IntersectService,
+    IntersectCapability,
     IntersectInteraction
 )
 

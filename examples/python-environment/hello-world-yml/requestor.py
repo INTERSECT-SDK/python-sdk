@@ -6,39 +6,29 @@ from sys import exit, stderr
 from time import sleep
 
 from intersect_sdk import (
-    Adapter,
     IntersectConfig,
     IntersectConfigParseException,
     load_config_from_file,
-    messages,
+    service
 )
+from definitions import capabilities
 
-
-class HelloWorldRequestor(Adapter):
+class HelloWorldRequestor(service.IntersectService):
     def __init__(self, config: IntersectConfig):
         # Setup base class
         super().__init__(config)
 
+        self.load_capabilities(capabilities)
         # Register request for "Hello, World!" message handler
-        self.register_message_handler(
-            self.handle_hello_world_reply, {messages.Status: [messages.Status.GENERAL]}
-        )
+        hello_world = self.get_capability("HelloWorld")
+        self.register_interaction_handler(hello_world, hello_world.getInteraction("HelloReply"), self.handle_hello_world_reply)
 
     def send_request_to_hello_world_adapter(self, destination: str):
-        # Subscribe to the hello world adapter reply channel
-        reply_channel = self.connection.channel(f"{destination}/reply")
-        reply_channel.subscribe(self.resolve_status_receive)
+        self.invoke_interaction(self.get_capability("HelloWorld").getInteraction("HelloRequest"), destination, {})
 
-        # Create and send the message to the hello world adapter
-        request = self.generate_request_detail(
-            destination=destination,
-            arguments={},
-        )
-        self.send(request)
-
-    def handle_hello_world_reply(self, message, type_, subtype, payload):
+    def handle_hello_world_reply(self, message, args):
         print("Reply from Hello World Adapter:", flush=True)
-        print(message.detail, flush=True)
+        print(args["payload"], flush=True)
         return True
 
 

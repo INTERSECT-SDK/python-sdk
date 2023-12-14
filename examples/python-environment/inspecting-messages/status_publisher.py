@@ -15,7 +15,7 @@ class StatusPublisherAdapter(Adapter):
         super().__init__(config)
 
         # Generate and publish start message
-        self.send(self.generate_status_starting())
+        #self.send(self.generate_status_starting())
 
         # Start status ticker and start action subscribe
         self.start_status_ticker()

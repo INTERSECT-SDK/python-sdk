@@ -1,28 +1,18 @@
 import threading
 import time
 from sys import exit, stderr
-from typing import Optional, Tuple
+from typing import Optional
 
 from intersect_sdk import (
-    Adapter,
     IntersectConfig,
     IntersectConfigParseException,
     load_config_from_dict,
-    messages,
+    service
 )
 
+from definitions import capabilities
 
-class CountingAdapter(Adapter):
-    handled_actions: Tuple = (
-        messages.Action.START,
-        messages.Action.STOP,
-        messages.Action.RESTART,
-    )
-
-    handled_request: Tuple = (
-        messages.Request.STATUS,
-        messages.Request.DETAIL,
-    )
+class CountingAdapter(service.IntersectService):
 
     def __init__(self, config: IntersectConfig):
         super().__init__(config)
@@ -31,43 +21,34 @@ class CountingAdapter(Adapter):
         self.counter_thread: Optional[threading.Thread] = None
         self.count_active: bool = True
 
-        # Register message handlers
-        self.register_message_handler(
-            self.handle_start,
-            {messages.Action: [messages.Action.START, messages.Action.RESTART]},
-        )
+        self.load_capabilities(capabilities)
 
-        self.register_message_handler(self.handle_stop, {messages.Action: [messages.Action.STOP]})
-
-        self.register_message_handler(
-            self.handle_request_detail, {messages.Request: [messages.Request.DETAIL]}
-        )
-
-        # Generate and publish start message
-        self.status_channel.publish(self.generate_status_starting())
-
-        # Start status ticker and start action subscribe
-        self.start_status_ticker()
+        # Register interaction handlers
+        counting_capability = self.get_capability("Counting")
+        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Start"), self.handle_start)
+        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Stop"), self.handle_stop)
+        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Restart"), self.handle_start)
+        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Detail"), self.handle_request_detail)
 
         # Initialize the count to 0
         self.count = 0
 
-    def handle_start(self, message, type_, subtype, payload):
+    def handle_start(self, message, payload):
+        print("Received start request.")
         self.restart_count()
         return True
 
-    def handle_stop(self, message, type_, subtype, payload):
+    def handle_stop(self, message, payload):
+        print("Received stop request.")
         self.stop_count()
         return True
 
-    def handle_request_detail(self, message, type_, subtype, payload):
+    def handle_request_detail(self, message, payload):
         print(
             f"Received request from {message.header.source}, sending reply...",
             flush=True,
         )
-        reply = self.generate_status_general(detail={"count": self.count})
-        reply.header.destination = message.header.source
-        self.send(reply)
+        self.invoke_interaction(self.get_capability("Counting").getInteraction("Status"), message.header.source, {"count": self.count})
         return True
 
     def _run_count(self):

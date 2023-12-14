@@ -8,11 +8,7 @@ from intersect_sdk import (
     service
 )
 
-from definitions import (
-    StatusInteraction,
-    StartInteraction,
-    StopInteraction,
-    DetailInteraction)
+from definitions import capabilities
 
 class Client(service.IntersectService):
     arguments_parser: str = "json"
@@ -21,21 +17,24 @@ class Client(service.IntersectService):
 
     def __init__(self, config: IntersectConfig):
         super().__init__(config)
+        self.load_capabilities(capabilities)
 
-        self.add_interaction("counter", StatusInteraction(), self.handle_status_general)
+        counting_capability = self.get_capability("Counting")
+        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Status"), self.handle_status_general)
 
     def handle_status_general(self, message, args):
         print("Count received from server: {}".format(args['payload']))
         return True
 
     def generate_request(self, destination):
-        self.invoke_interaction(DetailInteraction(), destination, None)
+        self.invoke_interaction(self.get_capability("Counting").getInteraction("Detail"), destination, None)
 
     def generate_stop(self, destination):
-        self.invoke_interaction(StopInteraction(), destination, None)
+        self.invoke_interaction(self.get_capability("Counting").getInteraction("Stop"), destination, None)
 
     def generate_start(self, destination):
-        self.invoke_interaction(StartInteraction(), destination, None)
+        self.invoke_interaction(self.get_capability("Counting").getInteraction("Start"), destination, None)
+
 
 
 if __name__ == "__main__":
