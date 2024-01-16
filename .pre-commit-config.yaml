@@ -18,7 +18,7 @@ repos:
     rev: 2.11.2
     hooks:
       - id: pdm-export
-        args: ['-o', 'requirements.txt', '--without-hashes']
+        args: ['--without-hashes']
       - id: pdm-lock-check
       - id: pdm-sync
   #- repo: local
