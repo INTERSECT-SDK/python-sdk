@@ -4,7 +4,7 @@ stages:
   - publish-chart
   - package
   - deploy-docs
-  
+
 
 variables:
   GIT_STRATEGY: clone
@@ -45,11 +45,9 @@ lint:
     # TODO -> forbid mypy command from failing
     - >
       docker run --rm $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA sh -ec "
-      pdm run isort --filter-files --check-only . ;
-      pdm run black --check --diff .;
-      pdm run lint-flake8; 
+      pdm run ruff check;
+      pdm run ruff format --check;
       pdm run lint-mypy || true;
-      pdm run lint-bandit
       "
   tags:
     - intersect-sdk-builder
@@ -60,14 +58,14 @@ unit-tests:
     - >
       docker run --rm
       -v $PWD/reports:/sdk/reports
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA 
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
       pdm run test-report
   artifacts:
     when: always
     reports:
       junit: reports/report_unit.xml
     paths:
-      - reports/        
+      - reports/
   tags:
     - intersect-sdk-builder
 
@@ -76,21 +74,21 @@ integration-tests:
   variables:
     RABBITMQ_USERNAME: "intersect_username"
     RABBITMQ_PASSWORD: "intersect_password"
-    RABBITMQ_HOST: "rabbitmq"  
+    RABBITMQ_HOST: "rabbitmq"
   script:
     - docker network create intersect
     - >
       docker run --rm -d
-      --name $RABBITMQ_HOST 
-      --network=intersect 
+      --name $RABBITMQ_HOST
+      --network=intersect
       $BROKER_CONTAINER
     - sleep 10
     - >
       docker run --rm
       -e RABBITMQ_USERNAME -e RABBITMQ_PASSWORD -e RABBITMQ_HOST
-      --network=intersect      
+      --network=intersect
       -v $PWD/reports:/sdk/reports
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA 
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
       pdm run integration-report
     - docker rm -f $RABBITMQ_HOST
     - docker network rm intersect
@@ -99,7 +97,7 @@ integration-tests:
     reports:
       junit: reports/report_integration.xml
     paths:
-      - reports/      
+      - reports/
   tags:
     - intersect-sdk-builder
 
@@ -110,7 +108,7 @@ coverage:
     - >
       docker run --rm
       -v $PWD/reports:/sdk/reports
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA  
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
       pdm run test-coverage
     - sudo sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
@@ -175,11 +173,11 @@ publish-package:
   script:
     - docker login --username=$CI_REGISTRY_USER --password=$CI_REGISTRY_PASSWORD $CI_REGISTRY
     - >
-      docker run --rm 
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA 
-      pdm publish 
-      --username gitlab-ci-token 
-      --password "$CI_JOB_TOKEN" 
+      docker run --rm
+      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+      pdm publish
+      --username gitlab-ci-token
+      --password "$CI_JOB_TOKEN"
       --repository "https://code.ornl.gov/api/v4/projects/${CI_PROJECT_ID}/packages/pypi"
   tags:
     - intersect-sdk-builder

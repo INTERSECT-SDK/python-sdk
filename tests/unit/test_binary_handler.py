@@ -2,10 +2,10 @@ from intersect_sdk.messages import BinaryHandler
 from intersect_sdk.messages import demo_pb2 as demo
 
 test_request = demo.Request()
-test_request.arguments = "a"
+test_request.arguments = 'a'
 
 test_generic = demo.Generic()
-test_generic.type = demo.Generic.Type.Value("REQUEST")
+test_generic.type = demo.Generic.Type.Value('REQUEST')
 test_generic.message = test_request.SerializeToString()
 test_generic.length = len(test_generic.message)
 test_generic_bytes = test_generic.SerializeToString()
@@ -29,7 +29,7 @@ def test_serialize():
 
     try:
         binary_handler.serialize(test_generic)
-        raise AssertionError()
+        raise AssertionError
     except TypeError:
         assert True
 
@@ -38,10 +38,10 @@ def test_deserialize():
     binary_handler = BinaryHandler()
     deserialized = binary_handler.deserialize(test_generic_bytes)
     assert isinstance(deserialized, demo.Request)
-    assert deserialized.arguments == "a"
+    assert deserialized.arguments == 'a'
 
     try:
         binary_handler.deserialize(test_bad_generic_bytes)
-        raise AssertionError()
+        raise AssertionError
     except TypeError:
         assert True

@@ -3,17 +3,16 @@ import time
 from sys import exit, stderr
 from typing import Optional
 
+from definitions import capabilities
 from intersect_sdk import (
     IntersectConfig,
     IntersectConfigParseException,
     load_config_from_dict,
-    service
+    service,
 )
 
-from definitions import capabilities
 
 class CountingAdapter(service.IntersectService):
-
     def __init__(self, config: IntersectConfig):
         super().__init__(config)
 
@@ -24,31 +23,45 @@ class CountingAdapter(service.IntersectService):
         self.load_capabilities(capabilities)
 
         # Register interaction handlers
-        counting_capability = self.get_capability("Counting")
-        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Start"), self.handle_start)
-        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Stop"), self.handle_stop)
-        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Restart"), self.handle_start)
-        self.register_interaction_handler(counting_capability, counting_capability.getInteraction("Detail"), self.handle_request_detail)
+        counting_capability = self.get_capability('Counting')
+        self.register_interaction_handler(
+            counting_capability, counting_capability.getInteraction('Start'), self.handle_start
+        )
+        self.register_interaction_handler(
+            counting_capability, counting_capability.getInteraction('Stop'), self.handle_stop
+        )
+        self.register_interaction_handler(
+            counting_capability, counting_capability.getInteraction('Restart'), self.handle_start
+        )
+        self.register_interaction_handler(
+            counting_capability,
+            counting_capability.getInteraction('Detail'),
+            self.handle_request_detail,
+        )
 
         # Initialize the count to 0
         self.count = 0
 
     def handle_start(self, message, payload):
-        print("Received start request.")
+        print('Received start request.')
         self.restart_count()
         return True
 
     def handle_stop(self, message, payload):
-        print("Received stop request.")
+        print('Received stop request.')
         self.stop_count()
         return True
 
     def handle_request_detail(self, message, payload):
         print(
-            f"Received request from {message.header.source}, sending reply...",
+            f'Received request from {message.header.source}, sending reply...',
             flush=True,
         )
-        self.invoke_interaction(self.get_capability("Counting").getInteraction("Status"), message.header.source, {"count": self.count})
+        self.invoke_interaction(
+            self.get_capability('Counting').getInteraction('Status'),
+            message.header.source,
+            {'count': self.count},
+        )
         return True
 
     def _run_count(self):
@@ -61,7 +74,7 @@ class CountingAdapter(service.IntersectService):
             self.counter_thread = threading.Thread(
                 target=self._run_count,
                 daemon=True,
-                name=f"{self.service_name}_counter_thread",
+                name=f'{self.service_name}_counter_thread',
             )
             self.counter_thread.start()
 
@@ -78,20 +91,20 @@ class CountingAdapter(service.IntersectService):
         self.start_count()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     config_dict = {
-        "broker": {
-            "username": "intersect_username",
-            "password": "intersect_password",
-            "host": "127.0.0.1",
-            "port": 1883,
+        'broker': {
+            'username': 'intersect_username',
+            'password': 'intersect_password',
+            'host': '127.0.0.1',
+            'port': 1883,
         },
-        "hierarchy": {
-            "organization": "Oak Ridge National Laboratory",
-            "facility": "Hello World Facility",
-            "system": "Example Server",
-            "subsystem": "Example Server",
-            "service": "example-server",
+        'hierarchy': {
+            'organization': 'Oak Ridge National Laboratory',
+            'facility': 'Hello World Facility',
+            'system': 'Example Server',
+            'subsystem': 'Example Server',
+            'service': 'example-server',
         },
     }
 
@@ -104,11 +117,11 @@ if __name__ == "__main__":
     counting_adapter = CountingAdapter(config)
     counting_adapter.start_count()
 
-    print("Press Ctrl-C to exit.")
+    print('Press Ctrl-C to exit.')
 
     try:
         while True:
             time.sleep(5)
-            print(f"Uptime: {counting_adapter.uptime}", end="\r")
+            print(f'Uptime: {counting_adapter.uptime}', end='\r')
     except KeyboardInterrupt:
-        print("\nUser requested exit.")
+        print('\nUser requested exit.')

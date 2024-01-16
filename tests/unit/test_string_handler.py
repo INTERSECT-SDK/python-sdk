@@ -1,13 +1,12 @@
 from google.protobuf import text_format as pb_text
-
 from intersect_sdk.messages import StringHandler
 from intersect_sdk.messages import demo_pb2 as demo
 
 test_request = demo.Request()
-test_request.arguments = "a"
+test_request.arguments = 'a'
 
 test_generic = demo.Generic()
-test_generic.type = demo.Generic.Type.Value("REQUEST")
+test_generic.type = demo.Generic.Type.Value('REQUEST')
 test_generic.message = pb_text.MessageToString(test_request)
 test_generic.length = len(test_generic.message)
 test_generic_str = pb_text.MessageToString(test_generic)
@@ -29,7 +28,7 @@ def test_serialize():
 
     try:
         str_handler.serialize(test_generic)
-        raise AssertionError()
+        raise AssertionError
     except TypeError:
         assert True
 
@@ -38,10 +37,10 @@ def test_deserialize():
     str_handler = StringHandler()
     deserialized = str_handler.deserialize(test_generic_str)
     assert isinstance(deserialized, demo.Request)
-    assert deserialized.arguments == "a"
+    assert deserialized.arguments == 'a'
 
     try:
         str_handler.deserialize(test_bad_generic_str)
-        raise AssertionError()
+        raise AssertionError
     except TypeError:
         assert True

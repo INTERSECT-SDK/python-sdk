@@ -1,32 +1,28 @@
 repos:
-  - repo: local
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
     hooks:
+    - id: check-yaml
+      args: ['--unsafe']
+    - id: check-toml
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.13
+    hooks:
+      # TODO UNCOMMENT THIS WHEN EXAMPLES/TESTS ARE FIXED
+      #- id: ruff
+        #args: [ --fix ]
+      - id: ruff-format
+  - repo: https://github.com/pdm-project/pdm
+    rev: 2.11.2
+    hooks:
+      - id: pdm-export
+        args: ['-o', 'requirements.txt', '--without-hashes']
       - id: pdm-lock-check
-        name: PDM Lock Check
-        description: run pdm lock --check to validate config
-        entry: pdm lock --check
-        pass_filenames: false
-        files: ^pyproject.toml$
-        language: system
-      - id: pdm-export-lock
-        name: PDM Export Lock
-        description: Verify lock can be exported to requirements.txt format
-        entry: pdm export
-        pass_filenames: false
-        files: ^pdm.lock$
-        language: system
-      - id: black
-        name: Black
-        description: use Black for formatting
-        entry: pdm run lint-black
-        pass_filenames: false
-        language: system
-      - id: isort
-        name: Isort
-        description: use Isort to sort imports
-        entry: pdm run lint-isort
-        pass_filenames: false
-        language: system
+      - id: pdm-sync
+  #- repo: local
+    #hooks:
       # TODO - get mypy working
       #- id: mypy
         #name: MyPy
@@ -34,15 +30,3 @@ repos:
         #entry: pdm run lint-mypy
         #pass_filenames: false
         #language: system
-      - id: flake8
-        name: Flake8
-        description: use Flake8 to lint
-        entry: pdm run lint-flake8
-        pass_filenames: false
-        language: system
-      - id: bandit
-        name: Bandit
-        description: security checks with Bandit
-        entry: pdm run lint-bandit
-        pass_filenames: false
-        language: system        

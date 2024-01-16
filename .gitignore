@@ -1,6 +1,4 @@
-__pycache__
 *~
-*.log
 *.bkp
 
 # tests
@@ -283,7 +281,7 @@ fabric.properties
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
-__pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 
@@ -333,6 +331,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+
+# linting
+.ruff_cache
 
 # Translations
 *.mo
