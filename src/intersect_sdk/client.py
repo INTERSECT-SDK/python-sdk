@@ -355,7 +355,7 @@ class IntersectClient:
                 # NOTE
                 # This is by design. We explicitly don't want dangling clients
                 # sucking up bandwidth on brokers. It could even be argued that we should
-                # just send call os.abort() here (this way so the Python application can't catch the SIGABRT),
+                # just call os.abort() here (this way so the Python application can't catch the SIGABRT),
                 # but SIGTERM is the soundest to ensure graceful application shutdown.
                 # However, graceful application shutdown is not as important for clients as it is for services...
                 send_os_signal()

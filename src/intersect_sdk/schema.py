@@ -27,7 +27,19 @@ The SDK needs to be able to dynamically look up functions, validate the request 
 
 import inspect
 from enum import Enum
-from typing import Any, Callable, Dict, Generator, Mapping, Optional, Tuple, Type, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from pydantic import PydanticUserError, TypeAdapter
 
@@ -58,6 +70,20 @@ def _get_functions(capability: Type, attr: str) -> Generator[Tuple[str, Callable
         method = getattr(capability, name)
         if callable(method) and hasattr(method, attr):
             yield name, method
+
+
+def _has_any_typing(annotation: Type) -> bool:
+    """
+    Check to see if any annotation in a typing or a class's tree has the "Any" typing.
+
+    This is important because Pydantic is able to handle "Any" typing by default, but we're not able to craft a useful schema
+    from this.
+    """
+    return (
+        annotation is Any
+        or any(_has_any_typing(annot) for annot in get_args(annotation))
+        or any(_has_any_typing(annot) for annot in get_type_hints(annotation).values())
+    )
 
 
 def _merge_schema_definitions(
@@ -128,6 +154,10 @@ def _status_fn_schema(
     if status_signature.return_annotation is inspect.Signature.empty:
         die(
             f"On capability '{capability.__name__}', capability status function '{status_fn_name}' should have a valid return annotation."
+        )
+    if _has_any_typing(status_signature.return_annotation):
+        die(
+            f"On capability '{capability.__name__}', return annotation '{status_signature.return_annotation.__name__}' on function '{status_fn_name}' has an Any typing somewhere in its type hierarchy. Please use a static typing - for help, see https://docs.pydantic.dev/latest/concepts/types/"
         )
     try:
         status_adapter = TypeAdapter(status_signature.return_annotation)
@@ -208,6 +238,10 @@ def _get_schemas_and_functions(
                 die(
                     f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation on function '{name.__name__}' missing. {SCHEMA_HELP_MSG}"
                 )
+            if _has_any_typing(annotation):
+                die(
+                    f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation '{annotation.__name__}' on function '{name.__name__}' has an Any typing somewhere in its type hierarchy. Please use a static typing - for help, see https://docs.pydantic.dev/latest/concepts/types/"
+                )
             if annotation is None:
                 function_cache_request_adapter = None
             else:
@@ -228,6 +262,10 @@ def _get_schemas_and_functions(
         if return_annotation is inspect.Signature.empty:
             die(
                 f"On capability '{capability.__name__}', return type annotation on function '{name.__name__}' missing. {SCHEMA_HELP_MSG}"
+            )
+        if _has_any_typing(annotation):
+            die(
+                f"On capability '{capability.__name__}', return annotation '{return_annotation.__name__}' on function '{name.__name__}' has an Any typing somewhere in its type hierarchy. Please use a static typing - for help, see https://docs.pydantic.dev/latest/concepts/types/"
             )
         if return_annotation is None:
             function_cache_response_adapter = None
