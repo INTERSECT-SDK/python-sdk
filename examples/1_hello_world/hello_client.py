@@ -1,13 +1,13 @@
 import logging
 
-from ...sdk import (
+from intersect_sdk import (
     IntersectClient,
     IntersectClientConfig,
     IntersectClientMessageParams,
     default_intersect_lifecycle_loop,
 )
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 
 def simple_client_callback(_source: str, _operation: str, payload: str) -> None:
@@ -17,8 +17,8 @@ def simple_client_callback(_source: str, _operation: str, payload: str) -> None:
     As we don't want to engage in a back-and-forth, we simply throw an exception to break out of the message loop.
     Ways to continue listening to messages or sending messages will be explored in other examples.
     """
-    print(payload)  # (example)
-    # raise exception to break out of message loop
+    print(payload)
+    # raise exception to break out of message loop - we only send and wait for one message
     raise Exception
 
 
@@ -42,10 +42,8 @@ if __name__ == '__main__':
             {
                 'username': 'intersect_username',
                 'password': 'intersect_password',
-                #'port': 1883,
-                #'protocol': 'mqtt3.1.1'
-                'port': 5672,
-                'protocol': 'amqp0.9.1',
+                'port': 1883,
+                'protocol': 'mqtt3.1.1',
             },
         ],
     }

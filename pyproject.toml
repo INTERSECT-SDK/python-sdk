@@ -2,7 +2,7 @@
 name = "intersect-sdk"
 description = "Python SDK to interact with INTERSECT"
 authors = [
-    {name = "Andrew Ayers", email = "ayresaf@ornl.gov"},
+    {name = "Andrew Ayres", email = "ayresaf@ornl.gov"},
     {name = "Matthew Baker", email = "bakermb@ornl.gov"},
     {name = "Gregory Cage", email = "cagege@ornl.gov"},
     {name = "Lance Drane", email = "dranelt@ornl.gov"},
@@ -127,9 +127,13 @@ extend-ignore = [
 ]
 
 [tool.ruff.extend-per-file-ignores]
-'__init__.py' = ['F401']
-'examples/**/*' = ['T20'] # allow print/pprint statements in examples
-'tests/**/*' = ['S101'] # allow assert statements in tests
+'__init__.py' = ['F401'] # standard Python rationale
+'examples/**/*' = [
+    'T20', # allow print/pprint statements in examples
+]
+'tests/**/*' = [
+    'S101', # allow assert statements in tests
+]
 
 [tool.mypy]
 ignore_missing_imports = true

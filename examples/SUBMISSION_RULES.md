@@ -77,3 +77,8 @@ if __name__ == '__main__':
     service = IntersectService(capability, config)
     print(json.dumps(service._schema, indent=2))
 ```
+
+## Dependencies
+
+1) Try to avoid any dependency not installed as a mandatory `intersect_sdk` dependency.
+2) All broker examples should use MQTT for the configuration.

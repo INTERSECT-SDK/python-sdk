@@ -237,6 +237,10 @@ class IntersectClient:
             logger.warning(
                 f'Invalid message received on userspace message channel, ignoring. Full message:\n{e}'
             )
+            # NOTE
+            # This may seem fairly drastic for an error which would be routinely dropped in the service,
+            # but I would argue that it's fine here. If a service isn't sending a valid messages,
+            # the client has bigger problems.
             send_os_signal()
 
     def _handle_userspace_message(self, message: UserspaceMessage) -> None:
@@ -249,6 +253,11 @@ class IntersectClient:
         if self._hierarchy.hierarchy_string('.') != message['headers'][
             'destination'
         ] or not resolve_user_version(message):
+            # NOTE
+            # Again, I would argue that while this may seem drastic, it's fine here.
+            # A client should NEVER be getting messages not addressed to it in a normal workflow.
+            # A client should also know enough about service SDK versions to know if
+            # it's even possible to try to send messages between them.
             send_os_signal()
             return
 
@@ -257,7 +266,18 @@ class IntersectClient:
             request_params = self._type_adapter.validate_json(
                 self._data_plane_manager.incoming_message_data_handler(message)
             )
-        except (ValidationError, IntersectException):
+        except ValidationError as e:
+            logger.warning(f'Service sent back invalid response:\n{e}')
+            # NOTE
+            # If the service sent something back which caused ValidationError
+            # to fail on an Any-typed TypeAdapter, the problem is with the service.
+            # I'd kill the client just to be safe.
+            send_os_signal()
+            return
+        except IntersectException:
+            # NOTE
+            # This is less controversial here. This indicates that the client
+            # couldn't talk to the data plane instance.
             send_os_signal()
             return
 
@@ -268,6 +288,12 @@ class IntersectClient:
             )
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
             logger.warning(f"Exception from user's callback function:\n{e}")
+            # NOTE
+            # This is a DELIBERATE design decision. ALL uncaught Exceptions should terminate the pub/sub loop!
+            # Users are even encouraged to deliberately raise Exceptions!
+            # Almost every application will want to loop forever until a certain condition.
+            # You could argue that OS signals can interfere with other parts of the application.
+            # In the future, we may want to allow users to specify an alternate callback.
             send_os_signal()
             return
         if not user_function_return:
@@ -284,6 +310,8 @@ class IntersectClient:
             params = IntersectClientMessageParams.model_validate(params)
         except ValidationError as e:
             logger.error(f'Invalid message parameters:\n{e}')
+            # NOTE
+            # this is always the client's fault, so probably best to terminate here
             send_os_signal()
             return
         response = self._type_adapter.dump_json(params.payload)
@@ -294,6 +322,9 @@ class IntersectClient:
                 response, params.response_content_type, params.response_data_handler
             )
         except IntersectException:
+            # NOTE
+            # This is less controversial here. This indicates that the client
+            # couldn't talk to the data plane instance.
             send_os_signal()
             return
 
@@ -321,5 +352,11 @@ class IntersectClient:
         while not self._heartbeat_thread.stopped():
             elapsed = time.time() - self._heartbeat
             if elapsed > 300.0:
+                # NOTE
+                # This is by design. We explicitly don't want dangling clients
+                # sucking up bandwidth on brokers. It could even be argued that we should
+                # just send call os.abort() here (this way so the Python application can't catch the SIGABRT),
+                # but SIGTERM is the soundest to ensure graceful application shutdown.
+                # However, graceful application shutdown is not as important for clients as it is for services...
                 send_os_signal()
             self._heartbeat_thread.wait(300.0)

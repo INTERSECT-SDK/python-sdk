@@ -1,6 +1,6 @@
 import logging
 
-from ...sdk import (
+from intersect_sdk import (
     HierarchyConfig,
     IntersectService,
     IntersectServiceConfig,
@@ -9,7 +9,8 @@ from ...sdk import (
     intersect_status,
 )
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class HelloServiceCapabilityImplementation:
@@ -59,10 +60,8 @@ if __name__ == '__main__':
             {
                 'username': 'intersect_username',
                 'password': 'intersect_password',
-                #'port': 1883,
-                #'protocol': 'mqtt3.1.1'
-                'port': 5672,
-                'protocol': 'amqp0.9.1',
+                'port': 1883,
+                'protocol': 'mqtt3.1.1',
             },
         ],
     }
@@ -75,7 +74,6 @@ if __name__ == '__main__':
             service='hello-service',
         ),
         app_version='0.0.1',
-        status_interval=30.0,
         **from_config_file,
     )
 
@@ -98,6 +96,7 @@ if __name__ == '__main__':
     instead of using this one.
     In that case, just be sure to call service.startup() and service.shutdown() at appropriate stages.
     """
+    logger.info('Starting hello_service, use Ctrl+C to exit.')
     default_intersect_lifecycle_loop(
         service,
     )

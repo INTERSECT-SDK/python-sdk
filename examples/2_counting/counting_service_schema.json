@@ -1,0 +1,197 @@
+{
+  "asyncapi": "2.6.0",
+  "x-intersect-version": "0.5.0",
+  "info": {
+    "title": "counting-organization.counting-facility.counting-system.counting-subsystem.counting-service",
+    "version": "0.0.1",
+    "description": "This example is meant to showcase that your implementation is able to track state\n    if you want it to.\n\n    Please note that this is not an especially robust implementation, as in the instance\n    the service gets two messages at the same time, it may manage to create\n    two threads at once."
+  },
+  "defaultContentType": "application/json",
+  "channels": {
+    "reset_count": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CountingServiceCapabilityImplementationState"
+          }
+        },
+        "description": "Set the counter back to 0\n\n        Params\n          start_again: if True, start the counter again; if False, the \n            counter will remain off.\n        Returns\n          the state BEFORE the counter was reset"
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "boolean"
+          }
+        },
+        "description": "Set the counter back to 0\n\n        Params\n          start_again: if True, start the counter again; if False, the \n            counter will remain off.\n        Returns\n          the state BEFORE the counter was reset"
+      }
+    },
+    "start_count": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CountingServiceCapabilityImplementationResponse"
+          }
+        },
+        "description": "Start the counter (potentially from any number). \"Fails\" if the counter is already running.\n\n        Returns\n          A CountingServiceCapabilityImplementationResponse object. The success value will be:\n            True - if counter was started successfully\n            False - if counter was already running and this was called"
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          }
+        },
+        "description": "Start the counter (potentially from any number). \"Fails\" if the counter is already running.\n\n        Returns\n          A CountingServiceCapabilityImplementationResponse object. The success value will be:\n            True - if counter was started successfully\n            False - if counter was already running and this was called"
+      }
+    },
+    "stop_count": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CountingServiceCapabilityImplementationResponse"
+          }
+        },
+        "description": "Stop the new ticker\n\n        Returns\n          A CountingServiceCapabilityImplementationResponse object. The success value will be:\n            True - if counter was stopped successfully\n            False - if counter was already not running and this was called"
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          }
+        },
+        "description": "Stop the new ticker\n\n        Returns\n          A CountingServiceCapabilityImplementationResponse object. The success value will be:\n            True - if counter was stopped successfully\n            False - if counter was already not running and this was called"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CountingServiceCapabilityImplementationState": {
+        "description": "We can't just use any class to represent state. This class either needs to\nextend Pydantic's BaseModel class, or be a dataclass. Both the Python\nstandard library's dataclass and Pydantic's dataclass are valid.",
+        "properties": {
+          "count": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "counting": {
+            "default": false,
+            "title": "Counting",
+            "type": "boolean"
+          }
+        },
+        "title": "CountingServiceCapabilityImplementationState",
+        "type": "object"
+      },
+      "CountingServiceCapabilityImplementationResponse": {
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/CountingServiceCapabilityImplementationState"
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "state",
+          "success"
+        ],
+        "title": "CountingServiceCapabilityImplementationResponse",
+        "type": "object"
+      }
+    },
+    "messageTraits": {
+      "commonHeaders": {
+        "headers": {
+          "$defs": {
+            "IntersectDataHandler": {
+              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
+              "enum": [
+                0,
+                1
+              ],
+              "title": "IntersectDataHandler",
+              "type": "integer"
+            }
+          },
+          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "properties": {
+            "source": {
+              "description": "source of the message",
+              "title": "Source",
+              "type": "string"
+            },
+            "destination": {
+              "description": "destination of the message",
+              "title": "Destination",
+              "type": "string"
+            },
+            "created_at": {
+              "description": "the UTC timestamp of message creation",
+              "title": "Created At",
+              "type": "string"
+            },
+            "service_version": {
+              "description": "SemVer string of service's version, used to check for compatibility",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "title": "Service Version",
+              "type": "string"
+            },
+            "sdk_version": {
+              "description": "SemVer string of SDK's version, used to check for compatibility",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "title": "Sdk Version",
+              "type": "string"
+            },
+            "data_handler": {
+              "allOf": [
+                {
+                  "$ref": "#/components/messageTraits/commonHeaders/headers/$defs/IntersectDataHandler"
+                }
+              ],
+              "default": 0,
+              "description": "Code signifying where data is stored."
+            }
+          },
+          "required": [
+            "source",
+            "destination",
+            "created_at",
+            "service_version",
+            "sdk_version"
+          ],
+          "title": "UserspaceMessageHeader",
+          "type": "object"
+        }
+      }
+    }
+  },
+  "status": {
+    "$ref": "#/components/schemas/CountingServiceCapabilityImplementationState"
+  }
+}

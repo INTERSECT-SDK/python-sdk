@@ -74,7 +74,7 @@ def _merge_schema_definitions(
         raise e
     definitions = schema.pop('$defs', None)
     if definitions:
-        schemas = {**schemas, **definitions}
+        schemas.update(definitions)
 
     # when Pydantic generates schemas, it likes to put explicit classes into $defs
     schema_type = schema.get('type')
