@@ -73,7 +73,7 @@ if __name__ == '__main__':
             subsystem='hello-subsystem',
             service='hello-service',
         ),
-        app_version='0.0.1',
+        schema_version='0.0.1',
         **from_config_file,
     )
 

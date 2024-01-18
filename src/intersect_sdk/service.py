@@ -118,7 +118,7 @@ class IntersectService(Generic[CAPABILITY]):
         ) = get_schema_and_functions_from_model(
             capability.__class__,
             capability_name=config.hierarchy,
-            app_version=config.app_version,
+            schema_version=config.schema_version,
         )
         self._schema = schema
         """
@@ -145,7 +145,7 @@ class IntersectService(Generic[CAPABILITY]):
         """
 
         self._hierarchy = config.hierarchy
-        self._version = config.app_version
+        self._version = config.schema_version
 
         self._status_thread: Optional[StoppableThread] = None
         self._status_ticker_interval = config.status_interval

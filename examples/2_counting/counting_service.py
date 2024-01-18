@@ -198,7 +198,7 @@ if __name__ == '__main__':
             subsystem='counting-subsystem',
             service='counting-service',
         ),
-        app_version='0.0.1',
+        schema_version='0.0.1',
         status_interval=30.0,
         **from_config_file,
     )

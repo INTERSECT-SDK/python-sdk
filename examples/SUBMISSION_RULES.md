@@ -50,8 +50,8 @@ class HelloServiceCapabilityImplementation:
         return f'Hello, {name}!'
 
 if __name__ == '__main__':
-    # app_version is necessary for schema but you can just use 0.0.1 for all examples
-    app_version = '0.0.1'
+    # schema_version is necessary for schema but you can just use 0.0.1 for all examples
+    schema_version = '0.0.1'
     # HierarchyConfig should EXACTLY match the example service's HierarchyConfig
     hierarchy = HierarchyConfig(
         organization='oak-ridge-national-laboratory',
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         subsystem='subsystem',
         service='service',
     )
-    schema = get_schema_from_model(HelloServiceCapabilityImplementation, hierarchy, app_version)
+    schema = get_schema_from_model(HelloServiceCapabilityImplementation, hierarchy, schema_version)
 
 
     print(json.dumps(schema, indent=2))

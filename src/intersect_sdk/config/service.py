@@ -44,7 +44,7 @@ class IntersectServiceConfig(BaseModel):
     as a potential time buffer.)
     """
 
-    app_version: str = Field(..., pattern=r'^\d+\.\d+\.\d+$')
+    schema_version: str = Field(..., pattern=r'^\d+\.\d+\.\d+$')
     """
     SemVer string of your application's version, needed for compatibility purposes
     """

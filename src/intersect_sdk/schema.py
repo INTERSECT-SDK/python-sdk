@@ -48,7 +48,7 @@ ASYNCAPI_VERSION = '2.6.0'
 def get_schema_and_functions_from_model(
     capability_type: Type,
     capability_name: HierarchyConfig,
-    app_version: str,
+    schema_version: str,
 ) -> Tuple[Dict[str, Any], Dict[str, FunctionMetadata], Optional[str], TypeAdapter]:
     """
     This returns both the schema and the function mapping.
@@ -66,7 +66,7 @@ def get_schema_and_functions_from_model(
         'x-intersect-version': __version__,
         'info': {
             'title': capability_name.hierarchy_string('.'),
-            'version': app_version,
+            'version': schema_version,
         },
         # applies to how an incoming message payload will be parsed.
         # can be changed per channel
@@ -106,13 +106,13 @@ def get_schema_and_functions_from_model(
 def get_schema_from_model(
     capability_type: Type,
     capability_name: HierarchyConfig,
-    app_version: str,
+    schema_version: str,
 ) -> Dict[str, Any]:
     """
     Params:
       - capability_type - the SDK user will provide the class of their capability handler, which generates the schema
       - capability_name - ideally, this could be scanned by the package name. Meant to be descriptive, i.e. "nionswift"
-      - app_version - ideally, this could be parsed from the package.
+      - schema_version - ideally, this could be parsed from the package.
       - status_fn: the function from your capability which retrieves its status
 
     The goal of this function is to be able to generate a complete schema
@@ -134,6 +134,6 @@ def get_schema_from_model(
     schemas, _, _, _ = get_schema_and_functions_from_model(
         capability_type,
         capability_name,
-        app_version,
+        schema_version,
     )
     return schemas
