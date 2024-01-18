@@ -116,7 +116,7 @@ extend-select = [
     'RUF', # RUFF additional rules
 ]
 # If you're seeking to disable a rule, first consider whether the rule is overbearing, or if it should only be turned off for your usecase.
-extend-ignore = [
+ignore = [
     'COM812', # formatter, handled by Ruff format
     'ISC001', # formatter, handled by Ruff format
     'SIM105', # "with contextlib.suppress():" is slower than try-except-pass
