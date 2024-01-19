@@ -53,7 +53,8 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         """Generates a JSON schema that matches any value.
 
         OVERRIDE: We get no type hints from this schema, so we need to invalidate this.
-        This will also automatically handle _most_ other types, such as List, Set, Dict, and Generator.
+        The two big annotations to watch out for are 'object' and "typing.Any".
+        This will handle 'object' in _most_ other types (i.e. List[object]), but NOT i.e. List[Any].
 
         It will not handle Tuples or classes in all cases; it will catch invalid types, but not missing types.
 
@@ -82,6 +83,23 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         return self.handle_invalid_for_json_schema(
             schema, f'core_schema.IsSubclassSchema ({schema["cls"]})'
         )
+
+    def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
+        """Returns a schema that matches a list schema.
+
+        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        if not schema.get('items_schema'):
+            return self.handle_invalid_for_json_schema(
+                schema, 'list subtyping may not be dynamic in INTERSECT'
+            )
+        return super().list_schema(schema)
 
     # TODO - Pydantic 2.6 will merge both tuple functions into one, use this implementation
     def tuple_positional_schema(self, schema: core_schema.TuplePositionalSchema) -> JsonSchemaValue:
@@ -117,6 +135,89 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         json_schema = super().tuple_variable_schema(schema)
         if not json_schema.get('items'):
             return self.handle_invalid_for_json_schema(schema, 'empty tuple typing for INTERSECT')
+        return json_schema
+
+    def set_schema(self, schema: core_schema.SetSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a set schema.
+
+        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        if not schema.get('items_schema'):
+            return self.handle_invalid_for_json_schema(
+                schema, 'set subtyping may not be dynamic in INTERSECT'
+            )
+        return super().set_schema(schema)
+
+    def frozenset_schema(self, schema: core_schema.FrozenSetSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a frozenset schema.
+
+        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        if not schema.get('items_schema'):
+            return self.handle_invalid_for_json_schema(
+                schema, 'frozenset subtyping may not be dynamic in INTERSECT'
+            )
+        return super().frozenset_schema(schema)
+
+    def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
+        """Returns a JSON schema that represents the provided GeneratorSchema.
+
+        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
+        NOTE: at time of writing (pydantic v2.5.3), this never seems to execute when there's an error, but the superclass function
+        suggests that it should. This function is kept in for backwards compatibility purposes.
+
+        Args:
+            schema: The schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        if not schema.get('items_schema'):
+            return self.handle_invalid_for_json_schema(
+                schema, 'generator yield subtyping (first argument) may not be dynamic in INTERSECT'
+            )
+        json_schema = super().generator_schema(schema)
+        if not json_schema.get('items'):
+            return self.handle_invalid_for_json_schema(
+                schema, 'generator yield subtyping (first argument) may not be dynamic in INTERSECT'
+            )
+        return json_schema
+
+    def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a dict schema.
+
+        OVERRIDE: While we can defer to Pydantic's handling for the most part, we need to check two things:
+        1) We need to make sure that "additionalProperties" has typing information (don't allow "Any" as the Value type)
+        2) In JSON, mapping "keys" must always be strings, so check that the Key type is "str".
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        keys_schema = schema.get('keys_schema', None)
+        if not keys_schema or keys_schema.get('type', None) != 'str':
+            return self.handle_invalid_for_json_schema(
+                schema, "dict or mapping key type needs to be 'str' for INTERSECT"
+            )
+        json_schema = super().dict_schema(schema)
+        if not json_schema.get('additionalProperties') and not json_schema.get('patternProperties'):
+            return self.handle_invalid_for_json_schema(
+                schema, 'dict or mapping value type cannot be Any/object for INTERSECT'
+            )
         return json_schema
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
@@ -282,11 +383,11 @@ def _status_fn_schema(
     status_fns = tuple(_get_functions(capability, BASE_STATUS_ATTR))
     if len(status_fns) > 1:
         die(
-            f"Class '{capability.__name__}' should only have one function annotated with the @intersect_status decorator."
+            f"Class '{capability.__name__}' should only have one function annotated with the @intersect_status() decorator."
         )
     if len(status_fns) == 0:
-        logger.warn(
-            f"Class '{capability.__name__}' has no function annotated with the @intersect_status decorator. No status information will be provided when sending status messages."
+        logger.warning(
+            f"Class '{capability.__name__}' has no function annotated with the @intersect_status() decorator. No status information will be provided when sending status messages."
         )
         return None, None, TypeAdapter(None)
     status_fn_name, status_fn = status_fns[0]
@@ -308,7 +409,7 @@ def _status_fn_schema(
         )
     except PydanticUserError as e:
         die(
-            f"On capability '{capability.__name__}', return annotation '{status_signature.return_annotation.__name__}' on function '{status_fn_name}' cannot be used.\n{e}"
+            f"On capability '{capability.__name__}', return annotation '{status_signature.return_annotation}' on function '{status_fn_name}' is invalid.\n{e}"
         )
 
 
@@ -343,7 +444,7 @@ def get_schemas_and_functions(
         return_annotation = signature.return_annotation
         if len(method_params) == 0 or len(method_params) > 2:
             die(
-                f"On capability '{capability.__name__}', function '{name.__name__}' should have 'self' and zero or one additional parameters"
+                f"On capability '{capability.__name__}', function '{name}' should have 'self' and zero or one additional parameters"
             )
 
         # The schema format should be hard-coded and determined based on how Pydantic parses the schema.
@@ -374,7 +475,7 @@ def get_schemas_and_functions(
             annotation = parameter.annotation
             if annotation is inspect.Signature.empty:
                 die(
-                    f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation on function '{name.__name__}' missing. {SCHEMA_HELP_MSG}"
+                    f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
                 )
             if annotation is None:
                 function_cache_request_adapter = None
@@ -386,7 +487,7 @@ def get_schemas_and_functions(
                     )
                 except PydanticUserError as e:
                     die(
-                        f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation '{annotation.__name__}' on function '{name.__name__}' is invalid\n{e}"
+                        f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
                     )
 
         else:
@@ -395,7 +496,7 @@ def get_schemas_and_functions(
         # this block handles response parameters
         if return_annotation is inspect.Signature.empty:
             die(
-                f"On capability '{capability.__name__}', return type annotation on function '{name.__name__}' missing. {SCHEMA_HELP_MSG}"
+                f"On capability '{capability.__name__}', return type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
             )
         if return_annotation is None:
             function_cache_response_adapter = None
@@ -407,7 +508,7 @@ def get_schemas_and_functions(
                 )
             except PydanticUserError as e:
                 die(
-                    f"On capability '{capability.__name__}', return annotation '{return_annotation.__name__}' on function '{name.__name__}' cannot be used.\n{e}"
+                    f"On capability '{capability.__name__}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
                 )
 
         function_map[name] = FunctionMetadata(

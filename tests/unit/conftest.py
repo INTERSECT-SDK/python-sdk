@@ -1,3 +1,4 @@
+"""
 import weakref
 
 import pytest
@@ -63,3 +64,4 @@ def _fixture_adapter(mock_config, monkeypatch):
     monkeypatch.setattr(Client, 'connect', lambda cls, host_tuple, username, password: '')
 
     return Adapter(mock_config)
+"""

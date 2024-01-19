@@ -16,6 +16,7 @@ def die(message: str, exit_code: int = 1) -> NoReturn:
     When handling callbacks from message brokers, however, the application should NOT terminate in this way.
     """
     logger.critical(message)
+    # XXX - potentially consider raising a RuntimeError here - though we would prefer that RuntimeError not be catchable
     sys.exit(exit_code)
 
 
