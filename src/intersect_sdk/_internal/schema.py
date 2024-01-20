@@ -379,12 +379,13 @@ def _merge_schema_definitions(
 
 def _status_fn_schema(
     capability: Type, schemas: Dict[str, Any]
-) -> Tuple[Optional[str], Optional[Dict[str, Any]], Optional[TypeAdapter]]:
+) -> Tuple[Optional[str], Optional[Callable], Optional[Dict[str, Any]], Optional[TypeAdapter]]:
     """
     Returns a tuple of:
     - The name of the status function, if it exists (else None)
+    - The status function itself, if it exists (else, None)
     - If the status function exists, the function's schema. else, None
-    - The TypeAdapter to use for serializing outgoing responses
+    - The TypeAdapter to use for serializing outgoing responses, if the status function exists; else, None
     """
     status_fns = tuple(_get_functions(capability, BASE_STATUS_ATTR))
     if len(status_fns) > 1:
@@ -395,7 +396,7 @@ def _status_fn_schema(
         logger.warning(
             f"Class '{capability.__name__}' has no function annotated with the @intersect_status() decorator. No status information will be provided when sending status messages."
         )
-        return None, None, TypeAdapter(None)
+        return None, None, None, None
     status_fn_name, status_fn = status_fns[0]
     status_signature = inspect.signature(status_fn)
     if len(status_signature.parameters) != 1:
@@ -410,6 +411,7 @@ def _status_fn_schema(
         status_adapter = TypeAdapter(status_signature.return_annotation)
         return (
             status_fn_name,
+            status_fn,
             _merge_schema_definitions(status_adapter, schemas, status_signature.return_annotation),
             status_adapter,
         )
@@ -517,9 +519,26 @@ def get_schemas_and_functions(
             function_cache_response_adapter,
         )
 
+    # potentially add status function to function map, but check for intersect_message first
     if len(function_map) == 0:
         die(
             f"No entrypoints detected on class '{capability.__name__}'. Please annotate at least one entrypoint with '@intersect_message()' ."
         )
 
-    return schemas, _status_fn_schema(capability, schemas), channels, function_map
+    status_fn_name, status_fn, status_fn_schema, status_fn_type_adapter = _status_fn_schema(
+        capability, schemas
+    )
+    # this conditional allows for the status function to also be called like a message
+    if status_fn_type_adapter:
+        function_map[status_fn_name] = FunctionMetadata(
+            status_fn,
+            None,
+            status_fn_type_adapter,
+        )
+
+    return (
+        schemas,
+        (status_fn_name, status_fn_schema, status_fn_type_adapter),
+        channels,
+        function_map,
+    )

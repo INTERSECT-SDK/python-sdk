@@ -61,6 +61,7 @@ def get_schema_and_functions_from_model(
         channels,
         function_map,
     ) = get_schemas_and_functions(capability_type)
+
     asyncapi_spec = {
         'asyncapi': ASYNCAPI_VERSION,
         'x-intersect-version': __version__,
