@@ -47,6 +47,7 @@ class IntersectMimeType(Enum):
     JSON = 'application/json'
     STRING = 'text/plain'
     BINARY = 'application/octet-string'
+    HDF5 = 'application/x-hdf5'
 
 
 def intersect_message(
