@@ -7,13 +7,14 @@ They should NEVER be PRODUCING messages on their userspace channel.
 """
 
 import datetime
+import uuid
 from typing import Any
-from uuid import uuid4
 
-from pydantic import Field, TypeAdapter
+from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
 
 from ...annotations import IntersectDataHandler, IntersectMimeType
+from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...version import __version__
 
 
@@ -24,18 +25,22 @@ class UserspaceMessageHeader(TypedDict):
     ALL messages should contain this header.
     """
 
-    source: Annotated[str, Field(description='source of the message')]
+    source: Annotated[
+        str, Field(description='source of the message', pattern=SYSTEM_OF_SYSTEM_REGEX)
+    ]
     """
     source of the message
     """
 
-    destination: Annotated[str, Field(description='destination of the message')]
+    destination: Annotated[
+        str, Field(description='destination of the message', pattern=SYSTEM_OF_SYSTEM_REGEX)
+    ]
     """
     destination of the message
     """
 
     created_at: Annotated[
-        str,
+        AwareDatetime,
         Field(
             description='the UTC timestamp of message creation',
         ),
@@ -95,7 +100,7 @@ class UserspaceMessage(TypedDict):
     https://www.asyncapi.com/docs/reference/specification/v2.6.0#messageObject
     """
 
-    messageId: Annotated[str, Field(default_factory=lambda: str(uuid4()))]
+    messageId: uuid.UUID
     """
     ID of the message. (NOTE: this is defined here to conform to the AsyncAPI spec)
     """
@@ -138,7 +143,7 @@ def create_userspace_message(
     payload: Any,
 ) -> UserspaceMessage:
     return UserspaceMessage(
-        messageId=str(uuid4()),
+        messageId=uuid.uuid4(),
         operationId=operation_id,
         contentType=content_type,
         payload=payload,
@@ -147,7 +152,7 @@ def create_userspace_message(
             destination=destination,
             service_version=service_version,
             sdk_version=__version__,
-            created_at=f'{datetime.datetime.utcnow().isoformat()}Z',
+            created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             data_handler=data_handler,
         ),
     )

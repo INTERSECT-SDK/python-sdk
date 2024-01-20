@@ -380,6 +380,12 @@ def _merge_schema_definitions(
 def _status_fn_schema(
     capability: Type, schemas: Dict[str, Any]
 ) -> Tuple[Optional[str], Optional[Dict[str, Any]], Optional[TypeAdapter]]:
+    """
+    Returns a tuple of:
+    - The name of the status function, if it exists (else None)
+    - If the status function exists, the function's schema. else, None
+    - The TypeAdapter to use for serializing outgoing responses
+    """
     status_fns = tuple(_get_functions(capability, BASE_STATUS_ATTR))
     if len(status_fns) > 1:
         die(
@@ -477,18 +483,15 @@ def get_schemas_and_functions(
                 die(
                     f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
                 )
-            if annotation is None:
-                function_cache_request_adapter = None
-            else:
-                try:
-                    function_cache_request_adapter = TypeAdapter(annotation)
-                    channels[name]['subscribe']['message']['payload'] = _merge_schema_definitions(
-                        function_cache_request_adapter, schemas, annotation
-                    )
-                except PydanticUserError as e:
-                    die(
-                        f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
-                    )
+            try:
+                function_cache_request_adapter = TypeAdapter(annotation)
+                channels[name]['subscribe']['message']['payload'] = _merge_schema_definitions(
+                    function_cache_request_adapter, schemas, annotation
+                )
+            except PydanticUserError as e:
+                die(
+                    f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
+                )
 
         else:
             function_cache_request_adapter = None
@@ -498,18 +501,15 @@ def get_schemas_and_functions(
             die(
                 f"On capability '{capability.__name__}', return type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
             )
-        if return_annotation is None:
-            function_cache_response_adapter = None
-        else:
-            try:
-                function_cache_response_adapter = TypeAdapter(return_annotation)
-                channels[name]['publish']['message']['payload'] = _merge_schema_definitions(
-                    function_cache_response_adapter, schemas, return_annotation
-                )
-            except PydanticUserError as e:
-                die(
-                    f"On capability '{capability.__name__}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
-                )
+        try:
+            function_cache_response_adapter = TypeAdapter(return_annotation)
+            channels[name]['publish']['message']['payload'] = _merge_schema_definitions(
+                function_cache_response_adapter, schemas, return_annotation
+            )
+        except PydanticUserError as e:
+            die(
+                f"On capability '{capability.__name__}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
+            )
 
         function_map[name] = FunctionMetadata(
             method,

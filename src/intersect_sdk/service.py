@@ -429,16 +429,7 @@ class IntersectService(Generic[CAPABILITY]):
             else:
                 response = getattr(self.capability, fn_name)()
 
-            if fn_meta.response_adapter:
-                # TODO - this check should probably be turned off in release and should possibly throw a fatal error in debug
-                """
-                try:
-                    function_meta.response_adapter.validate_python(response)
-                except ValidationError:
-                    pass
-                """
-                return fn_meta.response_adapter.dump_json(response)
-            return b'null'
+            return fn_meta.response_adapter.dump_json(response)
         except ValidationError as e:
             err_msg = f'Bad arguments to application:\n{e}\n'
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)

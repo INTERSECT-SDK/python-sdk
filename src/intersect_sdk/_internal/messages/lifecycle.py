@@ -8,13 +8,14 @@ Services should NEVER be CONSUMING messages on the lifecycle channel.
 """
 
 import datetime
+import uuid
 from enum import IntEnum
 from typing import Any, Dict, Literal
-from uuid import uuid4
 
-from pydantic import Field, TypeAdapter
+from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
 
+from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...version import __version__
 
 
@@ -64,18 +65,30 @@ class LifecycleMessageHeaders(TypedDict):
     ALL messages should contain this header.
     """
 
-    source: Annotated[str, Field(description='source of the message')]
+    source: Annotated[
+        str,
+        Field(
+            description='source of the message',
+            pattern=SYSTEM_OF_SYSTEM_REGEX,
+        ),
+    ]
     """
     source of the message
     """
 
-    destination: Annotated[str, Field(description='destination of the message')]
+    destination: Annotated[
+        str,
+        Field(
+            description='destination of the message',
+            pattern=SYSTEM_OF_SYSTEM_REGEX,
+        ),
+    ]
     """
     destination of the message
     """
 
     created_at: Annotated[
-        str,
+        AwareDatetime,
         Field(
             description='the UTC timestamp of message creation',
         ),
@@ -119,7 +132,7 @@ class LifecycleMessageHeaders(TypedDict):
 
 
 class LifecycleMessage(TypedDict):
-    messageId: str
+    messageId: uuid.UUID
     """
     ID of the message. (NOTE: this is defined here to conform to the AsyncAPI spec)
     """
@@ -136,7 +149,7 @@ class LifecycleMessage(TypedDict):
     NOTE: The payload's contents will differ based on the lifecycle_type property in the message header.
     """
 
-    contentType: Literal['application/json']
+    contentType: Annotated[Literal['application/json'], Field('application/json')]
     """
     The content type to use when encoding/decoding a message's payload.
 
@@ -156,11 +169,11 @@ def create_lifecycle_message(
     The contents of the payload should vary based on the lifecycle type.
     """
     return LifecycleMessage(
-        messageId=str(uuid4()),
+        messageId=uuid.uuid4(),
         headers=LifecycleMessageHeaders(
             source=source,
             destination=destination,
-            created_at=f'{datetime.datetime.utcnow().isoformat()}Z',
+            created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             service_version=service_version,
             sdk_version=__version__,
             lifecycle_type=lifecycle_type.value,
@@ -173,7 +186,7 @@ def create_lifecycle_message(
 LIFECYCLE_MESSAGE_ADAPTER = TypeAdapter(LifecycleMessage)
 
 
-def deserialize_and_validate_userspace_message(msg: Dict[str, Any]) -> LifecycleMessage:
+def deserialize_and_validate_lifecycle_message(msg: Dict[str, Any]) -> LifecycleMessage:
     """
     If the "msg" param is a valid userspace message, return the object
 

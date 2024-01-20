@@ -1,20 +1,18 @@
+from typing import Tuple
+
 from ..annotations import IntersectDataHandler
-from ..version import __version__ as our_version
-from ..version import version_info as our_version_info
+from ..version import __version__, version_info
 from .logger import logger
 from .messages.userspace import UserspaceMessage
 
 
-def resolve_user_version(msg: UserspaceMessage) -> bool:
+def _resolve_user_version(
+    msg: UserspaceMessage, our_version: str, our_version_info: Tuple[int, int, int]
+) -> bool:
     """
-    This function handles all version compatibilities between our SDK version
-    and an incoming message's SDK version.
+    Function which handles version resolution information
 
-    Params
-      msg - message from the orchestrator or another adapter
-
-    Returns
-      True if version resolution successful, false otherwise
+    Separated into private function for testing purposes
     """
     their_version = msg['headers']['sdk_version']
     their_version_info = [int(x) for x in their_version.split('.')]
@@ -38,3 +36,21 @@ def resolve_user_version(msg: UserspaceMessage) -> bool:
     # NOTE: consider implementing a content-type check here as well
 
     return True
+
+
+def resolve_user_version(msg: UserspaceMessage) -> bool:
+    """
+    This function handles all version compatibilities between our SDK version
+    and an incoming message's SDK version.
+
+    Params
+      msg - message from the orchestrator or another adapter
+
+    Returns
+      True if version resolution successful, false otherwise
+    """
+    return _resolve_user_version(
+        msg=msg,
+        our_version=__version__,
+        our_version_info=version_info,
+    )

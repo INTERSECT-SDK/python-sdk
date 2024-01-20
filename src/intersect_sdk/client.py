@@ -36,6 +36,7 @@ from ._internal.version_resolver import resolve_user_version
 from .annotations import IntersectDataHandler, IntersectMimeType
 from .config.client import IntersectClientConfig
 from .config.shared import HierarchyConfig
+from .constants import SYSTEM_OF_SYSTEM_REGEX
 
 
 class IntersectClientMessageParams(BaseModel):
@@ -44,7 +45,7 @@ class IntersectClientMessageParams(BaseModel):
     in order to send a message to another Service.
     """
 
-    destination: str = Field(..., pattern=r'[-.a-z0-9]+')
+    destination: str = Field(..., pattern=SYSTEM_OF_SYSTEM_REGEX)
     """
     The destination string. You'll need to know the system-of-system representation of the Service.
       Note that this should match what you would see in the schema.
