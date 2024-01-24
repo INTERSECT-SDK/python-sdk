@@ -14,9 +14,6 @@ generate the schema for the HelloWorld Service
 import json
 from ...sdk import (
     HierarchyConfig,
-    IntersectService,
-    IntersectServiceConfig,
-    default_intersect_lifecycle_loop,
     intersect_message,
     intersect_status,
     get_schema_from_model,

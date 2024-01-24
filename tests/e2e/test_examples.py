@@ -26,6 +26,9 @@ BASE_DIR = (
 
 
 # HELPERS #####################
+
+
+# TODO - run all files as modules
 def run_example_test(example: str, timeout: int = 60) -> str:
     example_dir = BASE_DIR / example
     service_files = glob.glob(f'{example_dir}{os.path.sep}*_service.py')
@@ -34,11 +37,11 @@ def run_example_test(example: str, timeout: int = 60) -> str:
     # make sure all service processes have been initialized before starting client process
     time.sleep(1.0)
     client_output = subprocess.run(
-        [sys.executable, client_file],
+        [sys.executable, client_file],  # noqa: S603
         check=True,
         capture_output=True,
         text=True,
-        timeout=timeout,  # noqa: S603 (see above)
+        timeout=timeout,
     )
     try:
         assert client_output.returncode == 0
@@ -51,14 +54,6 @@ def run_example_test(example: str, timeout: int = 60) -> str:
 # TESTS ######################
 
 
-# TODO disabling the AMQP test for now because it doesn't always run
-#
-# RabbitMQ has the following log:
-# operation channel.open caused a connection exception channel_error: "second 'channel.open' seen"
-#
-# Github issues:
-# - https://github.com/amqp-node/amqplib/issues/441
-#
 def test_example_1_hello_world_amqp():
     assert run_example_test('1_hello_world_amqp') == 'Hello, hello_client!\n'
 

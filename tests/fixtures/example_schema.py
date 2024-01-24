@@ -437,7 +437,7 @@ class DummyCapabilityImplementation:
         Using "Path" as the request type adds a `"format": "path"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the
         Pathlib API.
 
-        RETURNS - the extension of the
+        RETURNS - the type of the file based on its URL, or null if it can't guess.
         """
         self.update_status('test_path')
         return mimetypes.guess_type(path, strict=False)[0]

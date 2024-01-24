@@ -57,16 +57,19 @@
           "properties": {
             "source": {
               "description": "source of the message",
+              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
+              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
               "title": "Destination",
               "type": "string"
             },
             "created_at": {
               "description": "the UTC timestamp of message creation",
+              "format": "date-time",
               "title": "Created At",
               "type": "string"
             },
@@ -90,6 +93,12 @@
               ],
               "default": 0,
               "description": "Code signifying where data is stored."
+            },
+            "has_error": {
+              "default": false,
+              "description": "If this value is True, the payload will contain the error message (a string)",
+              "title": "Has Error",
+              "type": "boolean"
             }
           },
           "required": [

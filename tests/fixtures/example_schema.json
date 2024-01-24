@@ -332,7 +332,7 @@
       "publish": {
         "message": {
           "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-          "contentType": "application/json",
+          "contentType": "text/plain",
           "traits": {
             "$ref": "#/components/messageTraits/commonHeaders"
           },
@@ -347,7 +347,7 @@
             ]
           }
         },
-        "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the extension of the "
+        "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
       },
       "subscribe": {
         "message": {
@@ -362,7 +362,7 @@
             "type": "string"
           }
         },
-        "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the extension of the "
+        "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
       }
     },
     "test_uuid": {
@@ -683,6 +683,12 @@
               ],
               "default": 0,
               "description": "Code signifying where data is stored."
+            },
+            "has_error": {
+              "default": false,
+              "description": "If this value is True, the payload will contain the error message (a string)",
+              "title": "Has Error",
+              "type": "boolean"
             }
           },
           "required": [
