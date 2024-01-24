@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from intersect_sdk import (
     IntersectClient,
@@ -10,7 +11,7 @@ from intersect_sdk import (
 logging.basicConfig(level=logging.INFO)
 
 
-def simple_client_callback(_source: str, _operation: str, _has_error: bool, payload: str) -> None:
+def simple_client_callback(_source: str, _operation: str, _has_error: bool, payload: Any) -> None:
     """
     This simply prints the response from the service to your console.
 

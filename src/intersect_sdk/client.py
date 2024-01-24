@@ -244,7 +244,7 @@ class IntersectClient:
             )
             # NOTE
             # This may seem fairly drastic for an error which would be routinely dropped in the service,
-            # but I would argue that it's fine here. If a service isn't sending a valid messages,
+            # but I would argue that it's fine here. If a service isn't sending valid messages,
             # the client has bigger problems.
             send_os_signal()
 
@@ -288,6 +288,8 @@ class IntersectClient:
 
         # THREE: CALL USER FUNCTION AND GET RETURN
         try:
+            # NOTE: the way the service sends a message, errors and non-errors can be handled identically.
+            # Leave it to the user to determine how they want to handle an error.
             user_function_return = self._user_callback(
                 message['headers']['source'],
                 message['operationId'],

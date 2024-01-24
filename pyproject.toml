@@ -135,6 +135,7 @@ ignore = [
 'tests/*' = [
     'S101', # allow assert statements in tests
     'S106', # don't care about credentials in tests
+    'SLF001', # allow private member access in tests
     'ANN201', # don't need to annotate return types in tests
     'ARG', # allow unused parameters in tests
 ]

@@ -19,6 +19,7 @@ import sys
 import time
 from pathlib import Path
 
+# remove "tests/e2e" from path and add "examples"
 BASE_DIR = (
     Path(os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-2]))
     / 'examples'
@@ -37,7 +38,7 @@ def run_example_test(example: str, timeout: int = 60) -> str:
     # make sure all service processes have been initialized before starting client process
     time.sleep(1.0)
     client_output = subprocess.run(
-        [sys.executable, client_file],  # noqa: S603
+        [sys.executable, client_file],  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
         check=True,
         capture_output=True,
         text=True,

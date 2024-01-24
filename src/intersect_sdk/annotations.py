@@ -9,6 +9,8 @@ import functools
 from enum import Enum, IntEnum
 from typing import Any, Callable, Optional, Set
 
+from pydantic import validate_call
+
 from ._internal.constants import (
     BASE_ATTR,
     BASE_STATUS_ATTR,
@@ -33,7 +35,8 @@ class IntersectDataHandler(IntEnum):
 
 class IntersectMimeType(Enum):
     """
-    this is an enum which should be publicly exposed to users
+    Roughly corresponds to "Content-Type" values, but enforce standardization of values.
+    This list is not exhaustive and should be regularly updated.
 
     the value should be a MIME type (i.e.
     https://www.iana.org/assignments/media-types/media-types.xhtml
@@ -41,7 +44,7 @@ class IntersectMimeType(Enum):
     )
 
     JSON is acceptable for any file which contains non-binary data
-    BINARY is acceptable for any file which contains binary data
+    BINARY is acceptable for any file which contains binary data and can reasonably be handled as application/octet-string
     """
 
     JSON = 'application/json'
@@ -50,6 +53,7 @@ class IntersectMimeType(Enum):
     HDF5 = 'application/x-hdf5'
 
 
+@validate_call
 def intersect_message(
     ignore_keys: Optional[Set[str]] = None,
     request_content_type: IntersectMimeType = IntersectMimeType.JSON,
@@ -74,7 +78,7 @@ def intersect_message(
          - Iterable/Sequence types (list, deque, set, tuple, frozenset, etc.)
          - Mapping types (dict, Counter, OrderedDict, etc.)
          - most stdlib types, i.e. Decimal, datetime.datetime, pathlib, etc.
-         - using typing_extensions "Annotated" type in conjunction with Pydantic's "Field"
+         - using typing_extensions "Annotated" type in conjunction with Pydantic's "Field" or various classes from the annotated_types library
          - TODO: Generators are a WORK IN PROGRESS but will eventually represent a streaming function
        You are only allowed to have one additional parameter. Functions without this parameter are assumed to take in no arguments.
        Be sure to specify the parameter type in your function signature!
