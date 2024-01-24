@@ -47,7 +47,7 @@ class MQTTClient(BrokerClient):
         if uid:
             self.uid = uid
         else:
-            self.uid = str(uuid.uuid1())
+            self.uid = str(uuid.uuid4())
         self.host = host
         self.port = port
 

@@ -249,12 +249,12 @@ def test_disallow_dynamic_generator_subtyping(caplog: pytest.LogCaptureFixture):
     assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
-# should fail because Dict key type MUST be "str".
+# should fail because Dict key type MUST be "str", "int", or "float".
 # In JSON Schema, keys must be strings, and unless the schema advertises itself as such,
 # we can't guarantee that we can cast the keys to any other type.
 class MockNonStrDictKey:
     @intersect_message()
-    def mock_message(self, param: Dict[int, str]) -> None:
+    def mock_message(self, param: Dict[List[int], str]) -> None:
         ...
 
 
@@ -262,7 +262,10 @@ def test_disallow_non_str_dict_key_type(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper(MockNonStrDictKey)
     assert "parameter 'param' type annotation" in caplog.text
-    assert "dict or mapping key type needs to be 'str' for INTERSECT" in caplog.text
+    assert (
+        "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT"
+        in caplog.text
+    )
 
 
 # should fail because Dict value has an Any typing (this should cover all other mapping types as well)
@@ -276,7 +279,7 @@ def test_disallow_dynamic_dict_value_type(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper(MockAnyDictValue)
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'dict or mapping value type cannot be Any/object for INTERSECT' in caplog.text
+    assert 'dict or mapping: value type cannot be Any/object for INTERSECT' in caplog.text
 
 
 # should fail because Tuple has an Any typing

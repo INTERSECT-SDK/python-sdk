@@ -17,8 +17,7 @@ import time
 from typing import Any, Callable, List, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, TypeAdapter
-from pydantic_core import ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from typing_extensions import Self
 
 from ._internal.control_plane.control_plane_manager import ControlPlaneManager

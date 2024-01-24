@@ -17,7 +17,7 @@ from types import MappingProxyType
 from typing import Any, Generic, Optional, Set, TypeVar, Union
 from uuid import uuid4
 
-from pydantic_core import ValidationError
+from pydantic import ValidationError
 from typing_extensions import Self
 
 from ._internal.constants import (

@@ -1,0 +1,111 @@
+{
+  "asyncapi": "2.6.0",
+  "x-intersect-version": "0.5.0",
+  "info": {
+    "title": "hello-organization.hello-facility.hello-system.hello-subsystem.hello-service",
+    "version": "0.0.1",
+    "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload."
+  },
+  "defaultContentType": "application/json",
+  "channels": {
+    "say_hello_to_name": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "string"
+          }
+        },
+        "description": "Takes in a string parameter and says 'Hello' to the parameter!"
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "string"
+          }
+        },
+        "description": "Takes in a string parameter and says 'Hello' to the parameter!"
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "messageTraits": {
+      "commonHeaders": {
+        "headers": {
+          "$defs": {
+            "IntersectDataHandler": {
+              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
+              "enum": [
+                0,
+                1
+              ],
+              "title": "IntersectDataHandler",
+              "type": "integer"
+            }
+          },
+          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "properties": {
+            "source": {
+              "description": "source of the message",
+              "title": "Source",
+              "type": "string"
+            },
+            "destination": {
+              "description": "destination of the message",
+              "title": "Destination",
+              "type": "string"
+            },
+            "created_at": {
+              "description": "the UTC timestamp of message creation",
+              "title": "Created At",
+              "type": "string"
+            },
+            "service_version": {
+              "description": "SemVer string of service's version, used to check for compatibility",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "title": "Service Version",
+              "type": "string"
+            },
+            "sdk_version": {
+              "description": "SemVer string of SDK's version, used to check for compatibility",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "title": "Sdk Version",
+              "type": "string"
+            },
+            "data_handler": {
+              "allOf": [
+                {
+                  "$ref": "#/components/messageTraits/commonHeaders/headers/$defs/IntersectDataHandler"
+                }
+              ],
+              "default": 0,
+              "description": "Code signifying where data is stored."
+            }
+          },
+          "required": [
+            "source",
+            "destination",
+            "created_at",
+            "service_version",
+            "sdk_version"
+          ],
+          "title": "UserspaceMessageHeader",
+          "type": "object"
+        }
+      }
+    }
+  },
+  "status": {
+    "type": "string"
+  }
+}

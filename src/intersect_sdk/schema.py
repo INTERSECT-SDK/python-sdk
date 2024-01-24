@@ -38,11 +38,9 @@ from pydantic import TypeAdapter
 
 from ._internal.function_metadata import FunctionMetadata
 from ._internal.messages.userspace import UserspaceMessageHeader
-from ._internal.schema import get_schemas_and_functions
+from ._internal.schema import ASYNCAPI_VERSION, get_schemas_and_functions
 from .config.shared import HierarchyConfig
 from .version import __version__
-
-ASYNCAPI_VERSION = '2.6.0'
 
 
 def get_schema_and_functions_from_model(

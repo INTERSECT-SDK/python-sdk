@@ -198,9 +198,12 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
     def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a dict schema.
 
-        OVERRIDE: While we can defer to Pydantic's handling for the most part, we need to check two things:
-        1) We need to make sure that "additionalProperties" has typing information (don't allow "Any" as the Value type)
-        2) In JSON, mapping "keys" must always be strings, so check that the Key type is "str".
+        OVERRIDE: This is a reimplementation of Pydantic's handling, because we need to check two things:
+        1) We need to make sure that "additionalProperties" has typing information (don't allow "Any" or "object" as the Value type)
+        2) In JSON, mapping "keys" must always be strings, so check that the Key type is either "str" or integer/float.
+        With integer/float, we can generate a "patternProperties" schema for the key automatically.
+
+        NOTE: if you are using integer/float as the dictionary type, you CANNOT set strict_validation=True on the @intersect_message handler.
 
         Args:
             schema: The core schema.
@@ -208,16 +211,39 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         Returns:
             The generated JSON schema.
         """
-        keys_schema = schema.get('keys_schema', None)
-        if not keys_schema or keys_schema.get('type', None) != 'str':
+        if 'keys_schema' not in schema:
             return self.handle_invalid_for_json_schema(
-                schema, "dict or mapping key type needs to be 'str' for INTERSECT"
+                schema,
+                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT",
             )
-        json_schema = super().dict_schema(schema)
-        if not json_schema.get('additionalProperties') and not json_schema.get('patternProperties'):
+        if 'values_schema' not in schema:
             return self.handle_invalid_for_json_schema(
-                schema, 'dict or mapping value type cannot be Any/object for INTERSECT'
+                schema, 'dict or mapping: value type cannot be Any/object for INTERSECT'
             )
+        keys_schema = self.generate_inner(schema['keys_schema']).copy()
+        values_schema = self.generate_inner(schema['values_schema']).copy()
+        values_schema.pop('title', None)  # don't give a title to the additionalProperties
+        keys_type = keys_schema.get('type', None)
+        json_schema: JsonSchemaValue = {'type': 'object'}
+        if keys_type == 'integer':
+            json_schema['patternProperties'] = {'^[-+]?[0-9]+$': values_schema}
+        elif keys_type == 'number':
+            # this regex disallows '1237.', which can be handled by Python but not every programming language
+            json_schema['patternProperties'] = {
+                '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$': values_schema
+            }
+        elif keys_type == 'string':
+            keys_pattern = keys_schema.pop('pattern', None)
+            if keys_pattern is None:
+                json_schema['additionalProperties'] = values_schema
+            else:
+                json_schema['patternProperties'] = {keys_pattern: values_schema}
+        else:
+            return self.handle_invalid_for_json_schema(
+                schema,
+                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT",
+            )
+        self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:

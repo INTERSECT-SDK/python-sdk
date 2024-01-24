@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Any, Dict
 
 from intersect_sdk import (
     IntersectClient,
@@ -19,7 +20,7 @@ class SampleOrchestrator:
         # all approximations in comments come from the first run against the service, but the values can potentially vary
         # if you run the client multiple times!
         self.message_stack = [
-            # wait 5 seconds before stopping the counter. "Count" in response will be approx. 7
+            # wait 5 seconds before stopping the counter. "Count" in response will be approx. 6
             (
                 IntersectClientMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
@@ -78,11 +79,12 @@ class SampleOrchestrator:
         self.message_stack.reverse()
 
     def client_callback(
-        self, source: str, operation: str, payload: str
+        self, source: str, operation: str, payload: Dict[str, Any]
     ) -> IntersectClientMessageParams:
-        print('Source: ', source)
-        print('Operation: ', operation)
-        print('Payload: ', payload, '\n')
+        print('Source:', source)
+        print('Operation:', operation)
+        print('Payload:', payload)
+        print()
         if not self.message_stack:
             # break out of pub/sub loop
             raise Exception

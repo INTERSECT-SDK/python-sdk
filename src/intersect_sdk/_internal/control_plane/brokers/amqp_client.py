@@ -51,7 +51,7 @@ class AMQPClient(BrokerClient):
         if uid:
             self.id = uid
         else:
-            self.id = str(uuid.uuid1())
+            self.id = str(uuid.uuid4())
 
         self._connection_params = pika.ConnectionParameters(
             host=host,
