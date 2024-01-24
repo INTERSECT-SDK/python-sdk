@@ -40,6 +40,7 @@ from ._internal.messages.userspace import (
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die
 from ._internal.version_resolver import resolve_user_version
+from .annotations import IntersectDataHandler, IntersectMimeType
 from .config.service import IntersectServiceConfig
 from .schema import get_schema_and_functions_from_model
 
@@ -336,28 +337,36 @@ class IntersectService(Generic[CAPABILITY]):
 
         # ONE: HANDLE CORE COMPAT ISSUES
         # is this first branch necessary? May not be in the future
-        if self._hierarchy.hierarchy_string('.') != message['headers'][
-            'destination'
-        ] or not resolve_user_version(message):
+        if self._hierarchy.hierarchy_string('.') != message['headers']['destination']:
+            return
+        if not resolve_user_version(message):
+            self._send_error_message(
+                f'SDK version incompatibility. Service version: {self._version} . Sender version: {message["headers"]["service_version"]}',
+                message,
+            )
             return
 
         # TWO: OPERATION EXISTS AND IS AVAILABLE
         operation = message['operationId']
         operation_meta = self._function_map.get(operation)
         if operation_meta is None:
-            logger.warning(f'Tried to call non-existent operation {operation}')
-            # do we send an error message here?
+            err_msg = f'Tried to call non-existent operation {operation}'
+            logger.warning(err_msg)
+            self._send_error_message(err_msg, message)
             return
         if self._function_keys & getattr(operation_meta.method, SHUTDOWN_KEYS):
-            logger.error(f"Function '{operation}' is currently not available for use.")
-            # do we send an error message here?
+            err_msg = f"Function '{operation}' is currently not available for use."
+            logger.error(err_msg)
+            self._send_error_message(err_msg, message)
             return
 
         # THREE: GET DATA FROM APPROPRIATE DATA STORE
         try:
             request_params = self._data_plane_manager.incoming_message_data_handler(message)
         except IntersectException:
-            # send error message here? may need exceptions which save state
+            # could theoretically be either a service or client issue
+            # XXX send a better error message?
+            self._send_error_message('Could not get data from data handler', message)
             return
 
         try:
@@ -369,8 +378,14 @@ class IntersectService(Generic[CAPABILITY]):
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
                 response, response_content_type, response_data_handler
             )
+        except IntersectApplicationException as e:
+            # client issue
+            # TODO: ValidationErrors are fine to send, but generic Exceptions raised by the domain might not be
+            self._send_error_message(str(e), message)
+            return
         except IntersectException:
-            # send error message here? may need exceptions which save state
+            # XXX send a better error message? This is a service issue
+            self._send_error_message('Could not send data to data handler', message)
             return
         finally:
             self._check_for_status_update()
@@ -437,6 +452,20 @@ class IntersectService(Generic[CAPABILITY]):
         logger.warning(err_msg)
         raise IntersectApplicationException(err_msg)
 
+    def _send_error_message(self, error_string: str, original_message: UserspaceMessage) -> None:
+        msg = create_userspace_message(
+            source=original_message['headers']['destination'],
+            destination=original_message['headers']['source'],
+            service_version=self._version,
+            content_type=IntersectMimeType.STRING,
+            data_handler=IntersectDataHandler.MESSAGE,
+            operation_id=original_message['operationId'],
+            payload=error_string,
+        )
+        logger.debug(f'Sending error message:\n{msg}')
+        response_channel = f"{original_message['headers']['source'].replace('.', '/')}/userspace"
+        self._control_plane_manager.publish_message(response_channel, msg)
+
     def _send_lifecycle_message(self, lifecycle_type: LifecycleType, payload: Any = None) -> None:
         """Send out a lifecycle message"""
         msg = create_lifecycle_message(
@@ -453,6 +482,8 @@ class IntersectService(Generic[CAPABILITY]):
         """
         Call the user's status retrieval function to see if it equals the cached value.
         If it does not, send out a status update function.
+
+        This will also always update the last cached value.
 
         Returns:
           True if there was a status update, False if there wasn't

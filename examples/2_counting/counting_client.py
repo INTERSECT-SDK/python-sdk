@@ -79,7 +79,7 @@ class SampleOrchestrator:
         self.message_stack.reverse()
 
     def client_callback(
-        self, source: str, operation: str, payload: Dict[str, Any]
+        self, source: str, operation: str, _has_error: bool, payload: Dict[str, Any]
     ) -> IntersectClientMessageParams:
         print('Source:', source)
         print('Operation:', operation)

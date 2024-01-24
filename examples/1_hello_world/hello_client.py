@@ -10,7 +10,7 @@ from intersect_sdk import (
 logging.basicConfig(level=logging.INFO)
 
 
-def simple_client_callback(_source: str, _operation: str, payload: str) -> None:
+def simple_client_callback(_source: str, _operation: str, _has_error: bool, payload: str) -> None:
     """
     This simply prints the response from the service to your console.
 

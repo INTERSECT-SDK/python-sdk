@@ -75,7 +75,9 @@ class IntersectClientMessageParams(BaseModel):
     """
 
 
-INTERSECT_CLIENT_CALLBACK_TYPE = Callable[[str, str, Any], Optional[IntersectClientMessageParams]]
+INTERSECT_CLIENT_CALLBACK_TYPE = Callable[
+    [str, str, bool, Any], Optional[IntersectClientMessageParams]
+]
 """
 This is a callable function type which should be defined by the user.
 
@@ -85,8 +87,11 @@ Params
   The SDK will send the function three arguments:
     1) The message source - this is mostly useful for your own control flow loops you write in the function
     2) The name of the operation that triggered the response from your ORIGINAL message - needed for your own control flow loops if sending multiple messages.
-    3) The response, as a Python object - the type should be based on the corresponding Service's schema response.
+    3) A boolean - if True, there was an error; if False, there was not.
+    4) The response, as a Python object - the type should be based on the corresponding Service's schema response.
        The Python object will already be deserialized for you.
+        If parameter 3 was "True", then this will be the error message.
+
 Returns
   If you want to access the response of the message, the function should return an IntersectClientMessageParams object.
 
@@ -284,7 +289,10 @@ class IntersectClient:
         # THREE: CALL USER FUNCTION AND GET RETURN
         try:
             user_function_return = self._user_callback(
-                message['headers']['source'], message['operationId'], request_params
+                message['headers']['source'],
+                message['operationId'],
+                message['headers']['has_error'],
+                request_params,
             )
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
             logger.warning(f"Exception from user's callback function:\n{e}")

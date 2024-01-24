@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
 from intersect_sdk import IntersectDataHandler, IntersectMimeType
 from intersect_sdk._internal.constants import (
     REQUEST_CONTENT,
@@ -10,7 +9,6 @@ from intersect_sdk._internal.constants import (
     STRICT_VALIDATION,
 )
 from intersect_sdk.schema import get_schema_and_functions_from_model, get_schema_from_model
-from pydantic import ValidationError
 
 from tests.fixtures.example_schema import (
     FAKE_HIERARCHY_CONFIG,

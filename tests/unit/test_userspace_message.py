@@ -19,6 +19,7 @@ def test_valid_userspace_message_deserializes():
     deserialized = deserialize_and_validate_userspace_message(serialized)
     assert deserialized['headers']['data_handler'] == IntersectDataHandler.MESSAGE
     assert deserialized['contentType'] == IntersectMimeType.JSON
+    assert deserialized['headers']['has_error'] is False
 
 
 def test_unusual_userspace_message_deserializes():
@@ -26,6 +27,7 @@ def test_unusual_userspace_message_deserializes():
     deserialized = deserialize_and_validate_userspace_message(serialized)
     assert deserialized['headers']['data_handler'] == IntersectDataHandler.MESSAGE
     assert deserialized['contentType'] == IntersectMimeType.JSON
+    assert deserialized['headers']['has_error'] is False
     # even on strict mode, Pydantic can validate an integer as a string type, i.e. '"2024"' - it parses this as number of seconds since the Unix epoch
     assert deserialized['headers']['created_at'].year == 1970
 

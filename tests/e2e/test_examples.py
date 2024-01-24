@@ -28,14 +28,18 @@ BASE_DIR = (
 # HELPERS #####################
 def run_example_test(example: str, timeout: int = 60) -> str:
     example_dir = BASE_DIR / example
-    service_files = glob.glob(f'{example_dir}/*_service.py')
-    client_file = glob.glob(f'{example_dir}/*_client.py')[0]
+    service_files = glob.glob(f'{example_dir}{os.path.sep}*_service.py')
+    client_file = glob.glob(f'{example_dir}{os.path.sep}*_client.py')[0]
     service_procs = [subprocess.Popen([sys.executable, file]) for file in service_files]  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
     # make sure all service processes have been initialized before starting client process
     time.sleep(1.0)
     client_output = subprocess.run(
-        [sys.executable, client_file], check=True, capture_output=True, text=True, timeout=timeout
-    )  # noqa: S603
+        [sys.executable, client_file],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=timeout,  # noqa: S603 (see above)
+    )
     try:
         assert client_output.returncode == 0
         return client_output.stdout

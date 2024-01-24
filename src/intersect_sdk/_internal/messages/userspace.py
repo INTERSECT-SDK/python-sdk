@@ -4,6 +4,9 @@ This module is internal-facing and should not be used directly by users.
 
 Services should ALWAYS be CONSUMING from their userspace channel.
 They should NEVER be PRODUCING messages on their userspace channel.
+
+Clients should be CONSUMING from their userspace channel, but should only get messages
+from services they explicitly messaged.
 """
 
 import datetime
@@ -91,6 +94,19 @@ class UserspaceMessageHeader(TypedDict):
     usage, the payload would indicate the URI to where the data is stored on MinIO.
     """
 
+    has_error: Annotated[
+        bool,
+        Field(
+            False,
+            description='If this value is True, the payload will contain the error message (a string)',
+        ),
+    ]
+    """
+    If this flag is set to True, the payload will contain the error message (always a string).
+
+    This should only be set to "True" on return messages sent by services - NEVER clients.
+    """
+
 
 class UserspaceMessage(TypedDict):
     """
@@ -120,6 +136,7 @@ class UserspaceMessage(TypedDict):
     main payload of the message. Needs to match the schema format, including the content type.
 
     NOTE: The payload's contents will differ based on the data_handler property in the message header.
+    NOTE: If "has_error" flag in the message headers is set to "True", the payload will instead contain an error string.
     """
 
     contentType: Annotated[IntersectMimeType, Field(IntersectMimeType.JSON)]
@@ -141,6 +158,7 @@ def create_userspace_message(
     content_type: IntersectMimeType,
     data_handler: IntersectDataHandler,
     payload: Any,
+    has_error: bool = False,
 ) -> UserspaceMessage:
     return UserspaceMessage(
         messageId=uuid.uuid4(),
@@ -154,6 +172,7 @@ def create_userspace_message(
             sdk_version=__version__,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             data_handler=data_handler,
+            has_error=has_error,
         ),
     )
 
