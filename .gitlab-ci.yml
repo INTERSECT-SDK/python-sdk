@@ -14,6 +14,8 @@ variables:
 
 # This import is for the func_rse_docker_* functions
 before_script:
+  # TODO remove to unbreak runner
+  - sudo rm -rf reports/
   - curl https://code.ornl.gov/rse-deployment/rse-sharables/raw/master/rse-bash-modules.sh -O
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   - source rse-bash-modules.sh
@@ -64,6 +66,7 @@ test-suite-with-coverage:
       pdm run test-all
   after_script:
     - docker-compose down -v
+    - sudo chown -R $UID reports/*
     - sudo sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:
