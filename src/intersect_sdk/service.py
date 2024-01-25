@@ -319,32 +319,47 @@ class IntersectService(Generic[CAPABILITY]):
         """
         return self._function_keys.copy()
 
-    def _handle_userspace_message_raw(self, message: bytes) -> None:
+    def _handle_userspace_message_raw(self, raw: bytes) -> None:
         """
         Broker callback, deserialize and validate a userspace message from a broker
+
+        This function is also responsible for publishing all response messages from the broker
         """
         try:
-            self._handle_userspace_message(deserialize_and_validate_userspace_message(message))
+            message = deserialize_and_validate_userspace_message(raw)
+            response_msg = self._handle_userspace_message(message)
+            if response_msg:
+                logger.debug(
+                    'Send %s message:\n%s',
+                    'error' if response_msg['headers']['has_error'] else 'userspace',
+                    response_msg,
+                )
+                response_channel = f"{message['headers']['source'].replace('.', '/')}/userspace"
+                self._control_plane_manager.publish_message(response_channel, response_msg)
         except ValidationError as e:
             logger.warning(
                 f'Invalid message received on userspace message channel, ignoring. Full message:\n{e}'
             )
 
-    def _handle_userspace_message(self, message: UserspaceMessage) -> None:
+    def _handle_userspace_message(self, message: UserspaceMessage) -> Optional[UserspaceMessage]:
         """
-        Handle a deserialized userspace message.
+        Main logic for handling a userspace message, minus all broker logic.
+
+        Params
+          message: UserspaceMessage from a client
+        Returns
+          The response message we want to send to the client, or None if we don't want to send anything.
         """
 
         # ONE: HANDLE CORE COMPAT ISSUES
         # is this first branch necessary? May not be in the future
         if self._hierarchy.hierarchy_string('.') != message['headers']['destination']:
-            return
+            return None
         if not resolve_user_version(message):
-            self._send_error_message(
+            return self._make_error_message(
                 f'SDK version incompatibility. Service version: {self._version} . Sender version: {message["headers"]["service_version"]}',
                 message,
             )
-            return
 
         # TWO: OPERATION EXISTS AND IS AVAILABLE
         operation = message['operationId']
@@ -352,13 +367,11 @@ class IntersectService(Generic[CAPABILITY]):
         if operation_meta is None:
             err_msg = f'Tried to call non-existent operation {operation}'
             logger.warning(err_msg)
-            self._send_error_message(err_msg, message)
-            return
+            return self._make_error_message(err_msg, message)
         if self._function_keys & getattr(operation_meta.method, SHUTDOWN_KEYS):
             err_msg = f"Function '{operation}' is currently not available for use."
             logger.error(err_msg)
-            self._send_error_message(err_msg, message)
-            return
+            return self._make_error_message(err_msg, message)
 
         # THREE: GET DATA FROM APPROPRIATE DATA STORE
         try:
@@ -366,8 +379,7 @@ class IntersectService(Generic[CAPABILITY]):
         except IntersectException:
             # could theoretically be either a service or client issue
             # XXX send a better error message?
-            self._send_error_message('Could not get data from data handler', message)
-            return
+            return self._make_error_message('Could not get data from data handler', message)
 
         try:
             # FOUR: CALL USER FUNCTION AND GET MESSAGE
@@ -381,17 +393,15 @@ class IntersectService(Generic[CAPABILITY]):
         except IntersectApplicationException as e:
             # client issue
             # TODO: ValidationErrors are fine to send, but generic Exceptions raised by the domain might not be
-            self._send_error_message(str(e), message)
-            return
+            return self._make_error_message(str(e), message)
         except IntersectException:
             # XXX send a better error message? This is a service issue
-            self._send_error_message('Could not send data to data handler', message)
-            return
+            return self._make_error_message('Could not send data to data handler', message)
         finally:
             self._check_for_status_update()
 
         # SIX: SEND MESSAGE
-        msg = create_userspace_message(
+        return create_userspace_message(
             source=message['headers']['destination'],
             destination=message['headers']['source'],
             service_version=self._version,
@@ -400,9 +410,6 @@ class IntersectService(Generic[CAPABILITY]):
             operation_id=message['operationId'],
             payload=response_payload,
         )
-        logger.debug(f'Send userspace message:\n{msg}')
-        response_channel = f"{message['headers']['source'].replace('.', '/')}/userspace"
-        self._control_plane_manager.publish_message(response_channel, msg)
 
     def _call_user_function(
         self,
@@ -452,8 +459,19 @@ class IntersectService(Generic[CAPABILITY]):
         logger.warning(err_msg)
         raise IntersectApplicationException(err_msg)
 
-    def _send_error_message(self, error_string: str, original_message: UserspaceMessage) -> None:
-        msg = create_userspace_message(
+    def _make_error_message(
+        self, error_string: str, original_message: UserspaceMessage
+    ) -> UserspaceMessage:
+        """
+        Generate an error message
+
+        Params:
+          error_string: The error string to send as the payload
+          original_message: The original UserspaceMessage
+        Returns:
+          the UserspaceMessage we will send as a reply
+        """
+        return create_userspace_message(
             source=original_message['headers']['destination'],
             destination=original_message['headers']['source'],
             service_version=self._version,
@@ -461,10 +479,8 @@ class IntersectService(Generic[CAPABILITY]):
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id=original_message['operationId'],
             payload=error_string,
+            has_error=True,
         )
-        logger.debug(f'Sending error message:\n{msg}')
-        response_channel = f"{original_message['headers']['source'].replace('.', '/')}/userspace"
-        self._control_plane_manager.publish_message(response_channel, msg)
 
     def _send_lifecycle_message(self, lifecycle_type: LifecycleType, payload: Any = None) -> None:
         """Send out a lifecycle message"""

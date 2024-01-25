@@ -52,69 +52,24 @@ lint:
   tags:
     - intersect-sdk-builder
 
-unit-tests:
+test-suite-with-coverage:
   stage: test
   script:
+    - docker-compose up -d
     - >
       docker run --rm
+      --network host
       -v $PWD/reports:/sdk/reports
       $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
-      pdm run test-report
-  artifacts:
-    when: always
-    reports:
-      junit: reports/report_unit.xml
-    paths:
-      - reports/
-  tags:
-    - intersect-sdk-builder
-
-integration-tests:
-  stage: test
-  variables:
-    RABBITMQ_USERNAME: "intersect_username"
-    RABBITMQ_PASSWORD: "intersect_password"
-    RABBITMQ_HOST: "rabbitmq"
-  script:
-    - docker network create intersect
-    - >
-      docker run --rm -d
-      --name $RABBITMQ_HOST
-      --network=intersect
-      $BROKER_CONTAINER
-    - sleep 10
-    - >
-      docker run --rm
-      -e RABBITMQ_USERNAME -e RABBITMQ_PASSWORD -e RABBITMQ_HOST
-      --network=intersect
-      -v $PWD/reports:/sdk/reports
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
-      pdm run integration-report
-    - docker rm -f $RABBITMQ_HOST
-    - docker network rm intersect
-  artifacts:
-    when: always
-    reports:
-      junit: reports/report_integration.xml
-    paths:
-      - reports/
-  tags:
-    - intersect-sdk-builder
-
-
-coverage:
-  stage: test
-  script:
-    - >
-      docker run --rm
-      -v $PWD/reports:/sdk/reports
-      $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
-      pdm run test-coverage
+      pdm run test-all
+  after_script:
+    - docker-compose down -v
     - sudo sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:
     when: always
     reports:
+      junit: reports/report_integration.xml
       coverage_report:
         coverage_format: cobertura
         path: reports/coverage.xml

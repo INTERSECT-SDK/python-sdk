@@ -16,14 +16,20 @@ Main commands are specified under `tool.pdm.scripts` in `pyproject.toml`
 
 ### Docker build instructions
 
-`docker build --target minimal -t intersect-sdk-python .` 
+`docker build --target minimal -t intersect-sdk-python .`
 
 You will only need to rebuild this image if you need to add/update dependencies.
+
+### Backing services
+
+A lot of INTERSECT functionality requires backing services be spun up. A quick way to do this is to use the docker-compose.yml file at the repository root to do so: `docker compose up -d`.
+
+If you don't want to use this docker-compose file, note that running a full Service or a full Client requires that you are able to connect to at least one broker (AMQP or MQTT) and at least one of _each_ data provider type (currently, just MINIO).
 
 ## Adding dependencies
 
 - **Required dependency**: `pdm add <dependency>`
-- **Optional dependency**: `pdm add -G <group> <dependency>` 
+- **Optional dependency**: `pdm add -G <group> <dependency>`
 - **Dev dependency** `pdm add --dev -G <dev-group> <dependency>`
 
 For dev dependencies, please always specify the dev group as one of `lint`, `test`, or `doc`.
@@ -34,12 +40,17 @@ Run `pdm run lint` to quickly run all linters. The pre-commit hooks will also ca
 
 ## Testing
 
-`pdm run test` - run tests in standard format
-`pdm run test-debug` - run tests allowing debug output (i.e. print statements in tests)
+Note that for the integration and e2e tests, you will need to spin up the docker-compose instance.
+
+`pdm run test-all` - run all tests in standard format.
+`pdm run test-all-debug` - run tests allowing debug output (i.e. print statements in tests)
+`pdm run test-unit` - run only the unit tests (no backing services required for these)
+
+Tests are run with pytest if you'd like to customize how they are run. The full `pdm run test...` scripts can be found in `pyproject.toml`
 
 ## Examples
 
-Examples are available in the `examples` directory. The examples in the `python-environment` directory should be run using the supplied conda environment while the examples in the `docker-compose` directory are run with Docker compose. See the documentation and the code comments in each example for more information.
+Examples are available in the `examples` directory. Please see the README.md in the `examples` directory for more information.
 
 ## Contributing
 

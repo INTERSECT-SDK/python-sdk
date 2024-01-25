@@ -2,11 +2,11 @@
 This module is meant to test examples of VALID schemas and generated functions.
 """
 
+import datetime
 import decimal
 import mimetypes
 import random
 from dataclasses import dataclass
-from datetime import datetime
 from decimal import Decimal
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
@@ -249,22 +249,6 @@ class DummyCapabilityImplementation:
         self._status_example['functions_called'] += 1
         self._status_example['last_function_called'] = fn_name
 
-    def internal_compute_weird_algorithm(self, token: int) -> List[int]:
-        """
-        example of an internal function, which should NOT be inspected
-        (as it is lacking the intersect_message annotation)
-        """
-
-        result = []
-        while token != 1:
-            result.append(token)
-            if token & 1 == 0:
-                token >>= 1
-            else:
-                token = token * 3 + 1
-        result.append(1)
-        return result
-
     @intersect_message(
         request_content_type=IntersectMimeType.JSON,
         response_content_type=IntersectMimeType.JSON,
@@ -278,13 +262,12 @@ class DummyCapabilityImplementation:
         response = [5, 8, 13]
         """
         self.update_status('calculate_fibonacci')
-        if request.start > request.end:
-            msg = (
-                f'request.start ({request.start}) cannot be greater than request.end {request.end}'
-            )
-            raise Exception(msg)
-        left = request.start
-        right = request.end + 1
+        if request[0] > request[1]:
+            left = request[1]
+            right = request[0] + 1
+        else:
+            left = request[0]
+            right = request[1] + 1
         return self._FIBONACCI_LST[left:right]
 
     @intersect_message(
@@ -384,16 +367,17 @@ class DummyCapabilityImplementation:
         self.update_status('test_dicts')
         return {k: v + 1 for (k, v) in request.items()}
 
+    # NOTE: tz-agnostic and tz-gnostic datetimes often don't work well together, and I don't think Pydantic OR JsonSchema "formats" have a way to specify timezone (a)gnosticism.
     @intersect_message(
         strict_request_validation=True, response_data_transfer_handler=IntersectDataHandler.MINIO
     )
-    def test_datetime(self, request: datetime) -> str:
+    def test_datetime(self, request: datetime.datetime) -> str:
         """
         NOTE: If strict mode is ON, only JSON strings can be coerced into datetimes.
         If strict mode is OFF, integers can also be coerced into datetimes.
         """
         self.update_status('test_datetime')
-        return f'It has been {datetime.now() - request} seconds since {request!s}'
+        return f'It has been {datetime.datetime.now(tz=datetime.timezone.utc) - request} seconds since {request!s}'
 
     @intersect_message()
     def test_generator(self, request: str) -> Generator[int, None, None]:
