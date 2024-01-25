@@ -390,10 +390,12 @@ class IntersectService(Generic[CAPABILITY]):
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
                 response, response_content_type, response_data_handler
             )
-        except IntersectApplicationException as e:
-            # client issue
-            # TODO: ValidationErrors are fine to send, but generic Exceptions raised by the domain might not be
-            return self._make_error_message(str(e), message)
+        except ValidationError as e:
+            # client issue with request parameters
+            return self._make_error_message(f'Bad arguments to application:\n{e}', message)
+        except IntersectApplicationException:
+            # domain-level exception; do not send specifics about the exception because it may leak internals
+            return self._make_error_message('Service domain logic threw exception.', message)
         except IntersectException:
             # XXX send a better error message? This is a service issue
             return self._make_error_message('Could not send data to data handler', message)
@@ -454,10 +456,11 @@ class IntersectService(Generic[CAPABILITY]):
             return fn_meta.response_adapter.dump_json(response)
         except ValidationError as e:
             err_msg = f'Bad arguments to application:\n{e}\n'
+            logger.warning(err_msg)
+            raise IntersectException(err_msg) from e
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
-            err_msg = f'Capability raised exception:\n{e}\n'
-        logger.warning(err_msg)
-        raise IntersectApplicationException(err_msg)
+            logger.warning(f'Capability raised exception:\n{e}\n')
+            raise IntersectApplicationException from e
 
     def _make_error_message(
         self, error_string: str, original_message: UserspaceMessage

@@ -180,7 +180,7 @@ def test_call_user_function_with_invalid_payload():
 
 
 # try to call an operation which doesn't exist - we'll get an error message back
-def test_call_nonexistant_user_function():
+def test_call_nonexistent_user_function():
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]

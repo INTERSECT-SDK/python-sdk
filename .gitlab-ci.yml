@@ -65,7 +65,7 @@ test-suite-with-coverage:
   after_script:
     - sudo chown -R $UID reports/* || true
     - docker-compose down -v
-    - sudo sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage.xml
+    - sudo sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage_report.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:
     when: always
