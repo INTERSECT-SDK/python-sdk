@@ -19,26 +19,31 @@ import sys
 import time
 from pathlib import Path
 
-# remove "tests/e2e" from path and add "examples"
-BASE_DIR = (
-    Path(os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-2]))
-    / 'examples'
-)
-
+os.chdir(Path(__file__).parents[2])
 
 # HELPERS #####################
 
 
 # TODO - run all files as modules
 def run_example_test(example: str, timeout: int = 60) -> str:
+    """
     example_dir = BASE_DIR / example
     service_files = glob.glob(f'{example_dir}{os.path.sep}*_service.py')
     client_file = glob.glob(f'{example_dir}{os.path.sep}*_client.py')[0]
-    service_procs = [subprocess.Popen([sys.executable, file]) for file in service_files]  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
+    """
+    service_files = [
+        f.replace(os.path.sep, '.')[:-3]
+        for f in glob.glob(f'examples{os.path.sep}{example}{os.path.sep}*_service.py')
+    ]
+    client_file = glob.glob(f'examples{os.path.sep}{example}{os.path.sep}*_client.py')[0].replace(
+        os.path.sep, '.'
+    )[:-3]
+
+    service_procs = [subprocess.Popen([sys.executable, '-m', file]) for file in service_files]  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
     # make sure all service processes have been initialized before starting client process
     time.sleep(1.0)
     client_output = subprocess.run(
-        [sys.executable, client_file],  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
+        [sys.executable, '-m', client_file],  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
         check=True,
         capture_output=True,
         text=True,
