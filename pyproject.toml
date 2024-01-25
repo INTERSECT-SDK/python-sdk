@@ -54,8 +54,8 @@ doc = [
 ]
 
 [tool.pdm.scripts]
-test-all = "pytest tests/ --cov=. --cov-fail-under=50 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml --junitxml=reports/report_unit.xml"
-test-all-debug = "pytest tests/ --cov=. --cov-fail-under=50 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage.xml --junitxml=reports/report_unit.xml -s"
+test-all = "pytest tests/ --cov=. --cov-fail-under=80 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage_report.xml --junitxml=reports/junit.xml"
+test-all-debug = "pytest tests/ --cov=. --cov-fail-under=80 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage_report.xml --junitxml=reports/junit.xml -s"
 test-unit = "pytest tests/unit --cov=."
 lint = {composite = ["lint-format", "lint ruff", "lint-mypy"]}
 lint-format = "ruff format"
