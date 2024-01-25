@@ -103,12 +103,6 @@ def intersect_message(
       only set this if you are mutating INSTRUMENT or APPLICATION state.
     request_content_type: how to deserialize incoming requests (default: JSON)
     response_content_type: how to serialize outgoing requests (default: JSON)
-      NOTE: this doesn't need to be a literal Response message, you can also apply it
-      to asynchronous messages
-
-    TODO: since multiple messages (probably all Event messages) can be sent out in a function,
-    it may be prudent to define a list of response information in the future
-
     response_data_transfer_handler: are responses going out through the message, or through another mean
     (i.e. MINIO)?
     strict_request_validation: if this is set to True, use pydantic strict validation - otherwise, use lenient validation (default: False)
@@ -132,11 +126,26 @@ def intersect_message(
     return inner_decorator
 
 
-def intersect_status() -> Any:
+@validate_call
+def intersect_status(
+    request_content_type: IntersectMimeType = IntersectMimeType.JSON,
+    response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
+    # TODO response_content_type may end up being a union
+    response_content_type: IntersectMimeType = IntersectMimeType.JSON,
+    strict_request_validation: bool = False,
+) -> Any:
     """
     Use this annotation to mark your capability method as a status retrieval function.
 
     You may ONLY mark ONE function as a status retrieval function. It's advisable to have one.
+
+    Params:
+        request_content_type: how to deserialize incoming requests (default: JSON)
+        response_content_type: how to serialize outgoing requests (default: JSON)
+        response_data_transfer_handler: are responses going out through the message, or through another mean
+          (i.e. MINIO)?
+        strict_request_validation: if this is set to True, use pydantic strict validation - otherwise, use lenient validation (default: False)
+          See https://docs.pydantic.dev/latest/concepts/conversion_table/ for more info about this.
     """
 
     def inner_decorator(func: Callable) -> Callable:
@@ -145,6 +154,11 @@ def intersect_status() -> Any:
             return func(*args, **kwargs)
 
         setattr(wrapper, BASE_STATUS_ATTR, True)
+        setattr(wrapper, REQUEST_CONTENT, request_content_type.value)
+        setattr(wrapper, RESPONSE_CONTENT, response_content_type.value)
+        setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler.value)
+        setattr(wrapper, STRICT_VALIDATION, strict_request_validation)
+        setattr(wrapper, SHUTDOWN_KEYS, set())
 
         return wrapper
 
