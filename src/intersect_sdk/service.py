@@ -449,7 +449,7 @@ class IntersectService(Generic[CAPABILITY]):
         except ValidationError as e:
             err_msg = f'Bad arguments to application:\n{e}\n'
             logger.warning(err_msg)
-            raise IntersectException(err_msg) from e
+            raise e
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
             logger.warning(f'Capability raised exception:\n{e}\n')
             raise IntersectApplicationException from e
