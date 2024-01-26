@@ -13,7 +13,26 @@ logging.basicConfig(level=logging.INFO)
 
 
 class SampleOrchestrator:
+    """This class contains the callback function.
+
+    It uses a class because we want to modify our own state from the callback function.
+
+    State is managed through a message stack. We initialize a request-reply-request-reply... chain with the Service,
+    and the chain ends once we've popped all messages from our message stack.
+    """
+
     def __init__(self) -> None:
+        """Basic constructor for the orchestrator class, call before creating the IntersectClient.
+
+        As the only thing exposed to the Client is the callback function, the orchestrator class may otherwise be
+        created and managed as the SDK developer sees fit.
+
+        The messages are initialized in the order they are sent for readability purposes.
+        The message stack is a tuple: the message, and the time to wait before sending it.
+
+        All approximations in comments come from the first run against the service, but the values can potentially vary
+        if you run the client multiple times!
+        """
         # the messages are initialized in the order they are sent for readability purposes
         # the message stack is a tuple: the message, and the time to wait before sending it.
         #
@@ -81,6 +100,31 @@ class SampleOrchestrator:
     def client_callback(
         self, source: str, operation: str, _has_error: bool, payload: Dict[str, Any]
     ) -> IntersectClientMessageParams:
+        """This simply prints the response from the Service to your console.
+
+        In this case, we only send one message at a time, and will not send another message until we get a response back from the Service.
+        If we have additional messages in our stack, we'll wait a little bit (based on the float value in the stack) before we
+        send the next message to the Service.
+
+        When we've exhausted our message stack, we just throw an Exception to break out of the pub/sub loop.
+
+        Params:
+          source: the source of the response message. In this case it will always be from the counting_service.
+          operation: the name of the function we called in the original message. For example, since we call "start_count" in our first request,
+            our first response will have "start_count" as the value.
+          _has_error: Boolean value which represents an error. Since there is never an error in this example, it will always be "False".
+          payload: Value of the response from the Service. The typing of the payload varies, based on the operation called and whether or not
+            _has_error was set to "True". In this case, since we do not have an error, we can defer to the operation's response type. This response type is
+            will be a dictionary resembling either "CountingServiceCapabilityImplementationState" or "CountingServiceCapabilityImplementationResponse",
+            depending on the operation called.
+
+            Note that the payload will always be a deserialized Python object, but the types are fairly limited: str, bool, float, int, None, List[T], and Dict[str, T]
+            are the only types the payload can have. "T" in this case can be any of the 7 types just mentioned. Since both response types from the Service are
+            classes*, this will be represented as a Dict[str, ...].
+
+            *The only exception to the "Class gets deserialized to a dictionary" rule is if the class inherits from Python's NamedTuple builtin, in which case
+            it will be deserialized as a List.
+        """
         print('Source:', source)
         print('Operation:', operation)
         print('Payload:', payload)

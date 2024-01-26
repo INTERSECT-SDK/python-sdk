@@ -24,8 +24,8 @@ os.chdir(Path(__file__).parents[2])
 # HELPERS #####################
 
 
-# TODO - run all files as modules
 def run_example_test(example: str, timeout: int = 60) -> str:
+    # convert all files to module syntax
     service_modules = [
         f.replace(os.path.sep, '.')[:-3]
         for f in glob.glob(f'examples{os.path.sep}{example}{os.path.sep}*_service.py')

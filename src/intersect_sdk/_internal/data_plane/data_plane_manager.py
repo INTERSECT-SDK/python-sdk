@@ -10,12 +10,14 @@ from .minio_utils import MinioPayload, create_minio_store, get_minio_object, sen
 
 
 class DataPlaneManager:
-    """
-    The DataPlaneManager serves as a common interface to the data plane
+    """The DataPlaneManager serves as a common interface to the data plane.
+
+    The API supports extensive plug-and-play for different data providers.
     """
 
     def __init__(self, hierarchy: HierarchyConfig, data_configs: DataStoreConfigMap) -> None:
-        """
+        """Inside the constructor, we verify that all data configuration credentials are correct.
+
         Params:
           hierarchy: Hierarchy configuration
           data_configs: data configuration
@@ -24,8 +26,7 @@ class DataPlaneManager:
         self._minio_providers = list(map(create_minio_store, data_configs.minio))
 
     def incoming_message_data_handler(self, message: UserspaceMessage) -> Union[str, bytes, None]:
-        """
-        Get data from the request data provider
+        """Get data from the request data provider.
 
         Params:
           message: the message sent externally to this location
@@ -59,13 +60,13 @@ class DataPlaneManager:
         content_type: IntersectMimeType,
         data_handler: IntersectDataHandler,
     ) -> Any:
-        """
-        Send the user's response to the appropriate data provider
+        """Send the user's response to the appropriate data provider.
 
         Params:
           - function_response - the return value from the user's function
           - content_type - content type of function_response
           - data_handler - where we're going to send the data off to (i.e. the message, MINIO...)
+
         Returns:
           the payload of the message
         Raise:

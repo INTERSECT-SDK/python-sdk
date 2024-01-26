@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class HelloServiceCapabilityImplementation:
-    """
-    Rudimentary capability implementation example.
+    """Rudimentary capability implementation example.
 
     All capability implementations are required to have an @intersect_status decorated function,
     but we do not use it here.
@@ -27,16 +26,12 @@ class HelloServiceCapabilityImplementation:
 
     @intersect_status()
     def status(self) -> str:
-        """
-        Basic status function which returns a hard-coded string.
-        """
+        """Basic status function which returns a hard-coded string."""
         return 'Up'
 
     @intersect_message()
     def say_hello_to_name(self, name: str) -> str:
-        """
-        Takes in a string parameter and says 'Hello' to the parameter!
-        """
+        """Takes in a string parameter and says 'Hello' to the parameter!"""
         return f'Hello, {name}!'
 
 

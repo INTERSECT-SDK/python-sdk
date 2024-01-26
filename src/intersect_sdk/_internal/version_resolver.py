@@ -9,8 +9,7 @@ from .messages.userspace import UserspaceMessage
 def _resolve_user_version(
     msg: UserspaceMessage, our_version: str, our_version_info: Tuple[int, int, int]
 ) -> bool:
-    """
-    Function which handles version resolution information
+    """Function which handles version resolution information.
 
     Separated into private function for testing purposes
     """
@@ -39,14 +38,12 @@ def _resolve_user_version(
 
 
 def resolve_user_version(msg: UserspaceMessage) -> bool:
-    """
-    This function handles all version compatibilities between our SDK version
-    and an incoming message's SDK version.
+    """This function handles all version compatibilities between our SDK version and an incoming message's SDK version.
 
     Params
       msg - message from the orchestrator or another adapter
 
-    Returns
+    Returns:
       True if version resolution successful, false otherwise
     """
     return _resolve_user_version(

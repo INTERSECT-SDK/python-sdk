@@ -20,11 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class CountingServiceCapabilityImplementationState(BaseModel):
-    """
-    We can't just use any class to represent state. This class either needs to
-    extend Pydantic's BaseModel class, or be a dataclass. Both the Python
-    standard library's dataclass and Pydantic's dataclass are valid.
-    """
+    """We can't just use any class to represent state. This class either needs to extend Pydantic's BaseModel class, or be a dataclass. Both the Python standard library's dataclass and Pydantic's dataclass are valid."""
 
     count: Annotated[int, Field(default=0, ge=0)]
     """
@@ -41,8 +37,7 @@ class CountingServiceCapabilityImplementationState(BaseModel):
 
 @dataclass
 class CountingServiceCapabilityImplementationResponse:
-    """
-    This class is used as a reply to messages which may not do anything.
+    """This class is used as a reply to messages which may not do anything.
 
     It's also an example of using a dataclass instead of Pydantic's BaseModel.
     """
@@ -58,9 +53,7 @@ class CountingServiceCapabilityImplementationResponse:
 
 
 class CountingServiceCapabilityImplementation:
-    """
-    This example is meant to showcase that your implementation is able to track state
-    if you want it to.
+    """This example is meant to showcase that your implementation is able to track state if you want it to.
 
     Please note that this is not an especially robust implementation, as in the instance
     the service gets two messages at the same time, it may manage to create
@@ -68,20 +61,17 @@ class CountingServiceCapabilityImplementation:
     """
 
     def __init__(self) -> None:
-        """
-        Constructors are never exposed to INTERSECT. You are free to
-        provide whatever parameters you like to the constructor, and
-        do whatever you like in the constructor.
+        """Constructors are never exposed to INTERSECT.
 
-        In this instance, we just initialize our state.
+        You are free to provide whatever parameters you like to the constructor, and
+        do whatever you like in the constructor. In this instance, we just initialize our state.
         """
         self.state = CountingServiceCapabilityImplementationState()
         self.counter_thread: Optional[threading.Thread] = None
 
     @intersect_status()
     def status(self) -> CountingServiceCapabilityImplementationState:
-        """
-        Basic status function communicates our current state.
+        """Basic status function communicates our current state.
 
         We set the status interval in the configuration to be 30 seconds long - if you
         run the service without the client, and set the log level
@@ -92,10 +82,9 @@ class CountingServiceCapabilityImplementation:
 
     @intersect_message()
     def start_count(self) -> CountingServiceCapabilityImplementationResponse:
-        """
-        Start the counter (potentially from any number). "Fails" if the counter is already running.
+        """Start the counter (potentially from any number). "Fails" if the counter is already running.
 
-        Returns
+        Returns:
           A CountingServiceCapabilityImplementationResponse object. The success value will be:
             True - if counter was started successfully
             False - if counter was already running and this was called
@@ -119,10 +108,9 @@ class CountingServiceCapabilityImplementation:
 
     @intersect_message()
     def stop_count(self) -> CountingServiceCapabilityImplementationResponse:
-        """
-        Stop the new ticker
+        """Stop the new ticker.
 
-        Returns
+        Returns:
           A CountingServiceCapabilityImplementationResponse object. The success value will be:
             True - if counter was stopped successfully
             False - if counter was already not running and this was called
@@ -142,13 +130,13 @@ class CountingServiceCapabilityImplementation:
 
     @intersect_message()
     def reset_count(self, start_again: bool) -> CountingServiceCapabilityImplementationState:
-        """
-        Set the counter back to 0
+        """Set the counter back to 0.
 
         Params
           start_again: if True, start the counter again; if False, the
             counter will remain off.
-        Returns
+
+        Returns:
           the state BEFORE the counter was reset
         """
         original_state = self.state.model_copy()
@@ -160,8 +148,7 @@ class CountingServiceCapabilityImplementation:
         return original_state
 
     def _run_count(self) -> None:
-        """
-        This is an example of a function which will NOT be exposed to INTERSECT.
+        """This is an example of a function which will NOT be exposed to INTERSECT.
 
         This is just the thread which increments the counter.
         """

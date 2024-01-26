@@ -1,6 +1,4 @@
-"""
-Configuration types shared across both Clients and Services.
-"""
+"""Configuration types shared across both Clients and Services."""
 
 from typing import List, Literal, Optional
 
@@ -25,9 +23,7 @@ ControlProvider = Literal['mqtt3.1.1', 'amqp0.9.1']
 
 
 class HierarchyConfig(BaseModel):
-    """
-    Configuration for registring this service in a system-of-system architecture
-    """
+    """Configuration for registring this service in a system-of-system architecture."""
 
     service: str = Field(pattern=HIERARCHY_REGEX)
     """
@@ -55,8 +51,13 @@ class HierarchyConfig(BaseModel):
     """
 
     def hierarchy_string(self, join_str: str = '') -> str:
-        """
-        return the full hierarchy string, joined together by join_str
+        """Get the full hierarchy string. This is mostly used internally, but if you're developing a client, it could potentially be helpful.
+
+        Params
+          join_str: String used to separate different hierarchy parts in the full string (default: empty string).
+
+        Returns:
+          Single string, which will contain all system-of-system parts. For optional parts not configured (i.e. - no subsystem), they will be represented by a "-" character.
         """
         if not self.subsystem:
             return join_str.join([self.organization, self.facility, self.system, '-', self.service])
@@ -75,9 +76,7 @@ class HierarchyConfig(BaseModel):
 
 
 class ControlPlaneConfig(BaseModel):
-    """
-    Configuration for interacting with a broker
-    """
+    """Configuration for interacting with a broker."""
 
     username: str = Field(min_length=1)
     """
@@ -120,9 +119,7 @@ class ControlPlaneConfig(BaseModel):
 
 
 class DataStoreConfig(BaseModel):
-    """
-    Configuration for interacting with a data store.
-    """
+    """Configuration for interacting with a data store."""
 
     username: str = Field(min_length=1)
     """
@@ -146,9 +143,7 @@ class DataStoreConfig(BaseModel):
 
 
 class DataStoreConfigMap(BaseModel):
-    """
-    Configurations for any data stores the application should talk to
-    """
+    """Configurations for any data stores the application should talk to."""
 
     minio: List[DataStoreConfig] = Field(..., min_length=1)
     """

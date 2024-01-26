@@ -1,5 +1,4 @@
-"""
-Persistent, registered entities into INTERSECT are Services. If you're looking to create your own orchestrator or utilize a temporary script, please see the intersect_sdk.client module.
+"""Persistent, registered entities into INTERSECT are Services. If you're looking to create your own orchestrator or utilize a temporary script, please see the intersect_sdk.client module.
 
 The Service is at the heart of a client-developed SDK. It works off of a user-defined capability (which can extend from many capabilities),
 and automatically integrates the user-defined capability into INTERSECT's message and schema-based
@@ -42,21 +41,26 @@ from ._internal.utils import die
 from ._internal.version_resolver import resolve_user_version
 from .annotations import IntersectDataHandler, IntersectMimeType
 from .config.service import IntersectServiceConfig
-from .schema import get_schema_and_functions_from_model
+from .schema import _get_schema_and_functions_from_model
 
 CAPABILITY = TypeVar('CAPABILITY')
 
 
 class IntersectService(Generic[CAPABILITY]):
-    """
+    """This is the core gateway class for a user's application into INTERSECT.
+
+    A service receives messages from a source, then sends a response message to that same source.
+    On a scientific domain level, this can be expressed through a simple functional style: you take in inputs,
+    you return your output.
+
     The service automatically integrates all of the following components:
-    - The user-defined capability
-    - Any message brokers
-    - Any core INTERSECT data layers
+      - The user-defined capability
+      - Any message brokers
+      - Any core INTERSECT data layers
 
     What it does NOT do:
-    - deal with any custom messaging logic - i.e. Pyro logic, an internal ZeroMQ system, etc. ... these should be defined on the capability level.
-    - deal with any application logic - that should be handled by the user's capability
+      - deal with any custom messaging logic - i.e. Pyro logic, an internal ZeroMQ system, etc. ... these should be defined on the capability level.
+      - deal with any application logic - that should be handled by the user's capability
 
     Users should generally not need to interact with objects of this class outside of the constructor and the startup() and shutdown() functions. It's advisable
     not to mutate the service object yourself, though you can freely log out properties for debugging purposes.
@@ -71,7 +75,7 @@ class IntersectService(Generic[CAPABILITY]):
       - allow_all_functions()
       - get_blocked_keys()
 
-    THERE IS NO GUARANTEE ANY OTHER METHODS REMAIN STABLE.
+    No other functions or parameters are guaranteed to remain stable.
     """
 
     capability = None
@@ -82,9 +86,9 @@ class IntersectService(Generic[CAPABILITY]):
     a stateful property in this capability, which you would generally do through your own lifecycle methods.
 
     In general, this would happen if:
-    - You want to expose or unexpose specific endpoints to the broader INTERSECT ecosystem during this application's
-    lifetime, without shutting down the application.
-    - You want other parts of your program to be able to read stateful information about the lifecycle.
+      - You want to expose or unexpose specific endpoints to the broader INTERSECT ecosystem during this application's lifetime, without shutting down the application.
+      - You want other parts of your program to be able to read stateful information about the lifecycle.
+
     """
 
     def __init__(
@@ -92,9 +96,7 @@ class IntersectService(Generic[CAPABILITY]):
         capability: CAPABILITY,
         config: IntersectServiceConfig,
     ) -> None:
-        """
-        The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem,
-        with the exception of checking connections/credentials to any backing services.
+        """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
 
         Parameters:
           capability: Your capability implementation class
@@ -116,7 +118,7 @@ class IntersectService(Generic[CAPABILITY]):
             function_map,
             status_fn_name,
             status_type_adapter,
-        ) = get_schema_and_functions_from_model(
+        ) = _get_schema_and_functions_from_model(
             capability.__class__,
             capability_name=config.hierarchy,
             schema_version=config.schema_version,
@@ -175,8 +177,7 @@ class IntersectService(Generic[CAPABILITY]):
         )
 
     def startup(self) -> Self:
-        """
-        This function connects the service to all INTERSECT systems.
+        """This function connects the service to all INTERSECT systems.
 
         You will need to call this function at least once in your application's lifecycle.
         You will also need to call it again if you call shutdown() on the service, and want to
@@ -186,8 +187,8 @@ class IntersectService(Generic[CAPABILITY]):
         lifecycle loop will call it prior to starting the main lifecycle loop.
 
         NOTE: any functions which were manually blocked will continue to be blocked
-          if you restart the service; call "service.allow_all_keys()" to unblock
-          all functions.
+        if you restart the service; call "service.allow_all_keys()" to unblock
+        all functions.
         """
         logger.info('Service is starting up')
 
@@ -209,9 +210,7 @@ class IntersectService(Generic[CAPABILITY]):
         return self
 
     def shutdown(self, reason: Optional[str] = None) -> Self:
-        """
-        This function disconnects the service from all INTERSECT systems. It does NOT
-        otherwise drop anything else from memory.
+        """This function disconnects the service from all INTERSECT systems. It does NOT otherwise drop anything else from memory.
 
         You should call this function whenever your
         application is terminating. You may also call this function
@@ -240,15 +239,15 @@ class IntersectService(Generic[CAPABILITY]):
         return self
 
     def is_connected(self) -> bool:
-        """
-        Returns
+        """Check if we're currently connected to the INTERSECT brokers.
+
+        Returns:
           True if we are currently connected to INTERSECT, False if not
         """
         return self._control_plane_manager.is_connected()
 
     def forbid_keys(self, keys: Set[str]) -> Self:
-        """
-        block all functions annotated with any key in "keys" and send out appropriate message
+        """Block all functions annotated with any key in "keys", and send out an appropriate message.
 
         NOTE: if you want to bulk forbid everything, you may want to call
         adapter.shutdown() to disconnect entirely from INTERSECT.
@@ -264,8 +263,7 @@ class IntersectService(Generic[CAPABILITY]):
         return self
 
     def allow_keys(self, keys: Set[str]) -> Self:
-        """
-        allow all functions annotated with any key in "keys" and send out appropriate message
+        """Allow all functions annotated with any key in "keys", and send out an appropriate message.
 
         NOTE: if the function has multiple keys, the function will only be "allowed"
         if all keys which have been forbidden are now allowed. If you want to bulk allow
@@ -282,8 +280,7 @@ class IntersectService(Generic[CAPABILITY]):
         return self
 
     def allow_all_functions(self) -> Self:
-        """
-        allow every function established in the service and send out appropriate message
+        """Allow every function established in the service, and send out an appropriate message.
 
         If you want to only allow certain functions, use "service.allow_keys()"
         """
@@ -296,8 +293,7 @@ class IntersectService(Generic[CAPABILITY]):
         return self
 
     def block_all_functions(self) -> Self:
-        """
-        block every function which _can_ be blocked in the service
+        """Block every function which _can_ be blocked in the service, and send out an appropriate message.
 
         Note that this does NOT disconnect from INTERSECT, and will not block functions which
         have no markings.
@@ -312,16 +308,16 @@ class IntersectService(Generic[CAPABILITY]):
         return self
 
     def get_blocked_keys(self) -> Set[str]:
-        """
-        Returns a set of the function keys which indicate the function should be blocked.
+        """Returns a set of the function keys which indicate the function should be blocked.
 
         Note that this returns a shallow copy, as the inner reference should NOT be mutated externally.
         """
         return self._function_keys.copy()
 
     def _handle_userspace_message_raw(self, raw: bytes) -> None:
-        """
-        Broker callback, deserialize and validate a userspace message from a broker
+        """Main broker callback function.
+
+        Deserializes and validates a userspace message from a broker.
 
         This function is also responsible for publishing all response messages from the broker
         """
@@ -342,15 +338,13 @@ class IntersectService(Generic[CAPABILITY]):
             )
 
     def _handle_userspace_message(self, message: UserspaceMessage) -> Optional[UserspaceMessage]:
-        """
-        Main logic for handling a userspace message, minus all broker logic.
+        """Main logic for handling a userspace message, minus all broker logic.
 
         Params
           message: UserspaceMessage from a client
         Returns
           The response message we want to send to the client, or None if we don't want to send anything.
         """
-
         # ONE: HANDLE CORE COMPAT ISSUES
         # is this first branch necessary? May not be in the future
         if self._hierarchy.hierarchy_string('.') != message['headers']['destination']:
@@ -419,8 +413,7 @@ class IntersectService(Generic[CAPABILITY]):
         fn_meta: FunctionMetadata,
         fn_params: Union[str, bytes, None] = None,
     ) -> bytes:
-        """
-        Entrypoint into capability. This should be a private function, only call it yourself for testing purposes.
+        """Entrypoint into capability. This should be a private function, only call it yourself for testing purposes.
 
         Basic validationas defined from a user's type definitions will also occur here.
 
@@ -432,17 +425,16 @@ class IntersectService(Generic[CAPABILITY]):
            as if the object is first converted to Python and THEN validated, users will not have the option
            to choose strict validation.
 
-        Returns
+        Returns:
             If the capability executed with no problems, a byte-string of the response will be returned.
 
-        Raises
+        Raises:
           IntersectApplicationException - this catches both invalid message arguments, as well as if the capability itself throws an Exception.
             It's meant to be for control-flow, it doesn't represent a fatal error.
 
         NOTE: running this function should normally not cause application failure. Users can terminate their application inside their capability class,
         but in almost all circumstances, this should be discouraged (outside of the constructor).
         """
-
         try:
             if fn_meta.request_adapter:
                 request_obj = fn_meta.request_adapter.validate_json(
@@ -465,8 +457,7 @@ class IntersectService(Generic[CAPABILITY]):
     def _make_error_message(
         self, error_string: str, original_message: UserspaceMessage
     ) -> UserspaceMessage:
-        """
-        Generate an error message
+        """Generate an error message.
 
         Params:
           error_string: The error string to send as the payload
@@ -486,7 +477,7 @@ class IntersectService(Generic[CAPABILITY]):
         )
 
     def _send_lifecycle_message(self, lifecycle_type: LifecycleType, payload: Any = None) -> None:
-        """Send out a lifecycle message"""
+        """Send out a lifecycle message."""
         msg = create_lifecycle_message(
             source=self._hierarchy.service,
             destination=self._lifecycle_channel_name,
@@ -498,9 +489,7 @@ class IntersectService(Generic[CAPABILITY]):
         self._control_plane_manager.publish_message(self._lifecycle_channel_name, msg)
 
     def _check_for_status_update(self) -> bool:
-        """
-        Call the user's status retrieval function to see if it equals the cached value.
-        If it does not, send out a status update function.
+        """Call the user's status retrieval function to see if it equals the cached value. If it does not, send out a status update function.
 
         This will also always update the last cached value.
 

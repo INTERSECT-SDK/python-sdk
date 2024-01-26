@@ -53,17 +53,27 @@ Docker
 
 `Docker <https://www.docker.com>`_ is used to create containers for using the Python SDK and to run the examples. Download and install Docker using the instructions provided on their website. See the **Authenticating** section below to use the GitLab Container registry which contains INTERSECT dependencies.
 
-Broker
-------
+Backing Services (Brokers, Data planes)
+---------------------------------------
 
-A broker configuration for SDK developoment is available on the INTERSECT GitLab at https://code.ornl.gov/intersect/sdk/broker. This broker is meant for testing and development purposes and should not be used for deploying INTERSECT in production.
+A Docker Compose configuration for SDK development is included below. Note that the broker configuration requires access to the INTERSECT Gitlab, and is available at https://code.ornl.gov/intersect/sdk/broker.
 
-Run the broker using the Docker commands shown below. See the previous section regarding authentication for the login command.
+Note that this broker image, and any data plane images, are meant for testing and should not be included in production.
+
+.. literalinclude:: ../docker-compose.yml
+
+From the repository root, run the backing services using the Docker commands shown below. See the previous section regarding authentication for the login command.
 
 .. code-block:: bash
 
    docker login code.ornl.gov:4567
-   docker run --rm -p 1883:1883 code.ornl.gov:4567/intersect/sdk/broker/0.2.0
+   # if you are copypasting from this website instead of running from the repository root, you should make sure you copy the contents into docker-compose.yml.
+   docker compose up -d
 
-To expose the management UI as well, add ``-p 15672:15672`` to the command. Then you can navigate to ``localhost:15672`` in your browser. The login credentials will be those found in the broker's `definitions file <https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json>`_.
+To see the broker's management UI, you can navigate to ``localhost:15672`` in your browser. The login credentials will be those found in the broker's `definitions file <https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json>`_.
 
+To cleanup:
+
+.. code-block:: bash
+
+   docker compose down -v

@@ -7,8 +7,7 @@ from .logger import logger
 
 
 def die(message: str, exit_code: int = 1) -> NoReturn:
-    """
-    Terminate the program.
+    """Terminate the program.
 
     This should generally happen ONLY during configuration (i.e. validating Intersect configurations,
      validating schemas, validating backing service connections, etc.), but the application should eagerly terminate at this point.
@@ -21,9 +20,7 @@ def die(message: str, exit_code: int = 1) -> NoReturn:
 
 
 def send_os_signal(ossignal: signal.Signals = signal.SIGTERM) -> None:
-    """
-    Send a signal to break out of a loop listening for signals,
-    and allow for code written after this loop to execute.
+    """Send a signal to break out of a loop listening for signals, and allow for code written after this loop to execute.
 
     NOTE: the `ossignal` param defaults to SIGTERM, which should generally be fine.
     This isn't the most "idiomatic" usage of the signal (that would be SIGUSR1, SIGUSR2, or SIGALRM)

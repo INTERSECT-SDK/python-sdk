@@ -1,5 +1,4 @@
-"""
-One-off scripting arrangements and user-created orchestrators are Clients. If you're looking to register your application into INTERSECT, please see the intersect_sdk.service module.
+"""One-off scripting arrangements and user-created orchestrators are Clients. If you're looking to register your application into INTERSECT, please see the intersect_sdk.service module.
 
 The Client is meant to be a way to interact with specific INTERSECT Services through custom scripts. You'll need to have knowledge
 of the schemas of these services when constructing your client, as this class does not make any assumptions about the services
@@ -39,15 +38,13 @@ from .constants import SYSTEM_OF_SYSTEM_REGEX
 
 
 class IntersectClientMessageParams(BaseModel):
-    """
-    The user implementing the IntersectClient class will need to return this object
-    in order to send a message to another Service.
-    """
+    """The user implementing the IntersectClient class will need to return this object in order to send a message to another Service."""
 
     destination: str = Field(..., pattern=SYSTEM_OF_SYSTEM_REGEX)
     """
     The destination string. You'll need to know the system-of-system representation of the Service.
-      Note that this should match what you would see in the schema.
+
+    Note that this should match what you would see in the schema.
     """
 
     operation: str = ...
@@ -84,13 +81,14 @@ This is a callable function type which should be defined by the user.
 Note: DO NOT handle serialization/deserialization yourself, the SDK will take care of this.
 
 Params
-  The SDK will send the function three arguments:
+  The SDK will send the function four arguments:
     1) The message source - this is mostly useful for your own control flow loops you write in the function
     2) The name of the operation that triggered the response from your ORIGINAL message - needed for your own control flow loops if sending multiple messages.
     3) A boolean - if True, there was an error; if False, there was not.
     4) The response, as a Python object - the type should be based on the corresponding Service's schema response.
-       The Python object will already be deserialized for you.
-        If parameter 3 was "True", then this will be the error message.
+       The Python object will already be deserialized for you. If parameter 3 was "True", then this will be the error message, as a string.
+       If parameter 3 was "False", then this will be either an integer, boolean, float, string, None,
+       a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
 
 Returns
   If you want to access the response of the message, the function should return an IntersectClientMessageParams object.
@@ -104,9 +102,7 @@ Raises
 
 
 class IntersectClient:
-    """
-    If you're just wanting to connect into INTERSECT temporarily to send messages between services,
-    use the IntersectClient class.
+    """If you're just wanting to connect into INTERSECT temporarily to send messages between services, use the IntersectClient class.
 
     Note that the ONLY current stable API is:
     - the constructor
@@ -114,7 +110,9 @@ class IntersectClient:
     - shutdown()
     - is_connected()
 
-    NOTE: the current implementation requires you have knowledge about the schema of the service you're wanting to communicate with.
+    No other functions or parameters are guaranteed to remain stable.
+
+    NOTE: the current implementation requires you have knowledge about the schema of the service(s) you're wanting to communicate with.
     """
 
     def __init__(
@@ -124,9 +122,7 @@ class IntersectClient:
         user_callback: INTERSECT_CLIENT_CALLBACK_TYPE,
         resend_initial_messages_on_secondary_startup: bool = False,
     ) -> None:
-        """
-        The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem,
-        with the exception of checking connections/credentials to any backing services.
+        """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
 
         Parameters:
           config: The IntersectConfig class
@@ -166,8 +162,7 @@ class IntersectClient:
         self._type_adapter = TypeAdapter(Any)
 
     def startup(self) -> Self:
-        """
-        This function connects the client to all INTERSECT systems.
+        """This function connects the client to all INTERSECT systems.
 
         You will need to call this function at least once in your application's lifecycle.
         You will also need to call it again if you call shutdown() on the service, and want to
@@ -198,9 +193,7 @@ class IntersectClient:
         return self
 
     def shutdown(self, reason: Optional[str] = None) -> Self:
-        """
-        This function disconnects the client from INTERSECT configurations. It does NOT
-        otherwise drop anything else from memory.
+        """This function disconnects the client from INTERSECT configurations. It does NOT otherwise drop anything else from memory.
 
         This function should generally be called immediately after the broker connection loop.
 
@@ -225,16 +218,15 @@ class IntersectClient:
         return self
 
     def is_connected(self) -> bool:
-        """
-        Returns
+        """Check if we're currently connected to the INTERSECT brokers.
+
+        Returns:
           True if we are currently connected to INTERSECT, False if not
         """
         return self._control_plane_manager.is_connected()
 
     def _handle_userspace_message_raw(self, message: bytes) -> None:
-        """
-        Broker callback, deserialize and validate a userspace message from a broker
-        """
+        """Broker callback, deserialize and validate a userspace message from a broker."""
         self._heartbeat = time.time()
         try:
             self._handle_userspace_message(deserialize_and_validate_userspace_message(message))
@@ -249,10 +241,7 @@ class IntersectClient:
             send_os_signal()
 
     def _handle_userspace_message(self, message: UserspaceMessage) -> None:
-        """
-        Handle a deserialized userspace message.
-        """
-
+        """Handle a deserialized userspace message."""
         # ONE: HANDLE CORE COMPAT ISSUES
         # is this first branch necessary? May not be in the future
         if self._hierarchy.hierarchy_string('.') != message['headers'][
@@ -312,9 +301,7 @@ class IntersectClient:
         self._send_userspace_message(user_function_return)
 
     def _send_userspace_message(self, params: IntersectClientMessageParams) -> None:
-        """
-        Send a userspace message, be it an initial message from the user or from the user's callback function.
-        """
+        """Send a userspace message, be it an initial message from the user or from the user's callback function."""
         # ONE: VALIDATE AND SERIALIZE FUNCTION RESULTS
         try:
             params = IntersectClientMessageParams.model_validate(params)
@@ -353,8 +340,7 @@ class IntersectClient:
         self._control_plane_manager.publish_message(response_channel, msg)
 
     def _heartbeat_ticker(self) -> None:
-        """
-        Separate thread which checks to see how long it has been since a broker message was received.
+        """Separate thread which checks to see how long it has been since a broker message was received.
 
         If a broker has been connected for 5 minutes without sending a message, prepare to terminate the application.
         """

@@ -1,5 +1,5 @@
-"""
-This module contains core messaging definitions relating to INTERSECT lifecycle actions.
+"""This module contains core messaging definitions relating to INTERSECT lifecycle actions.
+
 This module is internal-facing and should not be used directly by users.
 
 Lifecycle messages are ALWAYS PRODUCED on the lifecycle channel.
@@ -20,8 +20,8 @@ from ...version import __version__
 
 
 class LifecycleType(IntEnum):
-    """
-    Lifecycle code which needs to be included in every message sent.
+    """Lifecycle code which needs to be included in every message sent.
+
     The lifecycle code is also what determines the structure of the payload.
     """
 
@@ -59,8 +59,7 @@ class LifecycleType(IntEnum):
 
 
 class LifecycleMessageHeaders(TypedDict):
-    """
-    Matches the current header definition for INTERSECT messages.
+    """Matches the current header definition for INTERSECT messages.
 
     ALL messages should contain this header.
     """
@@ -165,9 +164,7 @@ def create_lifecycle_message(
     lifecycle_type: LifecycleType,
     payload: Any,
 ) -> LifecycleMessage:
-    """
-    The contents of the payload should vary based on the lifecycle type.
-    """
+    """The contents of the payload should vary based on the lifecycle type."""
     return LifecycleMessage(
         messageId=uuid.uuid4(),
         headers=LifecycleMessageHeaders(
@@ -187,8 +184,7 @@ LIFECYCLE_MESSAGE_ADAPTER = TypeAdapter(LifecycleMessage)
 
 
 def deserialize_and_validate_lifecycle_message(msg: Dict[str, Any]) -> LifecycleMessage:
-    """
-    If the "msg" param is a valid userspace message, return the object
+    """If the "msg" param is a valid userspace message, return the object.
 
     Raises Pydantic ValidationError if "msg" is not a valid userspace message
     """

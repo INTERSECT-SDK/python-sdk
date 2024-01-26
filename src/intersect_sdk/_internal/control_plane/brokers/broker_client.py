@@ -10,9 +10,7 @@ class BrokerClient(ABC):
 
     @abstractmethod
     def connect(self) -> None:
-        """
-        Connect to the defined broker. Credentials should be cached in the constructor.
-        """
+        """Connect to the defined broker. Credentials should be cached in the constructor."""
         ...
 
     @abstractmethod
@@ -37,26 +35,24 @@ class BrokerClient(ABC):
 
         Args:
             topic: The topic on which to publish the message as a string.
-            payload: The message to publish as a string.
+            payload: The message to publish, as raw bytes.
         """
         ...
 
     @abstractmethod
     def subscribe(self, topic: str) -> None:
-        """
-        Subscribe to one or more topics over the pre-existing connection (via connect()).
+        """Subscribe to a topic over the pre-existing connection (via connect()).
 
         Args:
-            topics: List of strings of topics to subscribe to.
+            topic: Topic to subscribe to.
         """
         ...
 
     @abstractmethod
     def unsubscribe(self, topic: str) -> None:
-        """
-        Unsubscribe from one or more topics over the pre-existing connection (via connect()).
+        """Unsubscribe from a topic over the pre-existing connection (via connect()).
 
         Args:
-            topics: List of strings of topics to subscribe to.
+            topic: Topic to unsubscribe from.
         """
         ...

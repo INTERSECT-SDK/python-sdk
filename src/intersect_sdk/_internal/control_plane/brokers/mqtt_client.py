@@ -42,7 +42,6 @@ class MQTTClient(BrokerClient):
             topics_to_handlers: callback function which gets the topic to handler map from the channel manager
             uid: A string representing the unique id to identify the client.
         """
-
         # Unique id for the MQTT broker to associate this client with
         if uid:
             self.uid = uid
@@ -67,19 +66,14 @@ class MQTTClient(BrokerClient):
 
     @retry(stop_max_attempt_number=5, wait_exponential_multiplier=1000, wait_exponential_max=60000)
     def connect(self) -> None:
-        """
-        Connect to the defined broker.
-        """
-
+        """Connect to the defined broker."""
         # Create a client to connect to RabbitMQ
         # TODO MQTT v5 implementations should set clean_start to NEVER here
         self._connection.connect(self.host, self.port, 60)
         self._connection.loop_start()
 
     def disconnect(self) -> None:
-        """
-        Disconnect from the broker.
-        """
+        """Disconnect from the broker."""
         self._connection.disconnect()
         self._connection.loop_stop()
 
@@ -89,7 +83,6 @@ class MQTTClient(BrokerClient):
         Returns:
             A boolean. True if there is a connection, False if not.
         """
-
         return self._connected
 
     def publish(self, topic: str, payload: bytes) -> None:
@@ -99,34 +92,30 @@ class MQTTClient(BrokerClient):
 
         Args:
             topic: The topic on which to publish the message as a string.
-            payload: The message to publish as a string.
+            payload: The message to publish, as raw bytes.
         """
-
         self._connection.publish(topic, payload, qos=2)
 
     def subscribe(self, topic: str) -> None:
-        """Subscribe to one or more topics over the pre-existing connection (via connect()).
-
-        Handlers will be invoked in the order in which they were given to subscribe().
+        """Subscribe to a topic over the pre-existing connection (via connect()).
 
         Args:
-            topics: List of strings of topics to subscribe to.
-            handler: Callable to be invoked  on the incoming messages from the subscribed
-                topics.
+            topic: Topic to subscribe to.
         """
         self._connection.subscribe(topic, qos=2)
 
     def unsubscribe(self, topic: str) -> None:
-        """
-        Unsubscribe from channels over the pre-existing connection.
+        """Unsubscribe from a topic over the pre-existing connection.
+
+        Args:
+          topic: Topic to unsubscribe from.
         """
         self._connection.unsubscribe(topic)
 
     def _on_message(
         self, _client: paho_client.Client, _userdata: Any, message: paho_client.MQTTMessage
     ) -> None:
-        """
-        Handle a message from the MQTT server.
+        """Handle a message from the MQTT server.
 
         Args:
           _client: the Paho client
@@ -144,7 +133,6 @@ class MQTTClient(BrokerClient):
             _userdata: MQTT user data.
             rc: MQTT return code as an integer.
         """
-
         self._connected = False
 
     def _set_connection_status(
@@ -158,7 +146,6 @@ class MQTTClient(BrokerClient):
             flags: List of MQTT connection flags.
             rc: The MQTT return code as an int.
         """
-
         # Return code 0 means connection was successful
         if rc == 0:
             self._connected = True

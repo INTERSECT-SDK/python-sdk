@@ -14,8 +14,7 @@ from .broker_client import BrokerClient
 
 
 class AMQPClient(BrokerClient):
-    """
-    Client for performing broker actions backed by a AMQP broker.
+    """Client for performing broker actions backed by a AMQP broker.
 
     NOTE: Currently, thread safety has been attempted, but may not be guaranteed
 
@@ -47,7 +46,6 @@ class AMQPClient(BrokerClient):
             topics_to_handlers: callback function which gets the topic to handler map from the channel manager
             uid: String for the client's UUID.
         """
-
         if uid:
             self.id = uid
         else:
@@ -83,7 +81,6 @@ class AMQPClient(BrokerClient):
 
         Try to connect to the broker, performing exponential backoff if connection fails.
         """
-
         # need deamon=True otherwise if tests fails it hangs trying to acquire lock
         self.thread = threading.Thread(target=self._start_consuming, daemon=True)
         self.thread.start()
@@ -109,7 +106,6 @@ class AMQPClient(BrokerClient):
         Returns:
             A boolean. True if there is a connection, False if not.
         """
-
         # We are connected to the broker if either the publish or consume connections is open
         return (self._publish_connection is not None and self._publish_connection.is_open) or (
             self._consume_connection is not None and self._consume_connection.is_open
@@ -122,9 +118,8 @@ class AMQPClient(BrokerClient):
 
         Args:
             topic: The topic on which to publish the message as a string
-            payload: The message to publish as a string.
+            payload: The message to publish, as raw bytes.
         """
-
         channel = self._publish_connection.channel()
         channel.exchange_declare(topic, exchange_type='fanout', durable=True)
         # this will send the message to topic exchange and distribute to all
@@ -199,7 +194,7 @@ class AMQPClient(BrokerClient):
         channel.exchange_declare(exchange=topic, exchange_type='fanout', durable=True, callback=cb)
 
     def _on_exchange_declareok(self, _unused_frame: Frame, channel: Channel, topic: str) -> None:
-        """Create a queue on the broker
+        """Create a queue on the broker.
 
         Used as a listener on exchange declaration.
 
@@ -267,7 +262,7 @@ class AMQPClient(BrokerClient):
 
         Args:
             _unused_channel: The Pika channel the message was received on. Ignored
-            basic_deliver:
+            basic_deliver: Contains internal Pika delivery information - i.e. the routing key.
             _properties: Object from the Pika call. Ignored.
             body: the pika message to be handled.
         """

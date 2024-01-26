@@ -14,8 +14,7 @@ GENERIC_MESSAGE_SERIALIZER = TypeAdapter(Any)
 
 
 def serialize_message(message: Any) -> bytes:
-    """
-    Serialize a message to bytes, in preparation for publishing it on a message broker.
+    """Serialize a message to bytes, in preparation for publishing it on a message broker.
 
     Works as a generic serializer/deserializer
     """
@@ -52,9 +51,7 @@ def create_control_provider(
 
 
 class ControlPlaneManager:
-    """
-    The ControlPlaneManager class allows for working with multiple brokers from a single function call.
-    """
+    """The ControlPlaneManager class allows for working with multiple brokers from a single function call."""
 
     def __init__(
         self,
@@ -75,8 +72,7 @@ class ControlPlaneManager:
     def add_subscription_channel(
         self, channel: str, callbacks: Set[Callable[[bytes], None]]
     ) -> None:
-        """
-        Start listening for userspace messages on a channel on all configured brokers.
+        """Start listening for userspace messages on a channel on all configured brokers.
 
         Note that ALL channels listened to will always handle userspace messages.
 
@@ -89,8 +85,7 @@ class ControlPlaneManager:
                 provider.subscribe(channel)
 
     def remove_subscription_channel(self, channel: str) -> bool:
-        """
-        Stop subscribing to a channel on all configured brokers.
+        """Stop subscribing to a channel on all configured brokers.
 
         Params:
           channel: string of the channel which should no longer be listened to
@@ -106,16 +101,17 @@ class ControlPlaneManager:
             return False
 
     def get_subscription_channels(self) -> TOPIC_TO_HANDLER_TYPE:
-        """
-        Returns
+        """Get the subscription channels.
+
+        Note that this function gets accessed as a callback from the direct broker implementations.
+
+        Returns:
           the dictionary of topics to callback functions
         """
         return self._topics_to_handlers
 
     def connect(self) -> None:
-        """
-        Connect to all configured brokers and subscribe to any channels configured
-        """
+        """Connect to all configured brokers and subscribe to any channels configured."""
         # TODO - when implementing discovery service, discovery and connection logic should be applied here
         for provider in self._control_providers:
             provider.connect()
@@ -124,17 +120,13 @@ class ControlPlaneManager:
         self._ready = True
 
     def disconnect(self) -> None:
-        """
-        Disconnect from all configured brokers
-        """
+        """Disconnect from all configured brokers."""
         self._ready = False
         for provider in self._control_providers:
             provider.disconnect()
 
     def publish_message(self, channel: str, msg: Any) -> None:
-        """
-        Publish message on channel for all brokers
-        """
+        """Publish message on channel for all brokers."""
         if self._ready:
             serialized_message = serialize_message(msg)
             for provider in self._control_providers:
@@ -143,8 +135,9 @@ class ControlPlaneManager:
             logger.error('Cannot send message, providers are not connected')
 
     def is_connected(self) -> bool:
-        """
-        Returns
-          True if we are currently connected to all brokers we've configured, False if not
+        """Check that we are connected to ALL configured brokers.
+
+        Returns:
+          - True if we are currently connected to all brokers we've configured, False if not
         """
         return all(control_provider.is_connected() for control_provider in self._control_providers)

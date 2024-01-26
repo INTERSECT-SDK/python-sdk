@@ -2,10 +2,18 @@
 
 There are a few rules we have for submitting examples to IntersectSDK.
 
-## Schemas and services
+## File naming convention
+
+The client file should match the format `<EXAMPLE>_client.py` , where `<EXAMPLE>` roughly corresponds to the name of the example.
+
+The service files should all match the format `<PURPOSE>_service.py`, where `<PURPOSE>` roughly corresponds to the name of the example and, if multiple services, what the service does.
+
+Modules are allowed but should be contained within the example directory. Any module file with shared imports should not end with `_client.py` or `_service.py` .
+
+## Schemas for services
 
 All example services should have an associated schema file (.json) in the repository. Here are a few ways we can
-generate the schema for the HelloWorld Service
+generate the schema for the HelloWorld Service:
 
 1) Write your own script which uses `get_schema_from_model` from the INTERSECT-SDK, which returns a dictionary. You'll need to provide this function your CapabilityImplementation class, your HierarchyConfig, and your application version. You can then dump the dictionary to JSON (please use `indent=2` as an argument).
 
@@ -77,5 +85,9 @@ if __name__ == '__main__':
 
 ## Dependencies
 
-1) Try to avoid any dependency not installed as a mandatory `intersect_sdk` dependency.
-2) All broker examples should use MQTT for the configuration.
+1) Try to avoid any dependency not installed as a mandatory `intersect_sdk` dependency. `pydantic`, `typing_extensions`, and `annotated_types` are dependencies which are mandatory as part of an `intersect_sdk` installation, and usage of these libraries is encouraged.
+2) All broker examples should use MQTT for the configuration, with the exception of `1_hello_world`.
+
+## Validation
+
+Validation should be expressed as declaratively as possible, through `pydantic`, `typing_extensions`, and `annotated_types` imports. Try to avoid implementing validation directly in the function body, as that cannot be represented in the generated schemas.

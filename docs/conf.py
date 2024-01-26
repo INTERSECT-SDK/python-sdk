@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath('../src'))
 # -- Project information -----------------------------------------------------
 
 project = 'Python SDK'
-copyright = '2023, INTERSECT developers'  # noqa: A001
+copyright = '2023, INTERSECT developers'  # noqa: A001 (OK to override builtin for Sphinx)
 author = 'INTERSECT developers'
 
 # The full version, including alpha/beta/rc tags

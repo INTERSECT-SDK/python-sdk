@@ -1,6 +1,4 @@
-"""
-Service specific configuration types.
-"""
+"""Service specific configuration types."""
 
 from typing import List, Literal, Union
 
@@ -11,9 +9,7 @@ from .shared import ControlPlaneConfig, DataStoreConfigMap, HierarchyConfig
 
 
 class IntersectServiceConfig(BaseModel):
-    """
-    The user-provided configuration needed to integrate with INTERSECT.
-    """
+    """The user-provided configuration needed to integrate with INTERSECT."""
 
     hierarchy: HierarchyConfig = Field(...)
     """

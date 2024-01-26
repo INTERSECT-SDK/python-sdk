@@ -1,6 +1,4 @@
-"""
-Internal utilities for schema generation we don't want exposed to users.
-"""
+"""Internal utilities for schema generation we don't want exposed to users."""
 
 import inspect
 from enum import Enum
@@ -42,8 +40,7 @@ For a complete reference, https://docs.pydantic.dev/latest/concepts/conversion_t
 
 
 class GenerateTypedJsonSchema(GenerateJsonSchema):
-    """
-    This extends Pydantic's default JSON schema generation class.
+    """This extends Pydantic's default JSON schema generation class.
 
     With any type which returns an empty dictionary or missing types, we want to invalidate these schemas.
     We can't construct a meaningful schema from these types.
@@ -69,8 +66,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         )
 
     def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that checks if a value is a subclass of a class, equivalent to Python's `issubclass`
-        method.
+        """Generates a JSON schema that checks if a value is a subclass of a class, equivalent to Python's `issubclass` method.
 
         OVERRIDE: Pydantic v2 returned an empty dictionary to maintain backwards compat. with v1, but we don't need this.
 
@@ -294,7 +290,6 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         Returns:
             The generated JSON schema.
         """
-
         json_schema = super().dataclass_schema(schema)
         if not json_schema.get('properties'):
             return self.handle_invalid_for_json_schema(
@@ -314,6 +309,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
 
         Args:
             arguments: The core schema.
+            var_kwargs_schema: The JSON schema for the function keyword arguments.
 
         Returns:
             The generated JSON schema.
@@ -334,6 +330,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
 
         Args:
             arguments: The core schema.
+            var_args_schema: The JSON schema for the function positional arguments.
 
         Returns:
             The generated JSON schema.
@@ -356,10 +353,14 @@ def _get_functions(capability: Type, attr: str) -> Generator[Tuple[str, Callable
 def _merge_schema_definitions(
     adapter: TypeAdapter, schemas: Dict[str, Any], annotation: Type
 ) -> Dict[str, Any]:
-    """
+    """This contains the core logic for generating a schema from the user's type definitions.
+
     This accomplishes two things after generating the schema:
     1) merges new schema definitions into the main schemas dictionary (NOTE: the schemas param is mutated)
     2) returns the value which will be represented in the channel payload
+
+    NOTE: Before modifying this function, you should have EXTENSIVE knowledge on how Pydantic handles
+    various types internally.
     """
     try:
         schema = adapter.json_schema(
@@ -406,7 +407,8 @@ def _merge_schema_definitions(
 def _status_fn_schema(
     capability: Type, schemas: Dict[str, Any]
 ) -> Tuple[Optional[str], Optional[Callable], Optional[Dict[str, Any]], Optional[TypeAdapter]]:
-    """
+    """Main status function logic.
+
     Returns a tuple of:
     - The name of the status function, if it exists (else None)
     - The status function itself, if it exists (else, None)
@@ -455,8 +457,7 @@ def get_schemas_and_functions(
     Dict[str, Any],
     Dict[str, FunctionMetadata],
 ]:
-    """
-    This function does the bulk of introspection, and also validates the user's capability.
+    """This function does the bulk of introspection, and also validates the user's capability.
 
     Basic logic:
 
@@ -466,7 +467,6 @@ def get_schemas_and_functions(
       describe all their parameters in one BaseModel-derived class.
       (NOTE: maybe allow for some other input formats?)
     """
-
     function_map = {}
     schemas = {}
     channels = {}

@@ -17,9 +17,7 @@ from ..utils import die
 
 
 class MinioPayload(TypedDict):
-    """
-    This is a payload which gets sent in the actual userspace message if the data handler is "MINIO".
-    """
+    """This is a payload which gets sent in the actual userspace message if the data handler is "MINIO"."""
 
     minio_url: str
     """
@@ -36,9 +34,10 @@ class MinioPayload(TypedDict):
 
 
 def _condense_minio_bucket_name(hierarchy: HierarchyConfig) -> str:
-    """
-    condense a hierarchy string into a string less than 64 characters
-    needed for MINIO bucket names
+    """Condense a hierarchy string into a string less than 64 characters.
+
+    This function is needed to handle MINIO bucket names. Collisions should be extremely rare,
+    and it should be fairly straightforward to identify a specific bucket for MINIO admins.
 
     Bucket name = first characters (up to 6) of service name + hyphen + sha224 of full hierarchy string
 
@@ -70,7 +69,8 @@ def create_minio_store(config: DataStoreConfig) -> Minio:
 def send_minio_object(
     data: bytes, provider: Minio, content_type: IntersectMimeType, hierarchy: HierarchyConfig
 ) -> MinioPayload:
-    """
+    """Core function to save data in MINIO.
+
     Params:
       data: user response data, as bytes
       provider: the Minio client
@@ -78,6 +78,7 @@ def send_minio_object(
       hierarchy: the hierarchy configuration
     Returns:
       The MINIO payload which gets sent in the actual message.
+
     Raises:
       IntersectException - if any non-fatal MinIO error is caught
     """
@@ -113,12 +114,14 @@ def send_minio_object(
 
 
 def get_minio_object(provider: Minio, payload: MinioPayload) -> bytes:
-    """
+    """Core function to retrieve data from MINIO.
+
     Params:
       provider: a pre-cached MinIO provider from the data provider store
       payload: the payload from the message (at this point, the minio_url should exist)
+
     Returns:
-      raw bytes of the request params of the user function
+      user response data, as raw bytes
     Raises:
       IntersectException - if any non-fatal MinIO error is caught
     """

@@ -1,5 +1,5 @@
-"""
-The root module contains the intended public API for users of the INTERSECT-SDK.
+"""The root module contains the intended public API for users of the INTERSECT-SDK.
+
 Users should not need to import anything outside of the root.
 
 In general, most breaking changes on version updates will relate to:

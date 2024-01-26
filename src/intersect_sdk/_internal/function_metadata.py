@@ -4,8 +4,7 @@ from pydantic import TypeAdapter
 
 
 class FunctionMetadata(NamedTuple):
-    """
-    Internal cache of public function metadata.
+    """Internal cache of public function metadata.
 
     NOTE: both this class and all properties in it should remain immutable after creation
     """

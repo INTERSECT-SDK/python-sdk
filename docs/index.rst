@@ -20,25 +20,23 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    :caption: Examples
 
    examples/hello-world
-   examples/inspecting-messages
-   examples/client-server-counting
+   examples/counting
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: API documentation
 
-   api/json_handler
-   api/binary_handler
-   api/string_handler
-   api/adapter
-   api/base
-   api/config_functions
-   api/config_models
-   api/exceptions
-   api/utils
-   api/brokers
-   api/channel
+   api/config_service
+   api/config_client
+   api/config_shared
+   api/annotations
+   api/schema
+   api/capability
+   api/service
    api/client
+   api/app_lifecycle
+   api/constants
+   api/version
 
 Contact
 -------

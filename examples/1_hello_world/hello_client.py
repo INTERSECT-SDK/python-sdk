@@ -12,11 +12,21 @@ logging.basicConfig(level=logging.INFO)
 
 
 def simple_client_callback(_source: str, _operation: str, _has_error: bool, payload: Any) -> None:
-    """
-    This simply prints the response from the service to your console.
+    """This simply prints the response from the service to your console.
 
     As we don't want to engage in a back-and-forth, we simply throw an exception to break out of the message loop.
     Ways to continue listening to messages or sending messages will be explored in other examples.
+
+    Params:
+      _source: the source of the response message. In this case it will always be from the hello_service.
+      _operation: the name of the function we called in the original message. In this case it will always be "say_hello_to_name".
+      _has_error: Boolean value which represents an error. Since there is never an error in this example, it will always be "False".
+      payload: Value of the response from the Service. The typing of the payload varies, based on the operation called and whether or not
+        _has_error was set to "True". In this case, since we do not have an error, we can defer to the operation's response type. This response type is
+        "str", so the type will be "str". The value will always be "Hello, hello_client!".
+
+        Note that the payload will always be a deserialized Python object, but the types are fairly limited: str, bool, float, int, None, List[T], and Dict[str, T]
+        are the only types the payload can have. "T" in this case can be any of the 7 types just mentioned.
     """
     print(payload)
     # raise exception to break out of message loop - we only send and wait for one message

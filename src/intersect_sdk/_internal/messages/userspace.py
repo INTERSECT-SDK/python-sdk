@@ -1,5 +1,5 @@
-"""
-This module contains core messaging definitions relating to user-defined functions.
+"""This module contains core messaging definitions relating to user-defined functions.
+
 This module is internal-facing and should not be used directly by users.
 
 Services should ALWAYS be CONSUMING from their userspace channel.
@@ -22,8 +22,7 @@ from ...version import __version__
 
 
 class UserspaceMessageHeader(TypedDict):
-    """
-    Matches the current header definition for INTERSECT messages.
+    """Matches the current header definition for INTERSECT messages.
 
     ALL messages should contain this header.
     """
@@ -109,8 +108,7 @@ class UserspaceMessageHeader(TypedDict):
 
 
 class UserspaceMessage(TypedDict):
-    """
-    Core definition of a message.
+    """Core definition of a message.
 
     The structure of this class is meant to somewhat closely mirror the AsyncAPI definition of a message:
     https://www.asyncapi.com/docs/reference/specification/v2.6.0#messageObject
@@ -181,8 +179,7 @@ USERSPACE_MESSAGE_ADAPTER = TypeAdapter(UserspaceMessage)
 
 
 def deserialize_and_validate_userspace_message(msg: bytes) -> UserspaceMessage:
-    """
-    If the "msg" param is a valid userspace message, return the object
+    """If the "msg" param is a valid userspace message, return the object.
 
     Raises Pydantic ValidationError if "msg" is not a valid userspace message
     """

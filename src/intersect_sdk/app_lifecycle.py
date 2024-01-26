@@ -1,5 +1,4 @@
-"""
-This module defines some generic lifecycle utilities users can implement for themselves.
+"""This module defines some generic lifecycle utilities users can implement for themselves.
 
 It IS essential for an application to be able to shut down gracefully, as the adapter can communicate
 to the broader INTERSECT ecosystem that they have shut down. Obviously, not all shutdowns can be detected.
@@ -24,11 +23,17 @@ from .service import IntersectService
 
 
 class SignalHandler:
-    """
-    Listen for signals sent to process and try to clean up gracefully.
+    """Listen for signals sent to process and try to clean up gracefully.
 
     Once the constructor has been initialized, signals will be caught.
 
+    We catch the following signals, based on platform support:
+      - SIGINT (same as Ctrl+C)
+      - SIGTERM
+      - SIGHUP
+      - SIGQUIT
+      - SIGUSR1
+      - SIGUSR2
 
     Currently, we do not ignore any signals we catch, though debatably
     SIGHUP (terminal died), SIGQUIT (core dump), SIGUSR1, and SIGUSR2
@@ -36,9 +41,9 @@ class SignalHandler:
     """
 
     def __init__(self, cleanup_callback: Optional[Callable[[int], None]] = None) -> None:
-        """
-        Parameters
-        ----------
+        """Basic constructor. Signal listeners are set up on constructor call.
+
+        Parameters:
 
         cleanup_callback: This is an optional callback function which will be
         called once a signal is caught. The callback function takes in a single
@@ -62,8 +67,7 @@ class SignalHandler:
             signal.signal(signum, self._on_signal_caught)
 
     def _on_signal_caught(self, signal: int, _: Any) -> None:
-        """
-        Executes when signal is caught
+        """Executes when signal is caught.
 
         Don't use this externally, but you can extend this class
         and override this method (be sure to call superclass function)
@@ -79,14 +83,21 @@ class SignalHandler:
         self._exit.set()
 
     def should_stop(self) -> bool:
-        """
-        Returns
-        -------
-        True if signal has not been detected, False otherwise
+        """Determine if signal has been detected. Useful as the "while" condition for application loops.
+
+        Returns:
+        True if signal has been detected, False otherwise
         """
         return self._exit.is_set()
 
     def wait(self, amount: float) -> None:
+        """While a signal has not been called, block for "amount" seconds.
+
+        If a signal is caught, the "wait" function is immediately interrupted.
+
+        Params:
+          amount: time to block
+        """
         self._exit.wait(amount)
 
 
@@ -96,21 +107,21 @@ def default_intersect_lifecycle_loop(
     cleanup_callback: Optional[Callable[[int], None]] = None,
     waiting_callback: Optional[Callable[[IntersectService], None]] = None,
 ) -> None:
-    """
-    If users don't have their own lifecycle manager, they can import this one to begin a lifecycle loop. This loop
-    automatically catches appropriate OS signals and allows for graceful shutdown.
+    """If users don't have their own lifecycle manager, they can import this function to begin a lifecycle loop.
+
+    This loop automatically catches appropriate OS signals and allows for graceful shutdown.
 
     IMPORTANT: If you are integrating an INTERSECT adapter into your existing application, you should use your
     own application's lifecycle manager instead.
 
     Params:
-      intersect_gateway: This can be either an IntersectClient or an IntersectService.
-      delay (float): how often the loop should wait for (default: 30 seconds)
-      cleanup_callback: This is an optional callback function which will be
+      - intersect_gateway: This can be either an IntersectClient or an IntersectService.
+      - delay: how often the loop should wait for (default: 30 seconds)
+      - cleanup_callback: This is an optional callback function which will be
         called once a signal is caught. The callback function takes in a single
         integer parameter, which will be the signal code intercepted. The function
         will be executed just before the loop ends.
-      waiting_callback: This is an optional callback function which will be
+      - waiting_callback: This is an optional callback function which will be
         called every <DELAY> seconds. It takes in the adapter, and returns nothing.
         This can be useful to set for debugging purposes.
 

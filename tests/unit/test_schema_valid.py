@@ -8,7 +8,7 @@ from intersect_sdk._internal.constants import (
     RESPONSE_DATA,
     STRICT_VALIDATION,
 )
-from intersect_sdk.schema import get_schema_and_functions_from_model, get_schema_from_model
+from intersect_sdk.schema import _get_schema_and_functions_from_model, get_schema_from_model
 
 from tests.fixtures.example_schema import (
     FAKE_HIERARCHY_CONFIG,
@@ -35,7 +35,12 @@ def test_schema_comparision():
 
 
 def test_verify_status_fn():
-    schema, function_map, status_fn_name, status_type_adapter = get_schema_and_functions_from_model(
+    (
+        schema,
+        function_map,
+        status_fn_name,
+        status_type_adapter,
+    ) = _get_schema_and_functions_from_model(
         DummyCapabilityImplementation, FAKE_HIERARCHY_CONFIG, '0.0.1'
     )
     assert status_fn_name == 'get_status'
@@ -48,7 +53,7 @@ def test_verify_status_fn():
 
 
 def test_verify_attributes():
-    _, function_map, _, _ = get_schema_and_functions_from_model(
+    _, function_map, _, _ = _get_schema_and_functions_from_model(
         DummyCapabilityImplementation, FAKE_HIERARCHY_CONFIG, '0.0.1'
     )
     # test defaults
