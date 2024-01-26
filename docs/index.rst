@@ -14,6 +14,8 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
 
    installation
    contributing
+   core_concepts
+   pydantic
 
 .. toctree::
    :maxdepth: 1

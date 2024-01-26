@@ -67,7 +67,6 @@ def intersect_message(
     ignore_keys: Optional[Set[str]] = None,
     request_content_type: IntersectMimeType = IntersectMimeType.JSON,
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
-    # TODO response_content_type may end up being a union
     response_content_type: IntersectMimeType = IntersectMimeType.JSON,
     strict_request_validation: bool = False,
 ) -> Any:
@@ -84,7 +83,7 @@ def intersect_message(
         - None
         - Union/Optional types
         - Iterable/Sequence types (list, deque, set, tuple, frozenset, etc.)
-        - Mapping types (dict, Counter, OrderedDict, etc.)
+        - Mapping types (dict, Counter, OrderedDict, etc.). Regarding mapping types: the keys must be one of str/float/int, and float/int keys CANNOT use strict_request_validation=True.
         - most stdlib types, i.e. Decimal, datetime.datetime, pathlib, etc.
         - using typing_extensions "Annotated" type in conjunction with Pydantic's "Field" or various classes from the annotated_types library
         - TODO: Generators are a WORK IN PROGRESS but will eventually represent a streaming function
@@ -115,8 +114,9 @@ def intersect_message(
       - response_content_type: how to serialize outgoing requests (default: JSON)
       - response_data_transfer_handler: are responses going out through the message, or through another mean
         (i.e. MINIO)?
-      - strict_request_validation: if this is set to True, use pydantic strict validation - otherwise, use lenient validation (default: False)
+      - strict_request_validation: if this is set to True, use pydantic strict validation for requests - otherwise, use lenient validation (default: False)
         See https://docs.pydantic.dev/latest/concepts/conversion_table/ for more info about this.
+        NOTE: If you are using a Mapping type (i.e. Dict) with integer or float keys, you MUST leave this on False.
     """
 
     def inner_decorator(func: Callable) -> Callable:
@@ -136,25 +136,23 @@ def intersect_message(
     return inner_decorator
 
 
+# TODO - consider forcing intersect_status endpoints to send Messages and JSON responses.
 @validate_call
 def intersect_status(
-    request_content_type: IntersectMimeType = IntersectMimeType.JSON,
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
-    # TODO response_content_type may end up being a union
     response_content_type: IntersectMimeType = IntersectMimeType.JSON,
-    strict_request_validation: bool = False,
 ) -> Any:
     """Use this annotation to mark your capability method as a status retrieval function.
 
     You may ONLY mark ONE function as a status retrieval function. It's advisable to have one.
 
+    Your status retrieval function may not have any parameters (other than "self"). Return annotation rules mirror
+    the typing rules for @intersect_message().
+
     Params:
-        - request_content_type: how to deserialize incoming requests (default: JSON)
         - response_content_type: how to serialize outgoing requests (default: JSON)
         - response_data_transfer_handler: are responses going out through the message, or through another mean
           (i.e. MINIO)?
-        - strict_request_validation: if this is set to True, use pydantic strict validation - otherwise, use lenient validation (default: False)
-          See https://docs.pydantic.dev/latest/concepts/conversion_table/ for more info about this.
     """
 
     def inner_decorator(func: Callable) -> Callable:
@@ -163,10 +161,10 @@ def intersect_status(
             return func(*args, **kwargs)
 
         setattr(wrapper, BASE_STATUS_ATTR, True)
-        setattr(wrapper, REQUEST_CONTENT, request_content_type.value)
+        setattr(wrapper, REQUEST_CONTENT, IntersectMimeType.JSON)
         setattr(wrapper, RESPONSE_CONTENT, response_content_type.value)
         setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler.value)
-        setattr(wrapper, STRICT_VALIDATION, strict_request_validation)
+        setattr(wrapper, STRICT_VALIDATION, False)
         setattr(wrapper, SHUTDOWN_KEYS, set())
 
         return wrapper
