@@ -225,11 +225,13 @@ class IntersectClient:
         """
         return self._control_plane_manager.is_connected()
 
-    def _handle_userspace_message_raw(self, message: bytes) -> None:
+    def _handle_userspace_message_raw(self, raw: bytes) -> None:
         """Broker callback, deserialize and validate a userspace message from a broker."""
         self._heartbeat = time.time()
         try:
-            self._handle_userspace_message(deserialize_and_validate_userspace_message(message))
+            message = deserialize_and_validate_userspace_message(raw)
+            logger.debug(f'Received userspace message:\n{message}')
+            self._handle_userspace_message(message)
         except ValidationError as e:
             logger.warning(
                 f'Invalid message received on userspace message channel, ignoring. Full message:\n{e}'

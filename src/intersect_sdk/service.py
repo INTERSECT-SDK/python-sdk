@@ -306,6 +306,7 @@ class IntersectService(Generic[CAPABILITY]):
         """
         try:
             message = deserialize_and_validate_userspace_message(raw)
+            logger.debug(f'Received userspace message:\n{message}')
             response_msg = self._handle_userspace_message(message)
             if response_msg:
                 logger.debug(

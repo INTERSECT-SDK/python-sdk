@@ -5,6 +5,8 @@ build
 .pdm-build
 .mypy_cache
 .pytest_cache
+.ruff_cache
 report_unit.xml
 coverage.xml
 htmlcov/
+reports/
