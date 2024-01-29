@@ -130,7 +130,7 @@ class UserspaceMessage(TypedDict):
     the headers of the message
     """
 
-    payload: Union[str, bytes, MinioPayload]
+    payload: Union[bytes, MinioPayload]
     """
     main payload of the message. Needs to match the schema format, including the content type.
 

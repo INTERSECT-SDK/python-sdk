@@ -47,7 +47,7 @@ lint:
       docker run --rm $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA sh -ec "
       pdm run ruff check;
       pdm run ruff format --check;
-      pdm run lint-mypy || true;
+      pdm run lint-mypy;
       "
   tags:
     - intersect-sdk-builder

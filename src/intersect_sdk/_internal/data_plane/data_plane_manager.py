@@ -25,7 +25,7 @@ class DataPlaneManager:
         self._hierarchy = hierarchy
         self._minio_providers = list(map(create_minio_store, data_configs.minio))
 
-    def incoming_message_data_handler(self, message: UserspaceMessage) -> Union[str, bytes]:
+    def incoming_message_data_handler(self, message: UserspaceMessage) -> bytes:
         """Get data from the request data provider.
 
         Params:
@@ -59,7 +59,7 @@ class DataPlaneManager:
         function_response: bytes,
         content_type: IntersectMimeType,
         data_handler: IntersectDataHandler,
-    ) -> Union[str, bytes, MinioPayload]:
+    ) -> Union[bytes, MinioPayload]:
         """Send the user's response to the appropriate data provider.
 
         Params:
@@ -76,7 +76,7 @@ class DataPlaneManager:
         # sys.getsizeof(function_response) and determine the data handler dynamically
         # users could perhaps specify T1/T2/T3 data types but not the specific implementation
         if data_handler == IntersectDataHandler.MESSAGE:
-            return function_response.decode()
+            return function_response
         if data_handler == IntersectDataHandler.MINIO:
             provider = random.choice(self._minio_providers)  # noqa: S311 (TODO choose a MINIO provider better than at random)
             return send_minio_object(function_response, provider, content_type, self._hierarchy)

@@ -21,12 +21,12 @@ repos:
         args: ['--without-hashes']
       - id: pdm-lock-check
       - id: pdm-sync
-  #- repo: local
-    #hooks:
+  - repo: local
+    hooks:
       # TODO - get mypy working
-      #- id: mypy
-        #name: MyPy
-        #description: use MyPy for static type checking
-        #entry: pdm run lint-mypy
-        #pass_filenames: false
-        #language: system
+      - id: mypy
+        name: MyPy
+        description: use MyPy for static type checking
+        entry: pdm run lint-mypy
+        pass_filenames: false
+        language: system

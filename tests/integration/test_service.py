@@ -138,7 +138,7 @@ def test_call_user_function():
     message_interceptor.disconnect()
 
     msg: UserspaceMessage = msg[0]
-    assert msg['payload'] == '[5,8,13]'
+    assert msg['payload'] == b'[5,8,13]'
 
 
 # call a user function with invalid parameters (so Pydantic will catch the error and pass it to the message interceptor)
@@ -175,8 +175,8 @@ def test_call_user_function_with_invalid_payload():
 
     msg: UserspaceMessage = msg[0]
     assert msg['headers']['has_error'] is True
-    assert 'Bad arguments to application' in msg['payload']
-    assert 'validation error for tuple[int, int]' in msg['payload']
+    assert b'Bad arguments to application' in msg['payload']
+    assert b'validation error for tuple[int, int]' in msg['payload']
 
 
 # try to call an operation which doesn't exist - we'll get an error message back
@@ -214,7 +214,7 @@ def test_call_nonexistent_user_function():
 
     msg: UserspaceMessage = msg[0]
     assert msg['headers']['has_error'] is True
-    assert 'Tried to call non-existent operation' in msg['payload']
+    assert b'Tried to call non-existent operation' in msg['payload']
 
 
 # this function is just here to ensure the MINIO workflow is correct

@@ -13,7 +13,7 @@ message brokers or the data layer beyond defining credentials in their "Intersec
 """
 
 from types import MappingProxyType
-from typing import Any, Callable, Generic, Optional, Set, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Set, TypeVar
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -139,14 +139,10 @@ class IntersectService(Generic[CAPABILITY]):
 
         self._status_thread: Optional[StoppableThread] = None
         self._status_ticker_interval = config.status_interval
-        self._status_retrieval_fn: Callable[[], str] = (
-            (
-                lambda: status_type_adapter.dump_json(
-                    getattr(self.capability, status_fn_name)()
-                ).decode()
-            )
+        self._status_retrieval_fn: Callable[[], bytes] = (
+            (lambda: status_type_adapter.dump_json(getattr(self.capability, status_fn_name)()))
             if status_type_adapter and status_fn_name
-            else lambda: 'null'
+            else lambda: b'null'
         )
 
         self._status_memo = self._status_retrieval_fn()
@@ -398,7 +394,7 @@ class IntersectService(Generic[CAPABILITY]):
         self,
         fn_name: str,
         fn_meta: FunctionMetadata,
-        fn_params: Union[str, bytes],
+        fn_params: bytes,
     ) -> bytes:
         """Entrypoint into capability. This should be a private function, only call it yourself for testing purposes.
 
