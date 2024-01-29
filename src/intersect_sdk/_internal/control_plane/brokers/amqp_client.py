@@ -68,7 +68,7 @@ class AMQPClient(BrokerClient):
         # Callback to the topics_to_handler list inside of
         self._topics_to_handlers = topics_to_handlers
         # mapping of topics to callables which can unsubscribe from the topic
-        self._topics_to_channel_cancel_callbacks: Dict[str, Callable] = {}
+        self._topics_to_channel_cancel_callbacks: Dict[str, Callable[[], None]] = {}
         self._consumer_thread = None
 
     @retry(

@@ -60,9 +60,9 @@ test-suite-with-coverage:
       docker run
       --name intersect-tester
       --network host
-      -v $PWD/reports:/sdk/reports
       $CONTAINER_URL/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
       pdm run test-all
+    - docker cp intersect-tester:/sdk/reports reports
     - sudo sed -i "s:<source>/sdk:<source>${CI_BUILDS_DIR}/${CI_PROJECT_PATH}:" reports/coverage_report.xml
   coverage: '/coverage: \d+.\d+%/' # for GitLab<15.0 use project settings, this line is noop
   artifacts:

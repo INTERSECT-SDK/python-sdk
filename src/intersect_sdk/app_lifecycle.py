@@ -102,10 +102,12 @@ class SignalHandler:
 
 
 def default_intersect_lifecycle_loop(
-    intersect_gateway: Union[IntersectClient, IntersectService],
+    intersect_gateway: Union[IntersectClient, IntersectService[Any]],
     delay: float = 30.0,
     cleanup_callback: Optional[Callable[[int], None]] = None,
-    waiting_callback: Optional[Callable[[IntersectService], None]] = None,
+    waiting_callback: Optional[
+        Callable[[Union[IntersectClient, IntersectService[Any]]], None]
+    ] = None,
 ) -> None:
     """If users don't have their own lifecycle manager, they can import this function to begin a lifecycle loop.
 

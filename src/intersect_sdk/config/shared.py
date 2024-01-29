@@ -111,7 +111,7 @@ class ControlPlaneConfig(BaseModel):
     NOTE: INTERSECT currently only supports AMQP and MQTT.
     """
 
-    protocol: ControlProvider = ...
+    protocol: ControlProvider
     """
     The protocol of the broker you'd like to use (i.e. AMQP, MQTT...)
     """
@@ -145,7 +145,7 @@ class DataStoreConfig(BaseModel):
 class DataStoreConfigMap(BaseModel):
     """Configurations for any data stores the application should talk to."""
 
-    minio: List[DataStoreConfig] = Field(..., min_length=1)
+    minio: List[DataStoreConfig] = Field(min_length=1)
     """
     minio configurations
     """

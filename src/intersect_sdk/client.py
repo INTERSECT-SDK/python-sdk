@@ -40,19 +40,19 @@ from .constants import SYSTEM_OF_SYSTEM_REGEX
 class IntersectClientMessageParams(BaseModel):
     """The user implementing the IntersectClient class will need to return this object in order to send a message to another Service."""
 
-    destination: str = Field(..., pattern=SYSTEM_OF_SYSTEM_REGEX)
+    destination: str = Field(pattern=SYSTEM_OF_SYSTEM_REGEX)
     """
     The destination string. You'll need to know the system-of-system representation of the Service.
 
     Note that this should match what you would see in the schema.
     """
 
-    operation: str = ...
+    operation: str
     """
     The name of the operation you want to call from the Service - this should be represented as it is in the Service's schema.
     """
 
-    payload: Any = ...
+    payload: Any
     """
     The raw Python object you want to have serialized as the payload
     """
@@ -148,7 +148,7 @@ class IntersectClient:
         )
 
         self._heartbeat_thread: Optional[StoppableThread] = None
-        self._heartbeat: float = None
+        self._heartbeat = 0.0
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
         # we SUBSCRIBE to messages on this channel.
@@ -210,7 +210,7 @@ class IntersectClient:
             self._heartbeat_thread.stop()
             self._heartbeat_thread.join()
             self._heartbeat_thread = None
-            self._heartbeat = None
+            self._heartbeat = 0.0
 
         self._control_plane_manager.disconnect()
 
@@ -344,15 +344,16 @@ class IntersectClient:
 
         If a broker has been connected for 5 minutes without sending a message, prepare to terminate the application.
         """
-        self._heartbeat_thread.wait(300.0)
-        while not self._heartbeat_thread.stopped():
-            elapsed = time.time() - self._heartbeat
-            if elapsed > 300.0:
-                # NOTE
-                # This is by design. We explicitly don't want dangling clients
-                # sucking up bandwidth on brokers. It could even be argued that we should
-                # just call os.abort() here (this way so the Python application can't catch the SIGABRT),
-                # but SIGTERM is the soundest to ensure graceful application shutdown.
-                # However, graceful application shutdown is not as important for clients as it is for services...
-                send_os_signal()
+        if self._heartbeat_thread:
             self._heartbeat_thread.wait(300.0)
+            while not self._heartbeat_thread.stopped():
+                elapsed = time.time() - self._heartbeat
+                if elapsed > 300.0:
+                    # NOTE
+                    # This is by design. We explicitly don't want dangling clients
+                    # sucking up bandwidth on brokers. It could even be argued that we should
+                    # just call os.abort() here (this way so the Python application can't catch the SIGABRT),
+                    # but SIGTERM is the soundest to ensure graceful application shutdown.
+                    # However, graceful application shutdown is not as important for clients as it is for services...
+                    send_os_signal()
+                self._heartbeat_thread.wait(300.0)

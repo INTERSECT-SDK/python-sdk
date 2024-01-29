@@ -119,15 +119,15 @@ def intersect_message(
         NOTE: If you are using a Mapping type (i.e. Dict) with integer or float keys, you MUST leave this on False.
     """
 
-    def inner_decorator(func: Callable) -> Callable:
+    def inner_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Callable:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
         setattr(wrapper, BASE_ATTR, True)
-        setattr(wrapper, REQUEST_CONTENT, request_content_type.value)
-        setattr(wrapper, RESPONSE_CONTENT, response_content_type.value)
-        setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler.value)
+        setattr(wrapper, REQUEST_CONTENT, request_content_type)
+        setattr(wrapper, RESPONSE_CONTENT, response_content_type)
+        setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler)
         setattr(wrapper, STRICT_VALIDATION, strict_request_validation)
         setattr(wrapper, SHUTDOWN_KEYS, set(ignore_keys) if ignore_keys else set())
 
@@ -155,15 +155,15 @@ def intersect_status(
           (i.e. MINIO)?
     """
 
-    def inner_decorator(func: Callable) -> Callable:
+    def inner_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Callable:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
         setattr(wrapper, BASE_STATUS_ATTR, True)
         setattr(wrapper, REQUEST_CONTENT, IntersectMimeType.JSON)
-        setattr(wrapper, RESPONSE_CONTENT, response_content_type.value)
-        setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler.value)
+        setattr(wrapper, RESPONSE_CONTENT, response_content_type)
+        setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler)
         setattr(wrapper, STRICT_VALIDATION, False)
         setattr(wrapper, SHUTDOWN_KEYS, set())
 

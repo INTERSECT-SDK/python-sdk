@@ -11,7 +11,7 @@ from services they explicitly messaged.
 
 import datetime
 import uuid
-from typing import Any
+from typing import Any, Union
 
 from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
@@ -19,6 +19,7 @@ from typing_extensions import Annotated, TypedDict
 from ...annotations import IntersectDataHandler, IntersectMimeType
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...version import __version__
+from ..data_plane.minio_utils import MinioPayload
 
 
 class UserspaceMessageHeader(TypedDict):
@@ -129,7 +130,7 @@ class UserspaceMessage(TypedDict):
     the headers of the message
     """
 
-    payload: Any
+    payload: Union[str, bytes, MinioPayload]
     """
     main payload of the message. Needs to match the schema format, including the content type.
 

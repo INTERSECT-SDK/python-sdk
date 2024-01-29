@@ -11,21 +11,19 @@ from .shared import ControlPlaneConfig, DataStoreConfigMap, HierarchyConfig
 class IntersectServiceConfig(BaseModel):
     """The user-provided configuration needed to integrate with INTERSECT."""
 
-    hierarchy: HierarchyConfig = Field(...)
+    hierarchy: HierarchyConfig
     """
     Configuration of the System-of-System representation
     """
 
-    brokers: Union[
-        Annotated[List[ControlPlaneConfig], Field(min_length=1)], Literal['discovery']
-    ] = ...
+    brokers: Union[Annotated[List[ControlPlaneConfig], Field(min_length=1)], Literal['discovery']]
     """
     Configurations for any message brokers the application should attach to
 
     use literal "discovery" string to discover brokers, use list of brokers otherwise
     """
 
-    data_stores: DataStoreConfigMap = ...
+    data_stores: DataStoreConfigMap
     """
     Configurations for any data stores the application should talk to
     """
@@ -40,7 +38,7 @@ class IntersectServiceConfig(BaseModel):
     as a potential time buffer.)
     """
 
-    schema_version: str = Field(..., pattern=r'^\d+\.\d+\.\d+$')
+    schema_version: str = Field(pattern=r'^\d+\.\d+\.\d+$')
     """
     SemVer string of your application's version, needed for compatibility purposes
     """

@@ -13,7 +13,7 @@ message brokers or the data layer beyond defining credentials in their "Intersec
 """
 
 from types import MappingProxyType
-from typing import Any, Generic, Optional, Set, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Set, TypeVar, Union
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -78,19 +78,6 @@ class IntersectService(Generic[CAPABILITY]):
     No other functions or parameters are guaranteed to remain stable.
     """
 
-    capability = None
-    """
-    This is the capability class that you have defined. In general, it will be accessed via
-    its @intersect_message annotated functions in this service class, and you will not need to
-    access this property. However, there are some circumstances where you may wish to get or modify
-    a stateful property in this capability, which you would generally do through your own lifecycle methods.
-
-    In general, this would happen if:
-      - You want to expose or unexpose specific endpoints to the broader INTERSECT ecosystem during this application's lifetime, without shutting down the application.
-      - You want other parts of your program to be able to read stateful information about the lifecycle.
-
-    """
-
     def __init__(
         self,
         capability: CAPABILITY,
@@ -152,13 +139,13 @@ class IntersectService(Generic[CAPABILITY]):
 
         self._status_thread: Optional[StoppableThread] = None
         self._status_ticker_interval = config.status_interval
-        self._status_retrieval_fn = (
+        self._status_retrieval_fn: Callable[[], str] = (
             (
                 lambda: status_type_adapter.dump_json(
                     getattr(self.capability, status_fn_name)()
                 ).decode()
             )
-            if status_fn_name
+            if status_type_adapter and status_fn_name
             else lambda: 'null'
         )
 
@@ -411,7 +398,7 @@ class IntersectService(Generic[CAPABILITY]):
         self,
         fn_name: str,
         fn_meta: FunctionMetadata,
-        fn_params: Union[str, bytes, None] = None,
+        fn_params: Union[str, bytes],
     ) -> bytes:
         """Entrypoint into capability. This should be a private function, only call it yourself for testing purposes.
 
@@ -509,14 +496,15 @@ class IntersectService(Generic[CAPABILITY]):
     def _status_ticker(self) -> None:
         """Periodically sends lifecycle polling messages showing the Service's state. Runs in a separate thread."""
         # initial wait should guarantee that polling message does not beat initial startup message
-        if self._status_ticker_interval < 60.0:
-            self._status_thread.wait(60.0)
-        else:
-            self._status_thread.wait(self._status_ticker_interval)
-        while not self._status_thread.stopped():
-            if not self._check_for_status_update():
-                self._send_lifecycle_message(
-                    lifecycle_type=LifecycleType.POLLING,
-                    payload={'schema': self._schema, 'status': self._status_memo},
-                )
-            self._status_thread.wait(self._status_ticker_interval)
+        if self._status_thread:
+            if self._status_ticker_interval < 60.0:
+                self._status_thread.wait(60.0)
+            else:
+                self._status_thread.wait(self._status_ticker_interval)
+            while not self._status_thread.stopped():
+                if not self._check_for_status_update():
+                    self._send_lifecycle_message(
+                        lifecycle_type=LifecycleType.POLLING,
+                        payload={'schema': self._schema, 'status': self._status_memo},
+                    )
+                self._status_thread.wait(self._status_ticker_interval)

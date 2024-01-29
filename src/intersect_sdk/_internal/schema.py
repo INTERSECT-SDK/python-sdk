@@ -11,11 +11,10 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
-    Type,
     get_origin,
 )
 
-from pydantic import PydanticUserError, TypeAdapter
+from pydantic import PydanticInvalidForJsonSchema, PydanticUserError, TypeAdapter
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeAliasType
@@ -315,10 +314,8 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             The generated JSON schema.
         """
         if not arguments:
-            return self.handle_invalid_for_json_schema(
-                var_kwargs_schema,
-                'core_schema.ArgumentsSchema (missing keyword arguments, needed for INTERSECT)',
-            )
+            err_msg = 'Cannot generate a JsonSchema for core_schema.ArgumentsSchema (missing keyword arguments, needed for INTERSECT)'
+            raise PydanticInvalidForJsonSchema(err_msg)
         return super().kw_arguments_schema(arguments, var_kwargs_schema)
 
     def p_arguments_schema(
@@ -336,14 +333,14 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             The generated JSON schema.
         """
         if not arguments:
-            return self.handle_invalid_for_json_schema(
-                var_args_schema,
-                'core_schema.ArgumentsSchema (missing arguments, needed for INTERSECT - are you using a NamedTuple class with no properties?)',
-            )
+            err_msg = 'Cannot generate a JsonSchema for core_schema.ArgumentsSchema (missing arguments, needed for INTERSECT - are you using a NamedTuple class with no properties?)'
+            raise PydanticInvalidForJsonSchema(err_msg)
         return super().p_arguments_schema(arguments, var_args_schema)
 
 
-def _get_functions(capability: Type, attr: str) -> Generator[Tuple[str, Callable], None, None]:
+def _get_functions(
+    capability: type, attr: str
+) -> Generator[Tuple[str, Callable[[Any], Any]], None, None]:
     for name in dir(capability):
         method = getattr(capability, name)
         if callable(method) and hasattr(method, attr):
@@ -351,7 +348,7 @@ def _get_functions(capability: Type, attr: str) -> Generator[Tuple[str, Callable
 
 
 def _merge_schema_definitions(
-    adapter: TypeAdapter, schemas: Dict[str, Any], annotation: Type
+    adapter: TypeAdapter[Any], schemas: Dict[str, Any], annotation: type
 ) -> Dict[str, Any]:
     """This contains the core logic for generating a schema from the user's type definitions.
 
@@ -381,7 +378,8 @@ def _merge_schema_definitions(
     schema_type = schema.get('type')
     if schema_type == 'object':
         # Dict, OrderedDict, and Mapping lack a user-defined label, so just return the schema
-        if inspect.isclass(get_origin(annotation)) and issubclass(get_origin(annotation), Mapping):
+        ann_origin = get_origin(annotation)
+        if inspect.isclass(ann_origin) and issubclass(ann_origin, Mapping):
             return schema
         schemas[annotation.__name__] = schema
         return {'$ref': f'#/components/schemas/{annotation.__name__}'}
@@ -389,7 +387,7 @@ def _merge_schema_definitions(
         # NamedTuples get their own definitions, all other array types do not
         if (
             inspect.isclass(annotation)
-            and issubclass(annotation, Tuple)
+            and issubclass(annotation, tuple)
             and hasattr(annotation, '_fields')
         ):
             schemas[annotation.__name__] = schema
@@ -405,8 +403,13 @@ def _merge_schema_definitions(
 
 
 def _status_fn_schema(
-    capability: Type, schemas: Dict[str, Any]
-) -> Tuple[Optional[str], Optional[Callable], Optional[Dict[str, Any]], Optional[TypeAdapter]]:
+    capability: type, schemas: Dict[str, Any]
+) -> Tuple[
+    Optional[str],
+    Optional[Callable[[Any], Any]],
+    Optional[Dict[str, Any]],
+    Optional[TypeAdapter[Any]],
+]:
     """Main status function logic.
 
     Returns a tuple of:
@@ -450,11 +453,11 @@ def _status_fn_schema(
 
 
 def get_schemas_and_functions(
-    capability: Type,
+    capability: type,
 ) -> Tuple[
-    Dict[str, Any],
-    Tuple[Optional[str], Optional[Dict[str, Any]], TypeAdapter],
-    Dict[str, Any],
+    Dict[Any, Any],
+    Tuple[Optional[str], Optional[Dict[str, Any]], Optional[TypeAdapter[Any]]],
+    Dict[str, Dict[str, Dict[str, Dict[str, Any]]]],
     Dict[str, FunctionMetadata],
 ]:
     """This function does the bulk of introspection, and also validates the user's capability.
@@ -468,7 +471,7 @@ def get_schemas_and_functions(
       (NOTE: maybe allow for some other input formats?)
     """
     function_map = {}
-    schemas = {}
+    schemas: Dict[Any, Any] = {}
     channels = {}
 
     for name, method in _get_functions(capability, BASE_ATTR):
@@ -487,21 +490,21 @@ def get_schemas_and_functions(
             'publish': {
                 'message': {
                     'schemaFormat': f'application/vnd.aai.asyncapi+json;version={ASYNCAPI_VERSION}',
-                    'contentType': getattr(method, REQUEST_CONTENT),
+                    'contentType': getattr(method, REQUEST_CONTENT).value,
                     'traits': {'$ref': '#/components/messageTraits/commonHeaders'},
                 }
             },
             'subscribe': {
                 'message': {
                     'schemaFormat': f'application/vnd.aai.asyncapi+json;version={ASYNCAPI_VERSION}',
-                    'contentType': getattr(method, RESPONSE_CONTENT),
+                    'contentType': getattr(method, RESPONSE_CONTENT).value,
                     'traits': {'$ref': '#/components/messageTraits/commonHeaders'},
                 }
             },
         }
         if docstring:
-            channels[name]['publish']['description'] = docstring
-            channels[name]['subscribe']['description'] = docstring
+            channels[name]['publish']['description'] = docstring  # type: ignore
+            channels[name]['subscribe']['description'] = docstring  # type: ignore
 
         # this block handles request params
         if len(method_params) == 2:
@@ -555,7 +558,7 @@ def get_schemas_and_functions(
         capability, schemas
     )
     # this conditional allows for the status function to also be called like a message
-    if status_fn_type_adapter:
+    if status_fn_type_adapter and status_fn and status_fn_name:
         function_map[status_fn_name] = FunctionMetadata(
             status_fn,
             None,

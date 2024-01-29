@@ -10,7 +10,7 @@ Services should NEVER be CONSUMING messages on the lifecycle channel.
 import datetime
 import uuid
 from enum import IntEnum
-from typing import Any, Dict, Literal
+from typing import Any, Literal, Union
 
 from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
@@ -173,7 +173,7 @@ def create_lifecycle_message(
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             service_version=service_version,
             sdk_version=__version__,
-            lifecycle_type=lifecycle_type.value,
+            lifecycle_type=lifecycle_type,
         ),
         payload=payload,
         contentType='application/json',
@@ -183,7 +183,7 @@ def create_lifecycle_message(
 LIFECYCLE_MESSAGE_ADAPTER = TypeAdapter(LifecycleMessage)
 
 
-def deserialize_and_validate_lifecycle_message(msg: Dict[str, Any]) -> LifecycleMessage:
+def deserialize_and_validate_lifecycle_message(msg: Union[str, bytes]) -> LifecycleMessage:
     """If the "msg" param is a valid userspace message, return the object.
 
     Raises Pydantic ValidationError if "msg" is not a valid userspace message

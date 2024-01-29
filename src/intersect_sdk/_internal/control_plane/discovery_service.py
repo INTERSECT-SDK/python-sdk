@@ -1,8 +1,9 @@
 """TODO: This is all old code we currently aren't using."""
 
 import json
-import urllib
 from typing import Tuple
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 
 def discover_broker(address: str, broker_endpoint: str) -> Tuple[str, str, int]:
@@ -19,15 +20,15 @@ def discover_broker(address: str, broker_endpoint: str) -> Tuple[str, str, int]:
     url = f'{address}/v0.1/{broker_endpoint}'
 
     # Get scheme associated with the `url` string
-    scheme = urllib.parse.urlparse(url).scheme
+    scheme = urlparse(url).scheme
 
     # Only accept `http` and `https` schemes, otherwise raise error
     if scheme not in ('http', 'https'):
         msg = f'URL scheme is {scheme}, only http or https schemes are accepted'
         raise ValueError(msg)
 
-    request = urllib.request.Request(url)  # noqa: S310 (scheme checked earlier)
-    with urllib.request.urlopen(request) as response:  # noqa: S310 (scheme checked earlier)
+    request = Request(url)  # noqa: S310 (scheme checked earlier)
+    with urlopen(request) as response:  # noqa: S310 (scheme checked earlier)
         body = response.read()
 
     broker_info = json.loads(body.decode('utf-8'))

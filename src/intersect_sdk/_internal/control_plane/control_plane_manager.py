@@ -32,7 +32,7 @@ def create_control_provider(
 
             return AMQPClient(
                 host=config.host,
-                port=config.port,
+                port=config.port or 5672,
                 username=config.username,
                 password=config.password,
                 topics_to_handlers=topic_handler_callback,
@@ -43,7 +43,7 @@ def create_control_provider(
     # MQTT
     return MQTTClient(
         host=config.host,
-        port=config.port,
+        port=config.port or 1883,
         username=config.username,
         password=config.password,
         topics_to_handlers=topic_handler_callback,

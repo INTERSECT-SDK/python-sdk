@@ -1,5 +1,5 @@
 import random
-from typing import Any, Union
+from typing import Union
 
 from ...annotations import IntersectDataHandler, IntersectMimeType
 from ...config.shared import DataStoreConfigMap, HierarchyConfig
@@ -25,7 +25,7 @@ class DataPlaneManager:
         self._hierarchy = hierarchy
         self._minio_providers = list(map(create_minio_store, data_configs.minio))
 
-    def incoming_message_data_handler(self, message: UserspaceMessage) -> Union[str, bytes, None]:
+    def incoming_message_data_handler(self, message: UserspaceMessage) -> Union[str, bytes]:
         """Get data from the request data provider.
 
         Params:
@@ -37,9 +37,9 @@ class DataPlaneManager:
         """
         request_data_handler = message['headers']['data_handler']
         if request_data_handler == IntersectDataHandler.MESSAGE:
-            return message['payload'] if message['payload'] else None
+            return message['payload']  # type: ignore
         if request_data_handler == IntersectDataHandler.MINIO:
-            payload: MinioPayload = message['payload']
+            payload: MinioPayload = message['payload']  # type: ignore
             provider = None
             for store in self._minio_providers:
                 if store._base_url._url.geturl() == payload['minio_url']:  # noqa: SLF001 (only way to get URL from MINIO API)
@@ -59,7 +59,7 @@ class DataPlaneManager:
         function_response: bytes,
         content_type: IntersectMimeType,
         data_handler: IntersectDataHandler,
-    ) -> Any:
+    ) -> Union[str, bytes, MinioPayload]:
         """Send the user's response to the appropriate data provider.
 
         Params:

@@ -32,7 +32,6 @@ from typing import (
     Dict,
     Optional,
     Tuple,
-    Type,
 )
 
 from pydantic import TypeAdapter
@@ -45,10 +44,10 @@ from .version import __version__
 
 
 def _get_schema_and_functions_from_model(
-    capability_type: Type,
+    capability_type: type,
     capability_name: HierarchyConfig,
     schema_version: str,
-) -> Tuple[Dict[str, Any], Dict[str, FunctionMetadata], Optional[str], TypeAdapter]:
+) -> Tuple[Dict[str, Any], Dict[str, FunctionMetadata], Optional[str], Optional[TypeAdapter[Any]]]:
     """This returns both the schema and the function mapping.
 
     This is meant for internal use - see "get_schema_from_model" for more comprehensive documentation.
@@ -85,7 +84,7 @@ def _get_schema_and_functions_from_model(
         },
     }
     if capability_type.__doc__:
-        asyncapi_spec['info']['description'] = inspect.cleandoc(capability_type.__doc__)
+        asyncapi_spec['info']['description'] = inspect.cleandoc(capability_type.__doc__)  # type: ignore
 
     if status_schema:
         asyncapi_spec['status'] = status_schema
@@ -103,7 +102,7 @@ def _get_schema_and_functions_from_model(
 
 
 def get_schema_from_model(
-    capability_type: Type,
+    capability_type: type,
     capability_name: HierarchyConfig,
     schema_version: str,
 ) -> Dict[str, Any]:

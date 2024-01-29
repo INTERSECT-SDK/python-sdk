@@ -1,11 +1,11 @@
 import mimetypes
 from hashlib import sha224
 from io import BytesIO
-from typing import TypedDict
 from uuid import uuid4
 
 from minio import Minio
 from minio.error import MinioException
+from typing_extensions import TypedDict
 from urllib3.exceptions import MaxRetryError
 from urllib3.util import parse_url
 
@@ -50,6 +50,8 @@ def _condense_minio_bucket_name(hierarchy: HierarchyConfig) -> str:
 
 def create_minio_store(config: DataStoreConfig) -> Minio:
     config_uri = parse_url(config.host)
+    if not config_uri.host:
+        die(f'Minio configuration host {config.host} cannot be parsed as a valid hostname.')
 
     client = Minio(
         secure=config_uri.scheme == 'https',
@@ -84,7 +86,7 @@ def send_minio_object(
     """
     bucket_name = _condense_minio_bucket_name(hierarchy)
     # mimetypes.guess_extension() is a nice-to-have for MINIO preview, but isn't essential.
-    object_id = str(uuid4()) + mimetypes.guess_extension(content_type)
+    object_id = str(uuid4()) + (mimetypes.guess_extension(content_type.value) or '')
     try:
         if not provider.bucket_exists(bucket_name):
             provider.make_bucket(bucket_name)
@@ -94,7 +96,7 @@ def send_minio_object(
             object_name=object_id,
             data=buff_data,
             length=buff_data.getbuffer().nbytes,
-            content_type=content_type,
+            content_type=content_type.value,
         )
         return MinioPayload(
             minio_url=provider._base_url._url.geturl(),  # noqa: SLF001 (only way to get URL from MINIO API)

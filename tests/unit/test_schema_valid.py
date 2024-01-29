@@ -61,25 +61,14 @@ def test_verify_attributes():
         getattr(function_map['verify_float_dict'].method, RESPONSE_DATA)
         == IntersectDataHandler.MESSAGE
     )
-    assert (
-        getattr(function_map['verify_nested'].method, REQUEST_CONTENT)
-        == IntersectMimeType.JSON.value
-    )
-    assert (
-        getattr(function_map['verify_nested'].method, RESPONSE_CONTENT)
-        == IntersectMimeType.JSON.value
-    )
+    assert getattr(function_map['verify_nested'].method, REQUEST_CONTENT) == IntersectMimeType.JSON
+    assert getattr(function_map['verify_nested'].method, RESPONSE_CONTENT) == IntersectMimeType.JSON
     assert getattr(function_map['verify_nested'].method, STRICT_VALIDATION) is False
 
     # test non-defaults
     assert (
         getattr(function_map['verify_nested'].method, RESPONSE_DATA) == IntersectDataHandler.MINIO
     )
-    assert (
-        getattr(function_map['ip4_to_ip6'].method, RESPONSE_CONTENT)
-        == IntersectMimeType.STRING.value
-    )
-    assert (
-        getattr(function_map['test_path'].method, REQUEST_CONTENT) == IntersectMimeType.STRING.value
-    )
+    assert getattr(function_map['ip4_to_ip6'].method, RESPONSE_CONTENT) == IntersectMimeType.STRING
+    assert getattr(function_map['test_path'].method, REQUEST_CONTENT) == IntersectMimeType.STRING
     assert getattr(function_map['calculate_weird_algorithm'].method, STRICT_VALIDATION) is True
