@@ -10,9 +10,8 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.13
     hooks:
-      # TODO UNCOMMENT THIS WHEN EXAMPLES/TESTS ARE FIXED
-      #- id: ruff
-        #args: [ --fix ]
+      - id: ruff
+        args: [ --fix ]
       - id: ruff-format
   - repo: https://github.com/pdm-project/pdm
     rev: 2.11.2
@@ -23,7 +22,6 @@ repos:
       - id: pdm-sync
   - repo: local
     hooks:
-      # TODO - get mypy working
       - id: mypy
         name: MyPy
         description: use MyPy for static type checking
