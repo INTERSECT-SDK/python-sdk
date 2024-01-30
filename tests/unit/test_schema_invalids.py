@@ -360,7 +360,7 @@ def test_disallow_typeless_tuple(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper(MockBareTuple)
     assert 'return annotation' in caplog.text
-    assert 'empty tuple typing for INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 # should fail because we're explicitly checking for this tuple type annotation
@@ -374,7 +374,7 @@ def test_disallow_ambiguous_tuple(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper(MockAmbiguousTuple)
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'tuple: () is not a permitted tuple argument for INTERSECT' in caplog.text
+    assert 'Tuple must have non-empty types and not use () as a type for INTERSECT' in caplog.text
 
 
 # should fail because NamedTuple has no properties

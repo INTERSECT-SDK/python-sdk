@@ -96,11 +96,10 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             )
         return super().list_schema(schema)
 
-    # TODO - Pydantic 2.6 will merge both tuple functions into one, use this implementation
-    def tuple_positional_schema(self, schema: core_schema.TuplePositionalSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a positional tuple schema e.g. `Tuple[int, str, bool]`.
+    def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int,str, bool]` or `Tuple[int, ...]`.
 
-        OVERRIDE: disallow Tuple[()] or tuple[()]), otherwise defer to Pydantic's handling
+        OVERRIDE: disallow bare tuple typing, Tuple[()], and tuple[()] types, otherwise defer to Pydantic's handling
 
         Args:
             schema: The core schema.
@@ -108,28 +107,12 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         Returns:
             The generated JSON schema.
         """
-        json_schema = super().tuple_positional_schema(schema)
+        json_schema = super().tuple_schema(schema)
         if not json_schema.get('items') and not json_schema.get('prefixItems'):
             return self.handle_invalid_for_json_schema(
-                schema, 'tuple: () is not a permitted tuple argument for INTERSECT'
+                schema,
+                'core_schema.TupleSchema: Tuple must have non-empty types and not use () as a type for INTERSECT',
             )
-        return json_schema
-
-    # TODO - Pydantic 2.6 will merge both tuple functions into one, use the other function's implementation
-    def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a variable tuple schema e.g. `Tuple[int, ...]`.
-
-        OVERRIDE: disallow bare tuple typing, otherwise defer to Pydantic's handling
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        json_schema = super().tuple_variable_schema(schema)
-        if not json_schema.get('items'):
-            return self.handle_invalid_for_json_schema(schema, 'empty tuple typing for INTERSECT')
         return json_schema
 
     def set_schema(self, schema: core_schema.SetSchema) -> JsonSchemaValue:
