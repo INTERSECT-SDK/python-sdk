@@ -64,7 +64,7 @@ class IntersectMimeType(Enum):
 
 @validate_call
 def intersect_message(
-    ignore_keys: Optional[Set[str]] = None,
+    ignore_keys: Optional[Set[str]] = None,  # noqa: FA100 (Pydantic uses runtime annotations)
     request_content_type: IntersectMimeType = IntersectMimeType.JSON,
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
     response_content_type: IntersectMimeType = IntersectMimeType.JSON,

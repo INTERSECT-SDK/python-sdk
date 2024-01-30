@@ -12,8 +12,10 @@ User-level interfaces are all handled on the same messaging channel, so users sh
 message brokers or the data layer beyond defining credentials in their "IntersectConfig" class.
 """
 
+from __future__ import annotations
+
 import time
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
@@ -118,7 +120,7 @@ class IntersectClient:
     def __init__(
         self,
         config: IntersectClientConfig,
-        initial_messages: List[IntersectClientMessageParams],
+        initial_messages: list[IntersectClientMessageParams],
         user_callback: INTERSECT_CLIENT_CALLBACK_TYPE,
         resend_initial_messages_on_secondary_startup: bool = False,
     ) -> None:
@@ -147,7 +149,7 @@ class IntersectClient:
             service='tmp-', system='tmp-', facility='tmp-', organization=f'tmp-{uuid4()!s}'
         )
 
-        self._heartbeat_thread: Optional[StoppableThread] = None
+        self._heartbeat_thread: StoppableThread | None = None
         self._heartbeat = 0.0
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
@@ -192,7 +194,7 @@ class IntersectClient:
         logger.info('Client startup complete')
         return self
 
-    def shutdown(self, reason: Optional[str] = None) -> Self:
+    def shutdown(self, reason: str | None = None) -> Self:
         """This function disconnects the client from INTERSECT configurations. It does NOT otherwise drop anything else from memory.
 
         This function should generally be called immediately after the broker connection loop.

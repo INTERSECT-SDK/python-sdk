@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import random
-from typing import Union
+from typing import TYPE_CHECKING
 
 from ...annotations import IntersectDataHandler, IntersectMimeType
-from ...config.shared import DataStoreConfigMap, HierarchyConfig
 from ..exceptions import IntersectError
 from ..logger import logger
-from ..messages.userspace import UserspaceMessage
 from .minio_utils import MinioPayload, create_minio_store, get_minio_object, send_minio_object
+
+if TYPE_CHECKING:
+    from ...config.shared import DataStoreConfigMap, HierarchyConfig
+    from ..messages.userspace import UserspaceMessage
 
 
 class DataPlaneManager:
@@ -59,7 +63,7 @@ class DataPlaneManager:
         function_response: bytes,
         content_type: IntersectMimeType,
         data_handler: IntersectDataHandler,
-    ) -> Union[bytes, MinioPayload]:
+    ) -> bytes | MinioPayload:
         """Send the user's response to the appropriate data provider.
 
         Params:

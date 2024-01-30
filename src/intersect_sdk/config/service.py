@@ -16,7 +16,7 @@ class IntersectServiceConfig(BaseModel):
     Configuration of the System-of-System representation
     """
 
-    brokers: Union[Annotated[List[ControlPlaneConfig], Field(min_length=1)], Literal['discovery']]
+    brokers: Union[Annotated[List[ControlPlaneConfig], Field(min_length=1)], Literal['discovery']]  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     Configurations for any message brokers the application should attach to
 

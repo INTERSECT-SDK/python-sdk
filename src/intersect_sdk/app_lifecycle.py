@@ -12,14 +12,18 @@ already manages its own lifecycles, you should integrate your adapter with FastA
 and let FastAPI handle lifecycles.
 """
 
+from __future__ import annotations
+
 import signal
 import sys
 from threading import Event
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable
 
 from ._internal.logger import logger
-from .client import IntersectClient
-from .service import IntersectService
+
+if TYPE_CHECKING:
+    from .client import IntersectClient
+    from .service import IntersectService
 
 
 class SignalHandler:
@@ -40,7 +44,7 @@ class SignalHandler:
     should be ignored.
     """
 
-    def __init__(self, cleanup_callback: Optional[Callable[[int], None]] = None) -> None:
+    def __init__(self, cleanup_callback: Callable[[int], None] | None = None) -> None:
         """Basic constructor. Signal listeners are set up on constructor call.
 
         Parameters:
@@ -102,12 +106,10 @@ class SignalHandler:
 
 
 def default_intersect_lifecycle_loop(
-    intersect_gateway: Union[IntersectClient, IntersectService[Any]],
+    intersect_gateway: IntersectClient | IntersectService[Any],
     delay: float = 30.0,
-    cleanup_callback: Optional[Callable[[int], None]] = None,
-    waiting_callback: Optional[
-        Callable[[Union[IntersectClient, IntersectService[Any]]], None]
-    ] = None,
+    cleanup_callback: Callable[[int], None] | None = None,
+    waiting_callback: Callable[[IntersectClient | IntersectService[Any]], None] | None = None,
 ) -> None:
     """If users don't have their own lifecycle manager, they can import this function to begin a lifecycle loop.
 

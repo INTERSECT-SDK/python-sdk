@@ -1,12 +1,13 @@
 """TODO: This is all old code we currently aren't using."""
 
+from __future__ import annotations
+
 import json
-from typing import Tuple
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
-def discover_broker(address: str, broker_endpoint: str) -> Tuple[str, str, int]:
+def discover_broker(address: str, broker_endpoint: str) -> tuple[str, str, int]:
     """Get the metadata for a broker from the discovery service.
 
     Args:

@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 from collections import defaultdict
-from typing import Any, Callable, List, Literal, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from pydantic import TypeAdapter
 
-from ...config.shared import ControlPlaneConfig
 from ..exceptions import IntersectInvalidBrokerError
 from ..logger import logger
-from .brokers.broker_client import BrokerClient
 from .brokers.mqtt_client import MQTTClient
-from .types import GET_TOPIC_TO_HANDLER_TYPE, TOPIC_TO_HANDLER_TYPE
+
+if TYPE_CHECKING:
+    from ...config.shared import ControlPlaneConfig
+    from .brokers.broker_client import BrokerClient
+    from .types import GET_TOPIC_TO_HANDLER_TYPE, TOPIC_TO_HANDLER_TYPE
 
 GENERIC_MESSAGE_SERIALIZER = TypeAdapter(Any)
 
@@ -55,7 +59,7 @@ class ControlPlaneManager:
 
     def __init__(
         self,
-        control_configs: Union[List[ControlPlaneConfig], Literal['discovery']],
+        control_configs: list[ControlPlaneConfig] | Literal['discovery'],
     ) -> None:
         if control_configs == 'discovery':
             msg = 'Discovery service not implemented yet'
@@ -70,7 +74,7 @@ class ControlPlaneManager:
         self._topics_to_handlers: TOPIC_TO_HANDLER_TYPE = defaultdict(set)
 
     def add_subscription_channel(
-        self, channel: str, callbacks: Set[Callable[[bytes], None]]
+        self, channel: str, callbacks: set[Callable[[bytes], None]]
     ) -> None:
         """Start listening for userspace messages on a channel on all configured brokers.
 

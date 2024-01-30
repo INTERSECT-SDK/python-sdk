@@ -12,8 +12,10 @@ User-level interfaces are all handled on the same messaging channel, so users sh
 message brokers or the data layer beyond defining credentials in their "IntersectConfig" class.
 """
 
+from __future__ import annotations
+
 from types import MappingProxyType
-from typing import Any, Callable, Generic, Optional, Set, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -28,7 +30,6 @@ from ._internal.constants import (
 from ._internal.control_plane.control_plane_manager import ControlPlaneManager
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectApplicationError, IntersectError
-from ._internal.function_metadata import FunctionMetadata
 from ._internal.logger import logger
 from ._internal.messages.lifecycle import LifecycleType, create_lifecycle_message
 from ._internal.messages.userspace import (
@@ -42,6 +43,9 @@ from ._internal.version_resolver import resolve_user_version
 from .annotations import IntersectDataHandler, IntersectMimeType
 from .config.service import IntersectServiceConfig
 from .schema import _get_schema_and_functions_from_model
+
+if TYPE_CHECKING:
+    from ._internal.function_metadata import FunctionMetadata
 
 CAPABILITY = TypeVar('CAPABILITY')
 
@@ -123,7 +127,7 @@ class IntersectService(Generic[CAPABILITY]):
         You can get user-defined properties from the method via getattr(_function_map.method, KEY), the keys get set
         in the intersect_message decorator function (annotations.py).
         """
-        self._function_keys: Set[str] = set()
+        self._function_keys: set[str] = set()
         """
         INTERNAL USE ONLY
 
@@ -137,7 +141,7 @@ class IntersectService(Generic[CAPABILITY]):
         self._hierarchy = config.hierarchy
         self._version = config.schema_version
 
-        self._status_thread: Optional[StoppableThread] = None
+        self._status_thread: StoppableThread | None = None
         self._status_ticker_interval = config.status_interval
         self._status_retrieval_fn: Callable[[], bytes] = (
             (lambda: status_type_adapter.dump_json(getattr(self.capability, status_fn_name)()))
@@ -192,7 +196,7 @@ class IntersectService(Generic[CAPABILITY]):
         logger.info('Service startup complete')
         return self
 
-    def shutdown(self, reason: Optional[str] = None) -> Self:
+    def shutdown(self, reason: str | None = None) -> Self:
         """This function disconnects the service from all INTERSECT systems. It does NOT otherwise drop anything else from memory.
 
         You should call this function whenever your
@@ -229,7 +233,7 @@ class IntersectService(Generic[CAPABILITY]):
         """
         return self._control_plane_manager.is_connected()
 
-    def forbid_keys(self, keys: Set[str]) -> Self:
+    def forbid_keys(self, keys: set[str]) -> Self:
         """Block all functions annotated with any key in "keys", and send out an appropriate message.
 
         NOTE: if you want to bulk forbid everything, you may want to call
@@ -245,7 +249,7 @@ class IntersectService(Generic[CAPABILITY]):
         )
         return self
 
-    def allow_keys(self, keys: Set[str]) -> Self:
+    def allow_keys(self, keys: set[str]) -> Self:
         """Allow all functions annotated with any key in "keys", and send out an appropriate message.
 
         NOTE: if the function has multiple keys, the function will only be "allowed"
@@ -290,7 +294,7 @@ class IntersectService(Generic[CAPABILITY]):
         )
         return self
 
-    def get_blocked_keys(self) -> Set[str]:
+    def get_blocked_keys(self) -> set[str]:
         """Returns a set of the function keys which indicate the function should be blocked.
 
         Note that this returns a shallow copy, as the inner reference should NOT be mutated externally.
@@ -321,7 +325,7 @@ class IntersectService(Generic[CAPABILITY]):
                 f'Invalid message received on userspace message channel, ignoring. Full message:\n{e}'
             )
 
-    def _handle_userspace_message(self, message: UserspaceMessage) -> Optional[UserspaceMessage]:
+    def _handle_userspace_message(self, message: UserspaceMessage) -> UserspaceMessage | None:
         """Main logic for handling a userspace message, minus all broker logic.
 
         Params

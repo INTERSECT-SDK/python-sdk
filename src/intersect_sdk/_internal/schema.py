@@ -1,28 +1,29 @@
 """Internal utilities for schema generation we don't want exposed to users."""
 
+from __future__ import annotations
+
 import inspect
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generator,
-    List,
     Mapping,
-    Optional,
-    Tuple,
     get_origin,
 )
 
 from pydantic import PydanticInvalidForJsonSchema, PydanticUserError, TypeAdapter
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
-from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeAliasType
 
 from .constants import BASE_ATTR, BASE_STATUS_ATTR, REQUEST_CONTENT, RESPONSE_CONTENT
 from .function_metadata import FunctionMetadata
 from .logger import logger
 from .utils import die
+
+if TYPE_CHECKING:
+    from pydantic_core import CoreSchema, core_schema
 
 ASYNCAPI_VERSION = '2.6.0'
 
@@ -282,8 +283,8 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
 
     def kw_arguments_schema(
         self,
-        arguments: List[core_schema.ArgumentsParameter],
-        var_kwargs_schema: Optional[CoreSchema],
+        arguments: list[core_schema.ArgumentsParameter],
+        var_kwargs_schema: CoreSchema | None,
     ) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function's keyword arguments.
 
@@ -302,7 +303,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         return super().kw_arguments_schema(arguments, var_kwargs_schema)
 
     def p_arguments_schema(
-        self, arguments: List[core_schema.ArgumentsParameter], var_args_schema: Optional[CoreSchema]
+        self, arguments: list[core_schema.ArgumentsParameter], var_args_schema: CoreSchema | None
     ) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function's positional arguments.
 
@@ -323,7 +324,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
 
 def _get_functions(
     capability: type, attr: str
-) -> Generator[Tuple[str, Callable[[Any], Any]], None, None]:
+) -> Generator[tuple[str, Callable[[Any], Any]], None, None]:
     for name in dir(capability):
         method = getattr(capability, name)
         if callable(method) and hasattr(method, attr):
@@ -331,8 +332,8 @@ def _get_functions(
 
 
 def _merge_schema_definitions(
-    adapter: TypeAdapter[Any], schemas: Dict[str, Any], annotation: type
-) -> Dict[str, Any]:
+    adapter: TypeAdapter[Any], schemas: dict[str, Any], annotation: type
+) -> dict[str, Any]:
     """This contains the core logic for generating a schema from the user's type definitions.
 
     This accomplishes two things after generating the schema:
@@ -382,12 +383,12 @@ def _merge_schema_definitions(
 
 
 def _status_fn_schema(
-    capability: type, schemas: Dict[str, Any]
-) -> Tuple[
-    Optional[str],
-    Optional[Callable[[Any], Any]],
-    Optional[Dict[str, Any]],
-    Optional[TypeAdapter[Any]],
+    capability: type, schemas: dict[str, Any]
+) -> tuple[
+    str | None,
+    Callable[[Any], Any] | None,
+    dict[str, Any] | None,
+    TypeAdapter[Any] | None,
 ]:
     """Main status function logic.
 
@@ -433,11 +434,11 @@ def _status_fn_schema(
 
 def get_schemas_and_functions(
     capability: type,
-) -> Tuple[
-    Dict[Any, Any],
-    Tuple[Optional[str], Optional[Dict[str, Any]], Optional[TypeAdapter[Any]]],
-    Dict[str, Dict[str, Dict[str, Dict[str, Any]]]],
-    Dict[str, FunctionMetadata],
+) -> tuple[
+    dict[Any, Any],
+    tuple[str | None, dict[str, Any] | None, TypeAdapter[Any] | None],
+    dict[str, dict[str, dict[str, dict[str, Any]]]],
+    dict[str, FunctionMetadata],
 ]:
     """This function does the bulk of introspection, and also validates the user's capability.
 
@@ -450,7 +451,7 @@ def get_schemas_and_functions(
       (NOTE: maybe allow for some other input formats?)
     """
     function_map = {}
-    schemas: Dict[Any, Any] = {}
+    schemas: dict[Any, Any] = {}
     channels = {}
 
     for name, method in _get_functions(capability, BASE_ATTR):

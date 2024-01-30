@@ -130,7 +130,7 @@ class UserspaceMessage(TypedDict):
     the headers of the message
     """
 
-    payload: Union[bytes, MinioPayload]
+    payload: Union[bytes, MinioPayload]  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     main payload of the message. Needs to match the schema format, including the content type.
 

@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 import functools
 import threading
 import uuid
-from typing import Callable, Dict, Optional
+from typing import TYPE_CHECKING, Callable
 
 import pika
-from pika.channel import Channel
-from pika.frame import Frame
-from pika.spec import Basic, BasicProperties
 from retrying import retry
 
-from ..types import GET_TOPIC_TO_HANDLER_TYPE
 from .broker_client import BrokerClient
+
+if TYPE_CHECKING:
+    from pika.channel import Channel
+    from pika.frame import Frame
+    from pika.spec import Basic, BasicProperties
+
+    from ..types import GET_TOPIC_TO_HANDLER_TYPE
 
 
 class AMQPClient(BrokerClient):
@@ -34,7 +39,7 @@ class AMQPClient(BrokerClient):
         username: str,
         password: str,
         topics_to_handlers: GET_TOPIC_TO_HANDLER_TYPE,
-        uid: Optional[str] = None,
+        uid: str | None = None,
     ) -> None:
         """The default constructor.
 
@@ -68,7 +73,7 @@ class AMQPClient(BrokerClient):
         # Callback to the topics_to_handler list inside of
         self._topics_to_handlers = topics_to_handlers
         # mapping of topics to callables which can unsubscribe from the topic
-        self._topics_to_channel_cancel_callbacks: Dict[str, Callable[[], None]] = {}
+        self._topics_to_channel_cancel_callbacks: dict[str, Callable[[], None]] = {}
         self._consumer_thread = None
 
     @retry(

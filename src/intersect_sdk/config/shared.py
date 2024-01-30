@@ -30,7 +30,7 @@ class HierarchyConfig(BaseModel):
     The name of this application - should be unique within an INTERSECT cluster
     """
 
-    subsystem: Optional[str] = Field(default=None, pattern=HIERARCHY_REGEX)
+    subsystem: Optional[str] = Field(default=None, pattern=HIERARCHY_REGEX)  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     An associated subsystem / service-grouping of the service
     """
@@ -93,7 +93,7 @@ class ControlPlaneConfig(BaseModel):
     Broker hostname (default: 127.0.0.1)
     """
 
-    port: Optional[PositiveInt] = Field(None)
+    port: Optional[PositiveInt] = Field(None)  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     Broker port. List of common ports:
 
@@ -136,7 +136,7 @@ class DataStoreConfig(BaseModel):
     Data store hostname (default: 127.0.0.1)
     """
 
-    port: Optional[PositiveInt] = Field(None)
+    port: Optional[PositiveInt] = Field(None)  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     Data store port
     """
@@ -145,7 +145,7 @@ class DataStoreConfig(BaseModel):
 class DataStoreConfigMap(BaseModel):
     """Configurations for any data stores the application should talk to."""
 
-    minio: List[DataStoreConfig] = Field(min_length=1)
+    minio: List[DataStoreConfig] = Field(min_length=1)  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     minio configurations
     """

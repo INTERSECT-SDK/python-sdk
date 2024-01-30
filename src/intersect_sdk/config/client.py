@@ -11,7 +11,7 @@ from .shared import ControlPlaneConfig, DataStoreConfigMap
 class IntersectClientConfig(BaseModel):
     """The user-provided configuration needed to integrate with INTERSECT as a client."""
 
-    brokers: Union[Annotated[List[ControlPlaneConfig], Field(min_length=1)], Literal['discovery']]
+    brokers: Union[Annotated[List[ControlPlaneConfig], Field(min_length=1)], Literal['discovery']]  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     Configurations for any message brokers the application should attach to
 

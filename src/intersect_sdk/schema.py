@@ -26,28 +26,30 @@ Users are able to define their response and request content-types, as well as th
 The SDK needs to be able to dynamically look up functions, validate the request structure and request parameters, and handle responses.
 """
 
+from __future__ import annotations
+
 import inspect
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Dict,
-    Optional,
-    Tuple,
 )
 
 from pydantic import TypeAdapter
 
-from ._internal.function_metadata import FunctionMetadata
 from ._internal.messages.userspace import UserspaceMessageHeader
 from ._internal.schema import ASYNCAPI_VERSION, get_schemas_and_functions
-from .config.shared import HierarchyConfig
 from .version import __version__
+
+if TYPE_CHECKING:
+    from ._internal.function_metadata import FunctionMetadata
+    from .config.shared import HierarchyConfig
 
 
 def _get_schema_and_functions_from_model(
     capability_type: type,
     capability_name: HierarchyConfig,
     schema_version: str,
-) -> Tuple[Dict[str, Any], Dict[str, FunctionMetadata], Optional[str], Optional[TypeAdapter[Any]]]:
+) -> tuple[dict[str, Any], dict[str, FunctionMetadata], str | None, TypeAdapter[Any] | None]:
     """This returns both the schema and the function mapping.
 
     This is meant for internal use - see "get_schema_from_model" for more comprehensive documentation.
@@ -105,7 +107,7 @@ def get_schema_from_model(
     capability_type: type,
     capability_name: HierarchyConfig,
     schema_version: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """The goal of this function is to be able to generate a complete schema matching the AsyncAPI spec 2.6.0 from a BaseModel class.
 
     Params:

@@ -1,6 +1,9 @@
-from typing import Any, Callable, NamedTuple, Optional
+from __future__ import annotations
 
-from pydantic import TypeAdapter
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple
+
+if TYPE_CHECKING:
+    from pydantic import TypeAdapter
 
 
 class FunctionMetadata(NamedTuple):
@@ -14,7 +17,7 @@ class FunctionMetadata(NamedTuple):
     The raw method of the function. The function itself is useless and should not be called,
     but will store user-defined attributes needed for internal handling of data.
     """
-    request_adapter: Optional[TypeAdapter[Any]]
+    request_adapter: TypeAdapter[Any] | None
     """
     Type adapter for serializing and validating requests. Should only be null if user did not specify a request parameter.
     """

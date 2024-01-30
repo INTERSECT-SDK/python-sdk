@@ -7,15 +7,17 @@ Services should NEVER be CONSUMING messages on the lifecycle channel.
 (consumption is for INTERSECT core services only).
 """
 
+from __future__ import annotations
+
 import datetime
 import uuid
 from enum import IntEnum
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
 
-from ...constants import SYSTEM_OF_SYSTEM_REGEX
+from ...constants import SYSTEM_OF_SYSTEM_REGEX  # noqa: TCH001 (Pydantic uses runtime annotations)
 from ...version import __version__
 
 
@@ -183,7 +185,7 @@ def create_lifecycle_message(
 LIFECYCLE_MESSAGE_ADAPTER = TypeAdapter(LifecycleMessage)
 
 
-def deserialize_and_validate_lifecycle_message(msg: Union[str, bytes]) -> LifecycleMessage:
+def deserialize_and_validate_lifecycle_message(msg: str | bytes) -> LifecycleMessage:
     """If the "msg" param is a valid userspace message, return the object.
 
     Raises Pydantic ValidationError if "msg" is not a valid userspace message

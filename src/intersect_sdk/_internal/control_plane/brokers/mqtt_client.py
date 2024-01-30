@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import uuid
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 import paho.mqtt.client as paho_client
 from retrying import retry
 
-from ..types import GET_TOPIC_TO_HANDLER_TYPE
 from .broker_client import BrokerClient
+
+if TYPE_CHECKING:
+    from ..types import GET_TOPIC_TO_HANDLER_TYPE
 
 
 class MQTTClient(BrokerClient):
@@ -30,7 +34,7 @@ class MQTTClient(BrokerClient):
         username: str,
         password: str,
         topics_to_handlers: GET_TOPIC_TO_HANDLER_TYPE,
-        uid: Optional[str] = None,
+        uid: str | None = None,
     ) -> None:
         """The default constructor.
 
@@ -136,7 +140,7 @@ class MQTTClient(BrokerClient):
         self._connected = False
 
     def _set_connection_status(
-        self, _client: paho_client.Client, _userdata: Any, _flags: Dict[str, Any], rc: int
+        self, _client: paho_client.Client, _userdata: Any, _flags: dict[str, Any], rc: int
     ) -> None:
         """Set the connection status in response to the result of a Paho connection attempt.
 

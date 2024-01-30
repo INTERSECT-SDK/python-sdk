@@ -1,13 +1,17 @@
-from typing import Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ..annotations import IntersectDataHandler
 from ..version import __version__, version_info
 from .logger import logger
-from .messages.userspace import UserspaceMessage
+
+if TYPE_CHECKING:
+    from .messages.userspace import UserspaceMessage
 
 
 def _resolve_user_version(
-    msg: UserspaceMessage, our_version: str, our_version_info: Tuple[int, int, int]
+    msg: UserspaceMessage, our_version: str, our_version_info: tuple[int, int, int]
 ) -> bool:
     """Function which handles version resolution information.
 
