@@ -342,13 +342,9 @@ def _merge_schema_definitions(
     NOTE: Before modifying this function, you should have EXTENSIVE knowledge on how Pydantic handles
     various types internally.
     """
-    try:
-        schema = adapter.json_schema(
-            ref_template='#/components/schemas/{model}', schema_generator=GenerateTypedJsonSchema
-        )
-    except PydanticUserError as e:
-        raise e
-
+    schema = adapter.json_schema(
+        ref_template='#/components/schemas/{model}', schema_generator=GenerateTypedJsonSchema
+    )
     definitions = schema.pop('$defs', None)
     if definitions:
         schemas.update(definitions)
@@ -486,8 +482,8 @@ def get_schemas_and_functions(
             },
         }
         if docstring:
-            channels[name]['publish']['description'] = docstring  # type: ignore
-            channels[name]['subscribe']['description'] = docstring  # type: ignore
+            channels[name]['publish']['description'] = docstring  # type: ignore[assignment]
+            channels[name]['subscribe']['description'] = docstring  # type: ignore[assignment]
 
         # this block handles request params
         if len(method_params) == 2:

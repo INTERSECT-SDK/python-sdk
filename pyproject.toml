@@ -71,7 +71,6 @@ source = "file"
 path = "src/intersect_sdk/version.py"
 
 [tool.ruff]
-target-version = "py38"
 line-length = 100
 isort = { known-first-party = ['src'] }
 pydocstyle = { convention = 'google'}
@@ -79,12 +78,16 @@ format = {quote-style = 'single'}
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 20 }
 pylint = { max-args = 10, max-branches = 20, max-returns = 10 }
+# needed for Pydantic, as we parse types at runtime
+pyupgrade = {keep-runtime-typing = true}
 # pyflakes and the relevant pycodestyle rules are already configured
 extend-select = [
     'C90', # mccabe complexity
     'I', # isort
+    'N', # pep8-naming
     'D', # pydocstyle
     'UP', # pyupgrade
+    'YTT', # flake8-2020
     'ANN', # flake8-annotations
     'ASYNC', # flake8-async
     'S', # flake8-bandit
@@ -93,10 +96,14 @@ extend-select = [
     'A', # flake8-builtins
     'COM', # flake8-commas
     'C4', # flake8-comprehensions
+    'DTZ', # flake8-datetimez
+    'T10', # flake8-debugger
     'EM', # flake8-error-message
+    'FA', # flake8-future-annotations
     'ISC', # flake8-implicit-string-concat
     'ICN', # flake8-import-conventions
     'G', # flake8-logging-format
+    'INP', # flake8-no-pep420
     'PIE', # flake8-PIE
     'T20', # flake8-T20
     'PYI', # flake8-pyi
@@ -109,7 +116,9 @@ extend-select = [
     'SIM', # flake8-simplify
     'TCH', # flake8-type-checking
     'ARG', # flake8-unused-arguments
+    'PGH', # pygrep-hooks
     'PL', # pylint
+    'TRY', # tryceratops
     'FLY', # flynt
     'RUF', # RUFF additional rules
 ]
@@ -128,12 +137,15 @@ ignore = [
 '__init__.py' = ['F401'] # __init__.py commonly has unused imports
 'docs/*' = [
     'D', # the documentation folder does not need documentation
+    'INP001', # docs are not a namespace package
 ]
 'examples/*' = [
+    'N999', # module names for examples are not standard
     'T20', # allow print/pprint statements in examples
     'S106', # don't care about credentials in examples
     'D100', # documenting modules in examples is unhelpful
-    'D104' # documenting packages in examples is unhelpful
+    'D104', # documenting packages in examples is unhelpful
+    'TRY002', # examples can raise their own exception
 ]
 'tests/*' = [
     'S101', # allow assert statements in tests

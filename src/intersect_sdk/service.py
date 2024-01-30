@@ -27,7 +27,7 @@ from ._internal.constants import (
 )
 from ._internal.control_plane.control_plane_manager import ControlPlaneManager
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
-from ._internal.exceptions import IntersectApplicationException, IntersectException
+from ._internal.exceptions import IntersectApplicationError, IntersectError
 from ._internal.function_metadata import FunctionMetadata
 from ._internal.logger import logger
 from ._internal.messages.lifecycle import LifecycleType, create_lifecycle_message
@@ -354,7 +354,7 @@ class IntersectService(Generic[CAPABILITY]):
         # THREE: GET DATA FROM APPROPRIATE DATA STORE
         try:
             request_params = self._data_plane_manager.incoming_message_data_handler(message)
-        except IntersectException:
+        except IntersectError:
             # could theoretically be either a service or client issue
             # XXX send a better error message?
             return self._make_error_message('Could not get data from data handler', message)
@@ -371,10 +371,10 @@ class IntersectService(Generic[CAPABILITY]):
         except ValidationError as e:
             # client issue with request parameters
             return self._make_error_message(f'Bad arguments to application:\n{e}', message)
-        except IntersectApplicationException:
+        except IntersectApplicationError:
             # domain-level exception; do not send specifics about the exception because it may leak internals
             return self._make_error_message('Service domain logic threw exception.', message)
-        except IntersectException:
+        except IntersectError:
             # XXX send a better error message? This is a service issue
             return self._make_error_message('Could not send data to data handler', message)
         finally:
@@ -433,10 +433,10 @@ class IntersectService(Generic[CAPABILITY]):
         except ValidationError as e:
             err_msg = f'Bad arguments to application:\n{e}\n'
             logger.warning(err_msg)
-            raise e
+            raise
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
             logger.warning(f'Capability raised exception:\n{e}\n')
-            raise IntersectApplicationException from e
+            raise IntersectApplicationError from e
 
     def _make_error_message(
         self, error_string: str, original_message: UserspaceMessage

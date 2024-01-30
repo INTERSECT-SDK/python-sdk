@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Literal, Set, Union
 from pydantic import TypeAdapter
 
 from ...config.shared import ControlPlaneConfig
-from ..exceptions import IntersectInvalidBrokerException
+from ..exceptions import IntersectInvalidBrokerError
 from ..logger import logger
 from .brokers.broker_client import BrokerClient
 from .brokers.mqtt_client import MQTTClient
@@ -39,7 +39,7 @@ def create_control_provider(
             )
         except ImportError as e:
             msg = "Configuration includes AMQP broker, but AMQP dependencies were not installed. Install intersect with the 'amqp' optional dependency to use this backend. (i.e. `pip install intersect_sdk[amqp]`)"
-            raise IntersectInvalidBrokerException(msg) from e
+            raise IntersectInvalidBrokerError(msg) from e
     # MQTT
     return MQTTClient(
         host=config.host,
@@ -93,12 +93,13 @@ class ControlPlaneManager:
         """
         try:
             del self._topics_to_handlers[channel]
+        except KeyError:
+            return False
+        else:
             if self._ready:
                 for provider in self._control_providers:
                     provider.unsubscribe(channel)
             return True
-        except KeyError:
-            return False
 
     def get_subscription_channels(self) -> TOPIC_TO_HANDLER_TYPE:
         """Get the subscription channels.

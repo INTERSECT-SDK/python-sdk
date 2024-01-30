@@ -21,7 +21,7 @@ from typing_extensions import Self
 
 from ._internal.control_plane.control_plane_manager import ControlPlaneManager
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
-from ._internal.exceptions import IntersectException
+from ._internal.exceptions import IntersectError
 from ._internal.logger import logger
 from ._internal.messages.userspace import (
     UserspaceMessage,
@@ -270,7 +270,7 @@ class IntersectClient:
             # I'd kill the client just to be safe.
             send_os_signal()
             return
-        except IntersectException:
+        except IntersectError:
             # NOTE
             # This is less controversial here. This indicates that the client
             # couldn't talk to the data plane instance.
@@ -320,7 +320,7 @@ class IntersectClient:
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
                 response, params.response_content_type, params.response_data_handler
             )
-        except IntersectException:
+        except IntersectError:
             # NOTE
             # This is less controversial here. This indicates that the client
             # couldn't talk to the data plane instance.

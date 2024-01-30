@@ -84,7 +84,7 @@ def _get_schema_and_functions_from_model(
         },
     }
     if capability_type.__doc__:
-        asyncapi_spec['info']['description'] = inspect.cleandoc(capability_type.__doc__)  # type: ignore
+        asyncapi_spec['info']['description'] = inspect.cleandoc(capability_type.__doc__)  # type: ignore[index]
 
     if status_schema:
         asyncapi_spec['status'] = status_schema

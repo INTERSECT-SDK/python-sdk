@@ -11,7 +11,7 @@ from urllib3.util import parse_url
 
 from ...annotations import IntersectMimeType
 from ...config.shared import DataStoreConfig, HierarchyConfig
-from ..exceptions import IntersectException
+from ..exceptions import IntersectError
 from ..logger import logger
 from ..utils import die
 
@@ -107,12 +107,12 @@ def send_minio_object(
         logger.warning(
             f'Non-fatal MinIO error when sending object, the server may be under stress but you should double-check your configuration. Details: \n{e}'
         )
-        raise IntersectException from e
+        raise IntersectError from e
     except MinioException as e:
         logger.error(
             f'Important MinIO error when sending object, this usually indicates a problem with your configuration. Details: \n{e}'
         )
-        raise IntersectException from e
+        raise IntersectError from e
 
 
 def get_minio_object(provider: Minio, payload: MinioPayload) -> bytes:
@@ -135,14 +135,15 @@ def get_minio_object(provider: Minio, payload: MinioPayload) -> bytes:
         provider.remove_object(
             bucket_name=payload['minio_bucket'], object_name=payload['minio_object_id']
         )
-        return response.data
     except MaxRetryError as e:
         logger.warning(
             f'Non-fatal MinIO error when retrieving object, the server may be under stress but you should double-check your configuration. Details: \n{e}'
         )
-        raise IntersectException from e
+        raise IntersectError from e
     except MinioException as e:
         logger.error(
             f'Important MinIO error when retrieving object, this usually indicates a problem with your configuration. Details: \n{e}'
         )
-        raise IntersectException from e
+        raise IntersectError from e
+    else:
+        return response.data

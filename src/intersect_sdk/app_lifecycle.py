@@ -52,18 +52,18 @@ class SignalHandler:
         """
         self._exit = Event()
         self._cleanup_callback = cleanup_callback
-        catchSignals = [
+        catch_signals = [
             signal.SIGINT,
             signal.SIGTERM,
         ]
         if sys.platform != 'win32':
-            catchSignals += [
+            catch_signals += [
                 signal.SIGHUP,
                 signal.SIGQUIT,
                 signal.SIGUSR1,
                 signal.SIGUSR2,
             ]
-        for signum in catchSignals:
+        for signum in catch_signals:
             signal.signal(signum, self._on_signal_caught)
 
     def _on_signal_caught(self, signal: int, _: Any) -> None:

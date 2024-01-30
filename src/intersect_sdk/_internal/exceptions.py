@@ -1,8 +1,8 @@
-class IntersectException(Exception):
+class IntersectError(Exception):
     """Generic marker for INTERSECT-specific exceptions."""
 
 
-class IntersectApplicationException(IntersectException):
+class IntersectApplicationError(IntersectError):
     """This is a special IntersectException, thrown if user application logic throws ANY kind of Exception.
 
     In general, validation should be expressed through JSON schema as much as possible; however, JSON schema is NOT a complete prescription for input validation.
@@ -13,5 +13,5 @@ class IntersectApplicationException(IntersectException):
     """
 
 
-class IntersectInvalidBrokerException(IntersectException):
+class IntersectInvalidBrokerError(IntersectError):
     """Exception when invalid broker backend used."""

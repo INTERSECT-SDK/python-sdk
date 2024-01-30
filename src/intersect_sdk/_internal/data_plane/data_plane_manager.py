@@ -3,7 +3,7 @@ from typing import Union
 
 from ...annotations import IntersectDataHandler, IntersectMimeType
 from ...config.shared import DataStoreConfigMap, HierarchyConfig
-from ..exceptions import IntersectException
+from ..exceptions import IntersectError
 from ..logger import logger
 from ..messages.userspace import UserspaceMessage
 from .minio_utils import MinioPayload, create_minio_store, get_minio_object, send_minio_object
@@ -37,9 +37,9 @@ class DataPlaneManager:
         """
         request_data_handler = message['headers']['data_handler']
         if request_data_handler == IntersectDataHandler.MESSAGE:
-            return message['payload']  # type: ignore
+            return message['payload']  # type: ignore[return-value]
         if request_data_handler == IntersectDataHandler.MINIO:
-            payload: MinioPayload = message['payload']  # type: ignore
+            payload: MinioPayload = message['payload']  # type: ignore[assignment]
             provider = None
             for store in self._minio_providers:
                 if store._base_url._url.geturl() == payload['minio_url']:  # noqa: SLF001 (only way to get URL from MINIO API)
@@ -49,10 +49,10 @@ class DataPlaneManager:
                 logger.error(
                     f"You did not configure listening to MINIO instance '{payload['minio_url']}'. You must fix this to handle this data."
                 )
-                raise IntersectException
+                raise IntersectError
             return get_minio_object(provider, payload)
         logger.warning(f'Cannot parse data handler {request_data_handler}')
-        raise IntersectException
+        raise IntersectError
 
     def outgoing_message_data_handler(
         self,
@@ -84,4 +84,4 @@ class DataPlaneManager:
         logger.error(
             f'No support implemented for code {data_handler}, please upgrade your intersect-sdk version.'
         )
-        raise IntersectException
+        raise IntersectError
