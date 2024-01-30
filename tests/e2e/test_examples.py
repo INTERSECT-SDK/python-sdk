@@ -11,7 +11,6 @@ To run the E2E tests, you will need a broker + backing services running.
 TODO these may not work on Windows or Mac
 """
 
-import glob
 import os
 import signal
 import subprocess
@@ -24,15 +23,16 @@ os.chdir(Path(__file__).parents[2])
 # HELPERS #####################
 
 
+def path_to_pymodule(p: Path) -> str:
+    return str(p).replace(os.path.sep, '.')[:-3]
+
+
 def run_example_test(example: str, timeout: int = 60) -> str:
     # convert all files to module syntax
     service_modules = [
-        f.replace(os.path.sep, '.')[:-3]
-        for f in glob.glob(f'examples{os.path.sep}{example}{os.path.sep}*_service.py')
+        path_to_pymodule(f) for f in Path(f'examples/{example}/').glob('*_service.py')
     ]
-    client_module = glob.glob(f'examples{os.path.sep}{example}{os.path.sep}*_client.py')[0].replace(
-        os.path.sep, '.'
-    )[:-3]
+    client_module = path_to_pymodule(next(Path(f'examples/{example}/').glob('*_client.py')))
 
     service_procs = [subprocess.Popen([sys.executable, '-m', file]) for file in service_modules]  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
     # make sure all service processes have been initialized before starting client process

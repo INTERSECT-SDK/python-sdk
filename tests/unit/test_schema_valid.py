@@ -25,8 +25,8 @@ def get_fixture_path(fixture: str):
 # TESTS ##################
 
 
-def test_schema_comparision():
-    with open(get_fixture_path('example_schema.json'), 'rb') as f:
+def test_schema_comparison():
+    with Path.open(get_fixture_path('example_schema.json'), 'rb') as f:
         expected_schema = json.load(f)
     actual_schema = get_schema_from_model(
         DummyCapabilityImplementation, FAKE_HIERARCHY_CONFIG, '0.0.1'

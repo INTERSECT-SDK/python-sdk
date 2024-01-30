@@ -6,19 +6,22 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath('../src'))
+from intersect_sdk import __version__ as intersect_version
+
+sys.path.insert(0, Path('../src').resolve())
 
 # -- Project information -----------------------------------------------------
 
-project = 'Python SDK'
-copyright = '2023, INTERSECT developers'  # noqa: A001 (OK to override builtin for Sphinx)
+project = 'INTERSECT-SDK (Python)'
+copyright = '2023-, INTERSECT developers'  # noqa: A001 (OK to override builtin for Sphinx)
 author = 'INTERSECT developers'
 
+version = intersect_version
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = intersect_version
 
 # -- General configuration ---------------------------------------------------
 
@@ -58,4 +61,4 @@ html_static_path = ['_static']
 # a list of builtin themes.
 html_theme = 'furo'
 html_logo = '_static/logo.png'
-html_title = 'Python SDK for INTERSECT'
+html_title = f'INTERSECT-SDK (Python) ({intersect_version})'
