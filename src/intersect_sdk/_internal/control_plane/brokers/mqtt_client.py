@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import paho.mqtt.client as paho_client
 from retrying import retry
@@ -9,7 +9,7 @@ from retrying import retry
 from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
-    from ..types import GET_TOPIC_TO_HANDLER_TYPE
+    from collections import defaultdict
 
 
 class MQTTClient(BrokerClient):
@@ -33,7 +33,7 @@ class MQTTClient(BrokerClient):
         port: int,
         username: str,
         password: str,
-        topics_to_handlers: GET_TOPIC_TO_HANDLER_TYPE,
+        topics_to_handlers: Callable[[], defaultdict[str, set[Callable[[bytes], None]]]],
         uid: str | None = None,
     ) -> None:
         """The default constructor.
@@ -47,10 +47,7 @@ class MQTTClient(BrokerClient):
             uid: A string representing the unique id to identify the client.
         """
         # Unique id for the MQTT broker to associate this client with
-        if uid:
-            self.uid = uid
-        else:
-            self.uid = str(uuid.uuid4())
+        self.uid = uid if uid else str(uuid.uuid4())
         self.host = host
         self.port = port
 

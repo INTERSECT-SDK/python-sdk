@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from typing import Any, Dict
@@ -125,9 +126,9 @@ class SampleOrchestrator:
             *The only exception to the "Class gets deserialized to a dictionary" rule is if the class inherits from Python's NamedTuple builtin, in which case
             it will be deserialized as a List.
         """
-        print('Source:', source)
-        print('Operation:', operation)
-        print('Payload:', payload)
+        print('Source:', json.dumps(source))
+        print('Operation:', json.dumps(operation))
+        print('Payload:', json.dumps(payload))
         print()
         if not self.message_stack:
             # break out of pub/sub loop

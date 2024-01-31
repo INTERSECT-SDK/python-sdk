@@ -11,11 +11,11 @@ from retrying import retry
 from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
+    from collections import defaultdict
+
     from pika.channel import Channel
     from pika.frame import Frame
     from pika.spec import Basic, BasicProperties
-
-    from ..types import GET_TOPIC_TO_HANDLER_TYPE
 
 
 class AMQPClient(BrokerClient):
@@ -38,7 +38,7 @@ class AMQPClient(BrokerClient):
         port: int,
         username: str,
         password: str,
-        topics_to_handlers: GET_TOPIC_TO_HANDLER_TYPE,
+        topics_to_handlers: Callable[[], defaultdict[str, set[Callable[[bytes], None]]]],
         uid: str | None = None,
     ) -> None:
         """The default constructor.
@@ -51,10 +51,7 @@ class AMQPClient(BrokerClient):
             topics_to_handlers: callback function which gets the topic to handler map from the channel manager
             uid: String for the client's UUID.
         """
-        if uid:
-            self.id = uid
-        else:
-            self.id = str(uuid.uuid4())
+        self.uid = uid if uid else str(uuid.uuid4())
 
         self._connection_params = pika.ConnectionParameters(
             host=host,
@@ -209,7 +206,7 @@ class AMQPClient(BrokerClient):
             topic: The string name for the Channel on the broker.
         """
         cb = functools.partial(self._on_queue_declareok, channel=channel, topic=topic)
-        channel.queue_declare(queue=topic + '.' + self.id, durable=True, callback=cb)
+        channel.queue_declare(queue=topic + '.' + self.uid, durable=True, callback=cb)
 
     def _on_queue_declareok(self, _unused_frame: Frame, channel: Channel, topic: str) -> None:
         """Begins listening on the given queue.
@@ -222,7 +219,7 @@ class AMQPClient(BrokerClient):
             topic: The string name for the Channel on the broker.
         """
         cb = functools.partial(self._on_queue_bindok, channel=channel, topic=topic)
-        channel.queue_bind(topic + '.' + self.id, topic, routing_key=topic, callback=cb)
+        channel.queue_bind(topic + '.' + self.uid, topic, routing_key=topic, callback=cb)
 
     def _on_queue_bindok(self, _unused_frame: Frame, channel: Channel, topic: str) -> None:
         """Consumes a message from the given channel.
@@ -236,7 +233,7 @@ class AMQPClient(BrokerClient):
         """
         cb = functools.partial(self._on_consume_ok)
         consumer_tag = channel.basic_consume(
-            queue=topic + '.' + self.id,
+            queue=topic + '.' + self.uid,
             auto_ack=True,
             on_message_callback=self._consume_message,
             callback=cb,

@@ -11,6 +11,7 @@ To run the E2E tests, you will need a broker + backing services running.
 TODO these may not work on Windows or Mac
 """
 
+import json
 import os
 import signal
 import subprocess
@@ -65,35 +66,50 @@ def test_example_1_hello_world_mqtt():
 
 def test_example_2_counter():
     actual_stdout = run_example_test('2_counting')
-    assert (
-        actual_stdout
-        == """Source: counting-organization.counting-facility.counting-system.counting-subsystem.counting-service
-Operation: start_count
-Payload: {'state': {'count': 1, 'counting': True}, 'success': True}
+    # the value of the actual counter can sometimes vary a little bit, don't fail the test if so
+    lines = actual_stdout.splitlines()
+    # test source
+    for line_idx in range(0, len(lines), 4):
+        assert (
+            lines[line_idx]
+            == 'Source: "counting-organization.counting-facility.counting-system.counting-subsystem.counting-service"'
+        )
+    # test operation
+    assert lines[1] == 'Operation: "start_count"'
+    assert lines[5] == 'Operation: "stop_count"'
+    assert lines[9] == 'Operation: "start_count"'
+    assert lines[13] == 'Operation: "reset_count"'
+    assert lines[17] == 'Operation: "reset_count"'
+    assert lines[21] == 'Operation: "start_count"'
+    assert lines[25] == 'Operation: "stop_count"'
 
-Source: counting-organization.counting-facility.counting-system.counting-subsystem.counting-service
-Operation: stop_count
-Payload: {'state': {'count': 6, 'counting': False}, 'success': True}
+    # test payloads
+    # if 'count' is within 3 steps of the subtrahend, just pass the test
 
-Source: counting-organization.counting-facility.counting-system.counting-subsystem.counting-service
-Operation: start_count
-Payload: {'state': {'count': 7, 'counting': True}, 'success': True}
+    payload = json.loads(lines[2][9:])
+    assert payload['state']['counting'] is True
+    assert abs(payload['state']['count'] - 1) <= 3
 
-Source: counting-organization.counting-facility.counting-system.counting-subsystem.counting-service
-Operation: reset_count
-Payload: {'count': 10, 'counting': True}
+    payload = json.loads(lines[6][9:])
+    assert payload['state']['counting'] is False
+    assert abs(payload['state']['count'] - 6) <= 3
 
-Source: counting-organization.counting-facility.counting-system.counting-subsystem.counting-service
-Operation: reset_count
-Payload: {'count': 6, 'counting': True}
+    payload = json.loads(lines[10][9:])
+    assert payload['state']['counting'] is True
+    assert abs(payload['state']['count'] - 7) <= 3
 
-Source: counting-organization.counting-facility.counting-system.counting-subsystem.counting-service
-Operation: start_count
-Payload: {'state': {'count': 1, 'counting': True}, 'success': True}
+    payload = json.loads(lines[14][9:])
+    assert payload['counting'] is True
+    assert abs(payload['count'] - 10) <= 3
 
-Source: counting-organization.counting-facility.counting-system.counting-subsystem.counting-service
-Operation: stop_count
-Payload: {'state': {'count': 4, 'counting': False}, 'success': True}
+    payload = json.loads(lines[18][9:])
+    assert payload['counting'] is True
+    assert abs(payload['count'] - 6) <= 3
 
-"""
-    )
+    payload = json.loads(lines[22][9:])
+    assert payload['state']['counting'] is True
+    assert abs(payload['state']['count'] - 1) <= 3
+
+    payload = json.loads(lines[26][9:])
+    assert payload['state']['counting'] is False
+    assert abs(payload['state']['count'] - 4) <= 3

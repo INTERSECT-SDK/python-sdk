@@ -167,6 +167,16 @@ disallow_untyped_decorators = false # this is needed for library decorator compa
 log_cli = true
 addopts = "-ra"
 
+[tool.coverage.report]
+omit = [
+    '*__init__*', # __init__ files should just re-export other classes and functions
+]
+exclude_lines = [
+    'pragma: no-cover', # standard
+    'if TYPE_CHECKING:', # type checking blocks are not executed in coverage, but we don't care
+    '@(abc\\.)?abstractmethod', # don't try to cover abstract methods
+]
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"

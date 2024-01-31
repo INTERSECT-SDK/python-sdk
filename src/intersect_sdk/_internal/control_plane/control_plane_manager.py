@@ -12,7 +12,6 @@ from .brokers.mqtt_client import MQTTClient
 if TYPE_CHECKING:
     from ...config.shared import ControlPlaneConfig
     from .brokers.broker_client import BrokerClient
-    from .types import GET_TOPIC_TO_HANDLER_TYPE, TOPIC_TO_HANDLER_TYPE
 
 GENERIC_MESSAGE_SERIALIZER = TypeAdapter(Any)
 
@@ -27,7 +26,7 @@ def serialize_message(message: Any) -> bytes:
 
 def create_control_provider(
     config: ControlPlaneConfig,
-    topic_handler_callback: GET_TOPIC_TO_HANDLER_TYPE,
+    topic_handler_callback: Callable[[], defaultdict[str, set[Callable[[bytes], None]]]],
 ) -> BrokerClient:
     if config.protocol == 'amqp0.9.1':
         # only try to import the AMQP client if the user is using an AMQP broker
@@ -71,7 +70,7 @@ class ControlPlaneManager:
 
         self._ready = False
         # topics_to_handlers are managed here and transcend connections/disconnections to the broker
-        self._topics_to_handlers: TOPIC_TO_HANDLER_TYPE = defaultdict(set)
+        self._topics_to_handlers: defaultdict[str, set[Callable[[bytes], None]]] = defaultdict(set)
 
     def add_subscription_channel(
         self, channel: str, callbacks: set[Callable[[bytes], None]]
@@ -105,7 +104,7 @@ class ControlPlaneManager:
                     provider.unsubscribe(channel)
             return True
 
-    def get_subscription_channels(self) -> TOPIC_TO_HANDLER_TYPE:
+    def get_subscription_channels(self) -> defaultdict[str, set[Callable[[bytes], None]]]:
         """Get the subscription channels.
 
         Note that this function gets accessed as a callback from the direct broker implementations.
