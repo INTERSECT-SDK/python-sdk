@@ -1,7 +1,7 @@
 import logging
-from typing import Any
 
 from intersect_sdk import (
+    INTERSECT_JSON_VALUE,
     IntersectClient,
     IntersectClientConfig,
     IntersectClientMessageParams,
@@ -11,7 +11,9 @@ from intersect_sdk import (
 logging.basicConfig(level=logging.INFO)
 
 
-def simple_client_callback(_source: str, _operation: str, _has_error: bool, payload: Any) -> None:
+def simple_client_callback(
+    _source: str, _operation: str, _has_error: bool, payload: INTERSECT_JSON_VALUE
+) -> None:
     """This simply prints the response from the service to your console.
 
     As we don't want to engage in a back-and-forth, we simply throw an exception to break out of the message loop.

@@ -173,7 +173,7 @@ omit = [
 ]
 exclude_lines = [
     'pragma: no-cover', # standard
-    'if TYPE_CHECKING:', # type checking blocks are not executed in coverage, but we don't care
+    'if (typing\\.)?TYPE_CHECKING:', # type checking blocks are not executed in coverage, but we don't care
     '@(abc\\.)?abstractmethod', # don't try to cover abstract methods
 ]
 

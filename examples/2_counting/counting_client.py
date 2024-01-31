@@ -1,9 +1,9 @@
 import json
 import logging
 import time
-from typing import Any, Dict
 
 from intersect_sdk import (
+    INTERSECT_JSON_VALUE,
     IntersectClient,
     IntersectClientConfig,
     IntersectClientMessageParams,
@@ -34,11 +34,6 @@ class SampleOrchestrator:
         All approximations in comments come from the first run against the service, but the values can potentially vary
         if you run the client multiple times!
         """
-        # the messages are initialized in the order they are sent for readability purposes
-        # the message stack is a tuple: the message, and the time to wait before sending it.
-        #
-        # all approximations in comments come from the first run against the service, but the values can potentially vary
-        # if you run the client multiple times!
         self.message_stack = [
             # wait 5 seconds before stopping the counter. "Count" in response will be approx. 6
             (
@@ -99,7 +94,7 @@ class SampleOrchestrator:
         self.message_stack.reverse()
 
     def client_callback(
-        self, source: str, operation: str, _has_error: bool, payload: Dict[str, Any]
+        self, source: str, operation: str, _has_error: bool, payload: INTERSECT_JSON_VALUE
     ) -> IntersectClientMessageParams:
         """This simply prints the response from the Service to your console.
 

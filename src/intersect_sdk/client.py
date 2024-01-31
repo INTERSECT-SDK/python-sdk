@@ -15,11 +15,11 @@ message brokers or the data layer beyond defining credentials in their "Intersec
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 from ._internal.control_plane.control_plane_manager import ControlPlaneManager
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
@@ -74,8 +74,24 @@ class IntersectClientMessageParams(BaseModel):
     """
 
 
+INTERSECT_JSON_VALUE: TypeAlias = Union[
+    List['INTERSECT_JSON_VALUE'],
+    Dict[str, 'INTERSECT_JSON_VALUE'],
+    str,
+    bool,
+    int,
+    float,
+    None,
+]
+"""
+This is a simple type representation of JSON as a Python object. INTERSECT will automatically deserialize service payloads into one of these types.
+
+(Pydantic has a similar type, "JsonValue", which should be used if you desire functionality beyond type hinting. This is strictly a type hint.)
+"""
+
+
 INTERSECT_CLIENT_CALLBACK_TYPE = Callable[
-    [str, str, bool, Any], Optional[IntersectClientMessageParams]
+    [str, str, bool, INTERSECT_JSON_VALUE], Optional[IntersectClientMessageParams]
 ]
 """
 This is a callable function type which should be defined by the user.
@@ -287,7 +303,7 @@ class IntersectClient:
                 message['headers']['source'],
                 message['operationId'],
                 message['headers']['has_error'],
-                request_params,
+                request_params,  # type: ignore[arg-type]
             )
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
             logger.warning(f"Exception from user's callback function:\n{e}")

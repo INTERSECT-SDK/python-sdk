@@ -14,7 +14,12 @@ from .annotations import (
     intersect_status,
 )
 from .app_lifecycle import default_intersect_lifecycle_loop
-from .client import INTERSECT_CLIENT_CALLBACK_TYPE, IntersectClient, IntersectClientMessageParams
+from .client import (
+    INTERSECT_CLIENT_CALLBACK_TYPE,
+    INTERSECT_JSON_VALUE,
+    IntersectClient,
+    IntersectClientMessageParams,
+)
 from .config.client import IntersectClientConfig
 from .config.service import IntersectServiceConfig
 from .config.shared import (
@@ -37,6 +42,7 @@ __all__ = [
     'IntersectClient',
     'IntersectClientMessageParams',
     'INTERSECT_CLIENT_CALLBACK_TYPE',
+    'INTERSECT_JSON_VALUE',
     'default_intersect_lifecycle_loop',
     'IntersectClientConfig',
     'IntersectServiceConfig',
