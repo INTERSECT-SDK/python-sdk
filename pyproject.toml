@@ -40,7 +40,7 @@ amqp = [
 [tool.pdm.dev-dependencies]
 lint = [
     "pre-commit>=3.3.1",
-    "ruff>=0.1.13",
+    "ruff>=0.2.0",
     "mypy>=1.8.0",
     "types-paho-mqtt>=1.6.0.20240106",
 ]
@@ -72,9 +72,11 @@ path = "src/intersect_sdk/version.py"
 
 [tool.ruff]
 line-length = 100
+format = {quote-style = 'single'}
+
+[tool.ruff.lint]
 isort = { known-first-party = ['src'] }
 pydocstyle = { convention = 'google'}
-format = {quote-style = 'single'}
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 20 }
 pylint = { max-args = 10, max-branches = 20, max-returns = 10 }
@@ -132,7 +134,7 @@ ignore = [
     'PLR2004', # allow "magic numbers"
 ]
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 '__init__.py' = ['F401'] # __init__.py commonly has unused imports
 'docs/*' = [
     'D', # the documentation folder does not need documentation
