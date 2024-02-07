@@ -43,6 +43,7 @@ from ._internal.version_resolver import resolve_user_version
 from .annotations import IntersectDataHandler, IntersectMimeType
 from .config.service import IntersectServiceConfig
 from .schema import _get_schema_and_functions_from_model
+from .version import __version__
 
 if TYPE_CHECKING:
     from ._internal.function_metadata import FunctionMetadata
@@ -339,7 +340,7 @@ class IntersectService(Generic[CAPABILITY]):
             return None
         if not resolve_user_version(message):
             return self._make_error_message(
-                f'SDK version incompatibility. Service version: {self._version} . Sender version: {message["headers"]["service_version"]}',
+                f'SDK version incompatibility. Service version: {__version__} . Sender version: {message["headers"]["service_version"]}',
                 message,
             )
 
