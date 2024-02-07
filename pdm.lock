@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "amqp", "doc", "lint", "test"]
+groups = ["default", "amqp", "doc", "lint", "test", "py38"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:924b7498a7fe9b12da8325d992bc38c95de68ac6999b102153c044ea09fd9531"
+content_hash = "sha256:4006df8671788a5a9a13f2ca68c11adb6c005835bb62525385138941a8daaca4"
 
 [[package]]
 name = "alabaster"
@@ -421,6 +421,16 @@ summary = "Docutils -- Python Documentation Utilities"
 files = [
     {file = "docutils-0.20.1-py3-none-any.whl", hash = "sha256:96f387a2c5562db4476f09f13bbab2192e764cac08ebbf3a34a95d9b1e4a59d6"},
     {file = "docutils-0.20.1.tar.gz", hash = "sha256:f08a4e276c3a1583a86dce3e34aba3fe04d02bba2dd51ed16106244e8a923e3b"},
+]
+
+[[package]]
+name = "eval-type-backport"
+version = "0.1.3"
+requires_python = ">=3.7"
+summary = "Like `typing._eval_type`, but lets older Python versions use newer typing features."
+files = [
+    {file = "eval_type_backport-0.1.3-py3-none-any.whl", hash = "sha256:519d2a993b3da286df9f90e17f503f66435106ad870cf26620c5720e2158ddf2"},
+    {file = "eval_type_backport-0.1.3.tar.gz", hash = "sha256:d83ee225331dfa009493cec1f3608a71550b515ee4749abe78da14e3c5e314f5"},
 ]
 
 [[package]]

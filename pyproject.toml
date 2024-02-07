@@ -36,6 +36,11 @@ dependencies = [
 amqp = [
     "pika>=1.3.2,<2.0.0",
 ]
+# if running Python 3.8, you'll need this dependency if you want runtime eval types, i.e.
+# Literal[tuple(some_dict.keys())]
+py38 = [
+    "eval-type-backport>=0.1.3",
+]
 
 [tool.pdm.dev-dependencies]
 lint = [
