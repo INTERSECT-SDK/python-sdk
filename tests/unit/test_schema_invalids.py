@@ -564,3 +564,17 @@ def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixt
         in caplog.text
     )
     assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
+
+
+# should fail because INTERSECT functions can only use positional args
+# (we do allow the '/' "positional only" annotation, but we also prohibit *args and **kwargs because they are misleading)
+class FunctionHasKeywordOnlyParameters:
+    @intersect_message()
+    def keyword_only_params(self, *, kw: int) -> int:
+        ...
+
+
+def test_disallow_keyword_only(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(FunctionHasKeywordOnlyParameters)
+    assert 'should not use keyword or variable length arguments' in caplog.text

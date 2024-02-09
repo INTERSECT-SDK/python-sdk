@@ -327,7 +327,11 @@ def _get_functions(
 ) -> Generator[tuple[str, Callable[[Any], Any]], None, None]:
     for name in dir(capability):
         method = getattr(capability, name)
-        if callable(method) and hasattr(method, attr):
+        if hasattr(method, attr):
+            if not callable(method):
+                die(
+                    'INTERSECT annotation should only be used on callable functions, with no other annotations'
+                )
             yield name, method
 
 
@@ -410,9 +414,12 @@ def _status_fn_schema(
         return None, None, None, None
     status_fn_name, status_fn = status_fns[0]
     status_signature = inspect.signature(status_fn)
-    if len(status_signature.parameters) != 1:
+    method_params = tuple(status_signature.parameters.values())
+    if len(method_params) != 1 or any(
+        p.kind not in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY) for p in method_params
+    ):
         die(
-            f"On capability '{capability.__name__}', capability status function '{status_fn_name}' should have no parameters other than 'self'"
+            f"On capability '{capability.__name__}', capability status function '{status_fn_name}' should have no parameters other than 'self', and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
         )
     if status_signature.return_annotation is inspect.Signature.empty:
         die(
@@ -459,9 +466,15 @@ def get_schemas_and_functions(
         signature = inspect.signature(method)
         method_params = tuple(signature.parameters.values())
         return_annotation = signature.return_annotation
-        if len(method_params) == 0 or len(method_params) > 2:
+        if (
+            len(method_params) == 0
+            or len(method_params) > 2
+            or any(
+                p.kind not in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY) for p in method_params
+            )
+        ):
             die(
-                f"On capability '{capability.__name__}', function '{name}' should have 'self' and zero or one additional parameters"
+                f"On capability '{capability.__name__}', function '{name}' should have 'self' and zero or one additional parameters, and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
             )
 
         # The schema format should be hard-coded and determined based on how Pydantic parses the schema.
