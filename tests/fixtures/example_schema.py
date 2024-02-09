@@ -470,7 +470,7 @@ class DummyCapabilityImplementation:
     @intersect_message(
         response_data_transfer_handler=IntersectDataHandler.MINIO,
     )
-    def verify_nested(self, param: Nested1, /) -> NestedResponse:
+    def verify_nested(self, /, param: Nested1) -> NestedResponse:
         """
         verifies that nested values are parsed correctly
         """
