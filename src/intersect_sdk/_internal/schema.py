@@ -193,7 +193,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         if 'keys_schema' not in schema:
             return self.handle_invalid_for_json_schema(
                 schema,
-                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT",
+                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT. You may use typing_extensions.Annotated in conjunction with Pydantic.Field to specify a string pattern if desired.",
             )
         if 'values_schema' not in schema:
             return self.handle_invalid_for_json_schema(
@@ -202,16 +202,21 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         keys_schema = self.generate_inner(schema['keys_schema']).copy()
         values_schema = self.generate_inner(schema['values_schema']).copy()
         values_schema.pop('title', None)  # don't give a title to the additionalProperties
-        keys_type = keys_schema.get('type', None)
+
+        # this is actually the Python type, not the jsonschema type.
+        # Only strings are valid JSON keys, but integers/floats are still useful for many use-cases.
+        # Other key types should be discouraged due to how their implementation would be obfuscated.
+        keys_type = schema['keys_schema']['type']
+
         json_schema: JsonSchemaValue = {'type': 'object'}
-        if keys_type == 'integer':
-            json_schema['patternProperties'] = {'^[-+]?[0-9]+$': values_schema}
-        elif keys_type == 'number':
+        if keys_type == 'int':
+            json_schema['patternProperties'] = {'^-?[0-9]+$': values_schema}
+        elif keys_type == 'float':
             # this regex disallows '1237.', which can be handled by Python but not every programming language
             json_schema['patternProperties'] = {
-                '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$': values_schema
+                '^-?[0-9]*\\.?[0-9]+([eE]-?[0-9]+)?$': values_schema
             }
-        elif keys_type == 'string':
+        elif keys_type == 'str':
             keys_pattern = keys_schema.pop('pattern', None)
             if keys_pattern is None:
                 json_schema['additionalProperties'] = values_schema
@@ -220,7 +225,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         else:
             return self.handle_invalid_for_json_schema(
                 schema,
-                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT",
+                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT. You may use typing_extensions.Annotated in conjunction with Pydantic.Field to specify a string pattern if desired.",
             )
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema

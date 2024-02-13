@@ -27,6 +27,8 @@ To forbid type coercion (i.e. casting a JSON string to a Python integer), you ca
 but if you have concerns you can refer to `Pydantic's Conversion Table <https://docs.pydantic.dev/latest/concepts/conversion_table/>`_ to determine what is and is not allowed.
 Note that in INTERSECT, the input source will always be JSON.
 
-Note that INTERSECT has a few additional restrictions on types from Pydantic. ``typing.Any`` and ``object`` are considered invalid types due to their inability
-to construct a strongly-typed schema. If you are using a Mapping type (such as Dict), the key type must be either ``str``, ``float``, or ``int``. Note that using floating-point or
-integer keys requires allowing type coercion.
+Note that INTERSECT has a few additional restrictions on types from Pydantic:
+
+* ``typing.Any`` and ``object`` are considered invalid types due to their inability to construct a strongly-typed schema.
+
+* If you are using a Mapping type (such as Dict), the key type must be either ``str``, ``float``, or ``int``. Note that using floating-point or integer keys requires allowing type coercion, and that float and integer keys cannot effectively communicate minimum/maximum values or ranges through the generated schema. However, regular expressions can be effectively communicated, i.e. ``Annotated[str, Field(pattern=r'<YOUR_REGEX_HERE>')]``.
