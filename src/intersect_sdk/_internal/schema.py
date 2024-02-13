@@ -329,15 +329,31 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
 
 def _get_functions(
     capability: type, attr: str
-) -> Generator[tuple[str, Callable[[Any], Any]], None, None]:
+) -> Generator[tuple[str, Callable[[Any], Any], int], None, None]:
+    """Inspect all functions, and check that annotated functions are not classmethods (which are always a mistake) and are callable.
+
+    In Python, staticmethods can be called from an instance; since they are more performant than instance methods, they should be allowed.
+
+    Params:
+      - capability - type of user's class
+      - attr: hidden attribute we want to lookup on the user's function
+
+    Yields:
+      - name of function
+      - the function
+      - minimum number of arguments (0 if staticmethod, 1 if instance method)
+    """
     for name in dir(capability):
         method = getattr(capability, name)
         if hasattr(method, attr):
             if not callable(method):
                 die(
-                    'INTERSECT annotation should only be used on callable functions, with no other annotations'
+                    'INTERSECT annotation should only be used on callable functions, and should be applied first (put it at the bottom)'
                 )
-            yield name, method
+            static_attr = inspect.getattr_static(capability, name)
+            if isinstance(static_attr, classmethod):
+                die('INTERSECT annotations cannot be used with @classmethod')
+            yield name, method, bool(not isinstance(static_attr, staticmethod))
 
 
 def _merge_schema_definitions(
@@ -417,14 +433,14 @@ def _status_fn_schema(
             f"Class '{capability.__name__}' has no function annotated with the @intersect_status() decorator. No status information will be provided when sending status messages."
         )
         return None, None, None, None
-    status_fn_name, status_fn = status_fns[0]
+    status_fn_name, status_fn, min_params = status_fns[0]
     status_signature = inspect.signature(status_fn)
     method_params = tuple(status_signature.parameters.values())
-    if len(method_params) != 1 or any(
+    if len(method_params) != min_params or any(
         p.kind not in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY) for p in method_params
     ):
         die(
-            f"On capability '{capability.__name__}', capability status function '{status_fn_name}' should have no parameters other than 'self', and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
+            f"On capability '{capability.__name__}', capability status function '{status_fn_name}' should have no parameters other than 'self' (unless a staticmethod), and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
         )
     if status_signature.return_annotation is inspect.Signature.empty:
         die(
@@ -466,20 +482,20 @@ def get_schemas_and_functions(
     schemas: dict[Any, Any] = {}
     channels = {}
 
-    for name, method in _get_functions(capability, BASE_ATTR):
+    for name, method, min_params in _get_functions(capability, BASE_ATTR):
         docstring = inspect.cleandoc(method.__doc__) if method.__doc__ else None
         signature = inspect.signature(method)
         method_params = tuple(signature.parameters.values())
         return_annotation = signature.return_annotation
         if (
-            len(method_params) == 0
-            or len(method_params) > 2
+            len(method_params) < min_params
+            or len(method_params) > min_params + 1
             or any(
                 p.kind not in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY) for p in method_params
             )
         ):
             die(
-                f"On capability '{capability.__name__}', function '{name}' should have 'self' and zero or one additional parameters, and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
+                f"On capability '{capability.__name__}', function '{name}' should have 'self' (unless a staticmethod) and zero or one additional parameters, and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
             )
 
         # The schema format should be hard-coded and determined based on how Pydantic parses the schema.
@@ -505,8 +521,8 @@ def get_schemas_and_functions(
             channels[name]['subscribe']['description'] = docstring  # type: ignore[assignment]
 
         # this block handles request params
-        if len(method_params) == 2:
-            parameter = method_params[1]
+        if len(method_params) == min_params + 1:
+            parameter = method_params[-1]
             annotation = parameter.annotation
             if annotation is inspect.Signature.empty:
                 die(

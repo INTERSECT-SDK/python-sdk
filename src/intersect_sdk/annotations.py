@@ -69,7 +69,7 @@ def intersect_message(
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
     response_content_type: IntersectMimeType = IntersectMimeType.JSON,
     strict_request_validation: bool = False,
-) -> Any:
+) -> Callable[..., Any]:
     """Use this annotation to mark your capability method as an entrypoint to external requests.
 
     A class method marked with this annotation has two requirements:
@@ -119,7 +119,14 @@ def intersect_message(
         NOTE: If you are using a Mapping type (i.e. Dict) with integer or float keys, you MUST leave this on False.
     """
 
-    def inner_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+    def inner_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        if isinstance(func, classmethod):
+            msg = 'The `@classmethod` decorator cannot be used with `@intersect_message()`'
+            raise TypeError(msg)
+        if isinstance(func, staticmethod):
+            msg = 'The `@staticmethod` decorator should be applied after `@intersect_message` (put `@staticmethod` on top)'
+            raise TypeError(msg)
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
@@ -155,7 +162,14 @@ def intersect_status(
           (i.e. MINIO)?
     """
 
-    def inner_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+    def inner_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        if isinstance(func, classmethod):
+            msg = 'The `@classmethod` decorator cannot be used with `@intersect_status()`'
+            raise TypeError(msg)
+        if isinstance(func, staticmethod):
+            msg = 'The `@staticmethod` decorator should be applied after `@intersect_status` (put `@staticmethod` on top)'
+            raise TypeError(msg)
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)

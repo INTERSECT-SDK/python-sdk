@@ -1,5 +1,5 @@
 import pytest
-from intersect_sdk import intersect_message
+from intersect_sdk import intersect_message, intersect_status
 from pydantic import ValidationError
 
 
@@ -24,3 +24,48 @@ def test_invalid_annotation_params():
     assert {'type': 'int_parsing', 'loc': ('response_data_transfer_handler',)} in errors
     assert {'type': 'enum', 'loc': ('response_content_type',)} in errors
     assert {'type': 'bool_parsing', 'loc': ('strict_request_validation',)} in errors
+
+
+# only tests @classmethod applied first, schema_invalids tests @classmethod applied last
+def test_classmethod_rejected(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(TypeError) as ex:
+
+        class ClassMethod1:
+            @intersect_message()
+            @classmethod
+            def bad_annotations(cls, param: bool) -> bool:
+                ...
+
+    assert 'The `@classmethod` decorator cannot be used with `@intersect_message()`' in str(ex)
+
+    with pytest.raises(TypeError) as ex2:
+
+        class ClassMethod2:
+            @intersect_status()
+            @classmethod
+            def bad_annotations(cls, param: bool) -> bool:
+                ...
+
+    assert 'The `@classmethod` decorator cannot be used with `@intersect_status()`' in str(ex2)
+
+
+def test_staticmethod_invalids():
+    with pytest.raises(TypeError) as ex:
+
+        class Test1:
+            @intersect_message()
+            @staticmethod
+            def bad_annotations(param: bool) -> bool:
+                ...
+
+    assert 'The `@staticmethod` decorator should be applied after `@intersect_message`' in str(ex)
+
+    with pytest.raises(TypeError) as ex2:
+
+        class Test2:
+            @intersect_status()
+            @staticmethod
+            def bad_annotations(param: bool) -> bool:
+                ...
+
+    assert 'The `@staticmethod` decorator should be applied after `@intersect_status`' in str(ex2)

@@ -379,8 +379,9 @@ class DummyCapabilityImplementation:
         self.update_status('test_datetime')
         return f'It has been {datetime.datetime.now(tz=datetime.timezone.utc) - request} seconds since {request!s}'
 
+    @staticmethod
     @intersect_message()
-    def test_generator(self, request: str) -> Generator[int, None, None]:
+    def test_generator(request: str) -> Generator[int, None, None]:
         """
         TODO - Generators need more support than this.
 
@@ -391,10 +392,9 @@ class DummyCapabilityImplementation:
           1) Given the typing is Generator[yield_type, send_type, return_type], only the yield_type matters
           2) The schema will always look like "{'items': {'type': <YIELD_TYPE>}, 'type': 'array'}"
         """
-        self.update_status('test_generator')
         for i in range(len(request) + 1):
             for j in range(i + 1, len(request) + 1):
-                yield hash(request[i:j])
+                yield sum(map(ord, request[i:j]))
 
     @intersect_message()
     def test_uuid(self, uid: UUID) -> str:

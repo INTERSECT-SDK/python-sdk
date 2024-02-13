@@ -578,3 +578,46 @@ def test_disallow_keyword_only(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper(FunctionHasKeywordOnlyParameters)
     assert 'should not use keyword or variable length arguments' in caplog.text
+
+
+# should fail because we explicitly disallow @classmethod annotations
+class ClassMethod:
+    @classmethod
+    @intersect_message()
+    def bad_annotations(cls, param: bool) -> bool:
+        ...
+
+
+def test_disallow_classmethod(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(ClassMethod)
+    assert 'INTERSECT annotations cannot be used with @classmethod' in caplog.text
+
+
+class StaticMethodTooManyParams:
+    @staticmethod
+    @intersect_message()
+    def too_many_params(one: bool, two: bool) -> bool:
+        ...
+
+
+def test_disallow_staticmethod_too_many_params(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(StaticMethodTooManyParams)
+    assert 'zero or one additional parameters' in caplog.text
+
+
+class StaticMethodMissingParamAnnotation:
+    @staticmethod
+    @intersect_message()
+    def missing_param_annotation(one) -> bool:  # noqa: ANN001 (the point)
+        ...
+
+
+def test_disallow_staticmethod_missing_param_annotation(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(StaticMethodMissingParamAnnotation)
+    assert (
+        "parameter 'one' type annotation on function 'missing_param_annotation' missing"
+        in caplog.text
+    )
