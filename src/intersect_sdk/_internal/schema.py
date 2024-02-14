@@ -353,7 +353,7 @@ def _get_functions(
             static_attr = inspect.getattr_static(capability, name)
             if isinstance(static_attr, classmethod):
                 die('INTERSECT annotations cannot be used with @classmethod')
-            yield name, method, bool(not isinstance(static_attr, staticmethod))
+            yield name, method, int(not isinstance(static_attr, staticmethod))
 
 
 def _merge_schema_definitions(
