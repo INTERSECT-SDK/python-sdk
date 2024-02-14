@@ -468,7 +468,7 @@ class IntersectService(Generic[CAPABILITY]):
     def _send_lifecycle_message(self, lifecycle_type: LifecycleType, payload: Any = None) -> None:
         """Send out a lifecycle message."""
         msg = create_lifecycle_message(
-            source=self._hierarchy.service,
+            source=self._hierarchy.hierarchy_string('.'),
             destination=self._lifecycle_channel_name,
             service_version=self._version,
             lifecycle_type=lifecycle_type,
