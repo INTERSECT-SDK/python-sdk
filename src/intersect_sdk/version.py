@@ -4,7 +4,7 @@ These values are often used programmatically by the SDK, but can be used by appl
 """
 from __future__ import annotations
 
-__version__ = '0.5.0'
+__version__ = '0.5.1'
 """
 Version string in the format <MAJOR>.<MINOR>.<DEBUG> . Follows semantic versioning rules.
 """
