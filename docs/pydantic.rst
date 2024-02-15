@@ -6,7 +6,7 @@ FastAPI, huggingface, and SQLModel use Pydantic. In addition to data validation,
 
 INTERSECT-SDK uses Pydantic extensively in internal code. When creating your own CapabilityImplementation for a Service, INTERSECT-SDK
 allows users to use Pydantic to customize their own types and the schemas generated from them. Types which cannot be validated by Pydantic
-cannot be converted into schemas, and being able to generate an overall schema
+cannot be converted into schemas, and being able to generate an overall schema is integral for a Service to integrate into the INTERSECT ecosystem.
 
 Users are encouraged to try to express validation through Pydantic as much as possible. If validation can be expressed through schema,
 this can assist UIs and external APIs in ensuring that little to no invalid parameters will be sent to your application, reducing system
