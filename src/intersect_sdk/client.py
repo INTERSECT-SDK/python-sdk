@@ -15,7 +15,7 @@ message brokers or the data layer beyond defining credentials in their "Intersec
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Sequence, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
@@ -91,7 +91,8 @@ This is a simple type representation of JSON as a Python object. INTERSECT will 
 
 
 INTERSECT_CLIENT_CALLBACK_TYPE = Callable[
-    [str, str, bool, INTERSECT_JSON_VALUE], Optional[IntersectClientMessageParams]
+    [str, str, bool, INTERSECT_JSON_VALUE],
+    Union[IntersectClientMessageParams, Sequence[IntersectClientMessageParams], None],
 ]
 """
 This is a callable function type which should be defined by the user.
@@ -109,11 +110,11 @@ Params
        a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
 
 Returns
-  If you want to access the response of the message, the function should return an IntersectClientMessageParams object.
+  If you want to send one or many messages in reaction to a message, the function should return an IntersectClientMessageParams object or a list/tuple of IntersectClientMessageParams objects.
 
   If you are DONE listening to messages, raise a generic Exception from your function.
 
-  If you DON'T want to access the response of the message, but want to continue listening for messages, you can just return None.
+  If you DON'T want to send another message, but want to continue listening for messages, you can just return None.
 Raises
   Any uncaught or raised exceptions the callback function throws will terminate the INTERSECT lifecycle.
 """
@@ -318,7 +319,12 @@ class IntersectClient:
         if not user_function_return:
             # continue listening for additional messages, but no need to send one out
             return
-        self._send_userspace_message(user_function_return)
+
+        if isinstance(user_function_return, Sequence):
+            for msg in user_function_return:
+                self._send_userspace_message(msg)
+        else:
+            self._send_userspace_message(user_function_return)
 
     def _send_userspace_message(self, params: IntersectClientMessageParams) -> None:
         """Send a userspace message, be it an initial message from the user or from the user's callback function."""
