@@ -489,3 +489,11 @@ class DummyCapabilityImplementation:
         """
         self.update_status('verify_float_dict')
         return {int(k): v for k, v in param.items()}
+
+    @intersect_message()
+    def valid_default_argument(self, param: Annotated[int, Field(default=4)]) -> int:
+        """
+        verifies that you can call a function with a default parameter
+        """
+        self.update_status('valid_default_argument')
+        return param << 1

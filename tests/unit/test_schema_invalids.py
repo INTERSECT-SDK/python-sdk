@@ -25,7 +25,7 @@ from intersect_sdk import (
     intersect_message,
     intersect_status,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing_extensions import Annotated, TypeAliasType, TypedDict
 
 # HELPERS #########################
@@ -594,6 +594,7 @@ def test_disallow_classmethod(caplog: pytest.LogCaptureFixture):
     assert 'INTERSECT annotations cannot be used with @classmethod' in caplog.text
 
 
+# should fail because too many parameters for static methods (static methods use one fewer param than instance methods)
 class StaticMethodTooManyParams:
     @staticmethod
     @intersect_message()
@@ -607,6 +608,7 @@ def test_disallow_staticmethod_too_many_params(caplog: pytest.LogCaptureFixture)
     assert 'zero or one additional parameters' in caplog.text
 
 
+# should fail because static method parameters still need annotations
 class StaticMethodMissingParamAnnotation:
     @staticmethod
     @intersect_message()
@@ -621,3 +623,76 @@ def test_disallow_staticmethod_missing_param_annotation(caplog: pytest.LogCaptur
         "parameter 'one' type annotation on function 'missing_param_annotation' missing"
         in caplog.text
     )
+
+
+# this just tests the Pythonic "default" style argument, you can use defaults with Annotated[int, Field(default=1)]
+class DefaultArgumentInFunctionSignature:
+    @intersect_message()
+    def disallow_default_param(self, one: int = 4) -> int:
+        ...
+
+
+def test_disallow_default_argument_in_function_signature(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(DefaultArgumentInFunctionSignature)
+    assert 'should not use a default value in the function parameter' in caplog.text
+
+
+# should fail because default value mismatches annotation
+class MismatchingDefaultType:
+    @intersect_message()
+    def mismatching_default_type(self, one: Annotated[int, Field(default='red')]) -> bool:
+        ...
+
+
+def test_mismatching_default_type(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(MismatchingDefaultType)
+    assert 'does not validate against schema' in caplog.text
+
+
+# should fail because nested class's default value mismatches annotation
+class MismatchingDefaultTypeNested:
+    class Nested(BaseModel):
+        one: int = 'red'
+
+    @intersect_message()
+    def mismatching_default_type(self, one: Nested) -> bool:
+        ...
+
+
+def test_mismatching_default_type_nested(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(MismatchingDefaultTypeNested)
+    assert 'does not validate against schema' in caplog.text
+
+
+# should fail because nested class's default value mismatches annotation
+class MismatchingDefaultTypeNested2:
+    class Nested(BaseModel):
+        one: int = 'red'
+
+    @intersect_message()
+    def mismatching_default_type(self, one: Annotated[Nested, Field(default=Nested())]) -> bool:
+        ...
+
+
+def test_mismatching_default_type_nested_2(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(MismatchingDefaultTypeNested2)
+    assert 'does not validate against schema' in caplog.text
+
+
+class DefaultNotSerializable:
+    class Nested(BaseModel):
+        one: int = lambda x: x  # noqa: E731 (we're testing bad code)
+
+    @intersect_message()
+    def mismatching_default_type(self, one: Annotated[Nested, Field(default=Nested())]) -> bool:
+        ...
+
+
+def test_default_not_serializable(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(DefaultNotSerializable)
+    assert 'is not JSON serializable' in caplog.text

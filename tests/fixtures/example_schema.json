@@ -445,6 +445,35 @@
         "description": "Spit out a random string, integer, boolean, or object response"
       }
     },
+    "valid_default_argument": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "integer"
+          }
+        },
+        "description": "verifies that you can call a function with a default parameter"
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "default": 4,
+            "type": "integer"
+          }
+        },
+        "description": "verifies that you can call a function with a default parameter"
+      }
+    },
     "verify_float_dict": {
       "publish": {
         "message": {

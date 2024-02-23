@@ -13,8 +13,11 @@ from typing import (
     get_origin,
 )
 
+from jsonschema import Draft202012Validator
+from jsonschema import ValidationError as SchemaValidationError
 from pydantic import PydanticInvalidForJsonSchema, PydanticUserError, TypeAdapter
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+from pydantic_core import PydanticSerializationError
 from typing_extensions import TypeAliasType
 
 from .constants import BASE_ATTR, BASE_STATUS_ATTR, REQUEST_CONTENT, RESPONSE_CONTENT
@@ -230,6 +233,58 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
+    def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema with a default value.
+
+        Mostly follows Pydantic's implementation, but we need to override because we actually do schema validation here.
+
+        One way we could do this use "validate_default" in Pydantic's ConfigDict, but this has too many problems.
+        First, we can't specify a ConfigDict on the TypeAdapter if the type is a pydantic.BaseModel, a dataclass, or a TypedDict; and our TypeAdapter handles ALL generic types.
+        See https://docs.pydantic.dev/2.6/errors/usage_errors/#type-adapter-config-unused
+        You also would ideally leave this as "False" anyways, because it is a performance cost every time the object is validated.
+        Since user types are never actually created until reacting to a userspace message, we check their schema instead.
+
+        We only want to do the validation step once, during configuration. Additionally, we only care if the default SCHEMA
+        value doesn't validate against the rest of the SCHEMA - otherwise, user defaults are fine.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        json_schema = self.generate_inner(schema['schema'])
+
+        # Skip verification if there's not actually a default value
+        # Users are free to use pydantic.Field's 'default_factory' if they want, but those values generally shouldn't be represented in schema
+        # and we ideally don't want to call a function (which we would need to do for default_factory).
+        if 'default' not in schema:
+            return json_schema
+        default = schema['default']
+
+        try:
+            encoded_default = self.encode_default(default)
+        except PydanticSerializationError:
+            # normally, Pydantic would only emit a warning here, but we'll error out.
+            self.handle_invalid_for_json_schema(
+                schema,
+                f"Default value '{default}' is not JSON serializable; use pydantic.Field's 'default_factory' argument for this.",
+            )
+
+        try:
+            Draft202012Validator(json_schema).validate(encoded_default)
+        except SchemaValidationError as e:
+            self.handle_invalid_for_json_schema(
+                schema, f"Default value '{default}' does not validate against schema\n{e}"
+            )
+
+        if '$ref' in json_schema:
+            # Since reference schemas do not support child keys, we wrap the reference schema in a single-case allOf:
+            return {'allOf': [json_schema], 'default': encoded_default}
+
+        json_schema['default'] = encoded_default
+        return json_schema
+
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a typed dict.
 
@@ -357,7 +412,9 @@ def _get_functions(
 
 
 def _merge_schema_definitions(
-    adapter: TypeAdapter[Any], schemas: dict[str, Any], annotation: type
+    adapter: TypeAdapter[Any],
+    schemas: dict[str, Any],
+    annotation: type,
 ) -> dict[str, Any]:
     """This contains the core logic for generating a schema from the user's type definitions.
 
@@ -524,9 +581,18 @@ def get_schemas_and_functions(
         if len(method_params) == min_params + 1:
             parameter = method_params[-1]
             annotation = parameter.annotation
-            if annotation is inspect.Signature.empty:
+            # Pydantic BaseModels require annotations even if using a default value, so we'll remain consistent.
+            if annotation is inspect.Parameter.empty:
                 die(
                     f"On capability '{capability.__name__}', parameter '{parameter.name}' type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
+                )
+            # rationale for disallowing function default values:
+            # https://docs.pydantic.dev/latest/concepts/validation_decorator/#using-field-to-describe-function-arguments
+            # (in general, default_factory is not something which should be used with user parameters)
+            # also makes TypeAdapters considerably easier to construct
+            if parameter.default is not inspect.Parameter.empty:
+                die(
+                    f"On capability '{capability.__name__}', parameter '{parameter.name}' should not use a default value in the function parameter (use 'typing_extensions.Annotated[TYPE, pydantic.Field(default=<DEFAULT>)]' instead - 'default_factory' is an acceptable, mutually exclusive argument to 'Field')."
                 )
             try:
                 function_cache_request_adapter = TypeAdapter(annotation)
