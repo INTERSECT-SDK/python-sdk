@@ -176,6 +176,40 @@ def test_call_static_user_function():
     assert msg['payload'] == b'[114,215,330,101,216,115]'
 
 
+def test_call_user_function_with_default_and_empty_payload():
+    intersect_service = make_intersect_service()
+    message_interceptor = make_message_interceptor()
+    msg = [None]
+
+    def userspace_msg_callback(payload: bytes) -> None:
+        msg[0] = deserialize_and_validate_userspace_message(payload)
+
+    message_interceptor.add_subscription_channel(
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+    )
+    message_interceptor.connect()
+    intersect_service.startup()
+    time.sleep(1.0)
+    message_interceptor.publish_message(
+        intersect_service._userspace_channel_name,
+        create_userspace_message(
+            source='msg.msg.msg.msg.msg',
+            destination='test.test.test.test.test',
+            service_version=intersect_version,
+            content_type=IntersectMimeType.JSON,
+            data_handler=IntersectDataHandler.MESSAGE,
+            operation_id='valid_default_argument',
+            payload=b'null',  # if sending null as the payload, the SDK will call the function's default value
+        ),
+    )
+    time.sleep(3.0)
+    intersect_service.shutdown()
+    message_interceptor.disconnect()
+
+    msg: UserspaceMessage = msg[0]
+    assert msg['payload'] == b'8'
+
+
 # call a user function with invalid parameters (so Pydantic will catch the error and pass it to the message interceptor)
 def test_call_user_function_with_invalid_payload():
     intersect_service = make_intersect_service()

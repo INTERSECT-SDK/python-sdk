@@ -21,7 +21,7 @@ def serialize_message(message: Any) -> bytes:
 
     Works as a generic serializer/deserializer
     """
-    return GENERIC_MESSAGE_SERIALIZER.dump_json(message)
+    return GENERIC_MESSAGE_SERIALIZER.dump_json(message, warnings=False)
 
 
 def create_control_provider(

@@ -145,7 +145,11 @@ class IntersectService(Generic[CAPABILITY]):
         self._status_thread: StoppableThread | None = None
         self._status_ticker_interval = config.status_interval
         self._status_retrieval_fn: Callable[[], bytes] = (
-            (lambda: status_type_adapter.dump_json(getattr(self.capability, status_fn_name)()))
+            (
+                lambda: status_type_adapter.dump_json(
+                    getattr(self.capability, status_fn_name)(), by_alias=True
+                )
+            )
             if status_type_adapter and status_fn_name
             else lambda: b'null'
         )
@@ -404,12 +408,15 @@ class IntersectService(Generic[CAPABILITY]):
     ) -> bytes:
         """Entrypoint into capability. This should be a private function, only call it yourself for testing purposes.
 
-        Basic validationas defined from a user's type definitions will also occur here.
+        Basic validations defined from a user's type definitions will also occur here.
 
         Params
         fn_name = operation. These get represented in the schema as "channels".
         fn_meta = all information stored about the user's operation. This includes user-defined params and the request/response (de)serializers.
-        fn_params = the request argument (default this to "None" to allow for no-arg functions or parameters with all fields having defaults)
+        fn_params = the request argument.
+           If this value is empty or the bytes literal "null", and users have a request type, we will try to call the user's function with
+           their default value as the parameter, or "None" if there isn't a default value.
+           Values nested on a lower level should be handled automatically by Pydantic.
            A note on this value: at this point, we still want the parameters to be a JSON string (not a Python object),
            as if the object is first converted to Python and THEN validated, users will not have the option
            to choose strict validation.
@@ -426,15 +433,25 @@ class IntersectService(Generic[CAPABILITY]):
         """
         try:
             if fn_meta.request_adapter:
-                request_obj = fn_meta.request_adapter.validate_json(
-                    fn_params,
-                    strict=getattr(fn_meta.method, STRICT_VALIDATION),
-                )
+                if not fn_params or fn_params == b'null':
+                    # strict=True here does nothing, because ConfigDict property validate_default may not be set and we validate defaults when generating the schema
+                    default_value = fn_meta.request_adapter.get_default_value()
+                    try:
+                        request_obj = default_value.value  # type: ignore[union-attr]
+                    except AttributeError:
+                        request_obj = fn_meta.request_adapter.validate_python(
+                            None,
+                        )
+                else:
+                    request_obj = fn_meta.request_adapter.validate_json(
+                        fn_params,
+                        strict=getattr(fn_meta.method, STRICT_VALIDATION),
+                    )
                 response = getattr(self.capability, fn_name)(request_obj)
             else:
                 response = getattr(self.capability, fn_name)()
 
-            return fn_meta.response_adapter.dump_json(response)
+            return fn_meta.response_adapter.dump_json(response, by_alias=True)
         except ValidationError as e:
             err_msg = f'Bad arguments to application:\n{e}\n'
             logger.warning(err_msg)

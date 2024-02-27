@@ -18,10 +18,13 @@ import time
 from typing import Any, Callable, Dict, List, Sequence, Union
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 from typing_extensions import Self, TypeAlias
 
-from ._internal.control_plane.control_plane_manager import ControlPlaneManager
+from ._internal.control_plane.control_plane_manager import (
+    GENERIC_MESSAGE_SERIALIZER,
+    ControlPlaneManager,
+)
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectError
 from ._internal.logger import logger
@@ -56,7 +59,9 @@ class IntersectClientMessageParams(BaseModel):
 
     payload: Any
     """
-    The raw Python object you want to have serialized as the payload
+    The raw Python object you want to have serialized as the payload.
+
+    If you want to just use the service's default value for a request (assuming it has a default value for a request), you may set this as None.
     """
 
     response_content_type: IntersectMimeType = IntersectMimeType.JSON
@@ -178,7 +183,6 @@ class IntersectClient:
         self._control_plane_manager.add_subscription_channel(
             self._userspace_channel_name, {self._handle_userspace_message_raw}
         )
-        self._type_adapter = TypeAdapter(Any)
 
     def startup(self) -> Self:
         """This function connects the client to all INTERSECT systems.
@@ -278,7 +282,7 @@ class IntersectClient:
 
         # TWO: GET DATA FROM APPROPRIATE DATA STORE AND DESERIALIZE IT
         try:
-            request_params = self._type_adapter.validate_json(
+            request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(
                 self._data_plane_manager.incoming_message_data_handler(message)
             )
         except ValidationError as e:
@@ -337,7 +341,7 @@ class IntersectClient:
             # this is always the client's fault, so probably best to terminate here
             send_os_signal()
             return
-        response = self._type_adapter.dump_json(params.payload)
+        response = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
         try:
