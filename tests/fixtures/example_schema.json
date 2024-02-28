@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.5.3",
+  "x-intersect-version": "0.5.4",
   "info": {
     "title": "test.test.test.test.test",
     "version": "0.0.1",
