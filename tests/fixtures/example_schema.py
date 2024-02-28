@@ -482,7 +482,7 @@ class DummyCapabilityImplementation:
             ),
         )
 
-    @intersect_message()
+    @intersect_message
     def verify_float_dict(self, param: Dict[float, str]) -> Dict[int, str]:
         """
         verifies that dictionaries can have floats and integers as key types
@@ -490,7 +490,7 @@ class DummyCapabilityImplementation:
         self.update_status('verify_float_dict')
         return {int(k): v for k, v in param.items()}
 
-    @intersect_message()
+    @intersect_message
     def valid_default_argument(self, param: Annotated[int, Field(default=4)]) -> int:
         """
         verifies that you can call a function with a default parameter

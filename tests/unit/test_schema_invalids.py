@@ -479,7 +479,7 @@ class TooManyStatusFunctions:
     def status_one(self, one: int) -> int:
         ...
 
-    @intersect_status()
+    @intersect_status
     def status_two(self, one: str) -> str:
         ...
 

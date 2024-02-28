@@ -11,6 +11,8 @@ This is necessary for generating a schema when creating an IntersectService.
 If you are not able to create a schema, the service will refuse to start.
 """
 
+from __future__ import annotations
+
 import functools
 from enum import Enum, IntEnum
 from typing import Any, Callable, Optional, Set
@@ -64,7 +66,9 @@ class IntersectMimeType(Enum):
 
 @validate_call
 def intersect_message(
-    ignore_keys: Optional[Set[str]] = None,  # noqa: FA100 (Pydantic uses runtime annotations)
+    __func: Callable[..., Any] | None = None,
+    *,
+    ignore_keys: Optional[Set[str]] = None,  # noqa: UP006, UP007 (runtime type annotation)
     request_content_type: IntersectMimeType = IntersectMimeType.JSON,
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
     response_content_type: IntersectMimeType = IntersectMimeType.JSON,
@@ -140,12 +144,16 @@ def intersect_message(
 
         return wrapper
 
+    if __func:
+        return inner_decorator(__func)
     return inner_decorator
 
 
 # TODO - consider forcing intersect_status endpoints to send Messages and JSON responses.
 @validate_call
 def intersect_status(
+    __func: Callable[..., Any] | None = None,
+    *,
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
     response_content_type: IntersectMimeType = IntersectMimeType.JSON,
 ) -> Any:
@@ -183,4 +191,6 @@ def intersect_status(
 
         return wrapper
 
+    if __func:
+        return inner_decorator(__func)
     return inner_decorator
