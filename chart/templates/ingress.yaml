@@ -1,8 +1,6 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "intersect-sdk-python-docs.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1a1
+apiVersion: networking.k8s.io/v1
 {{- else -}}
 {{- fail "Invalid k8s version, version >=1.19 is required" }}
 {{- end }}
