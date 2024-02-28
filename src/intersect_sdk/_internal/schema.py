@@ -13,20 +13,17 @@ from typing import (
     get_origin,
 )
 
-from jsonschema import Draft202012Validator
-from jsonschema import ValidationError as SchemaValidationError
-from pydantic import PydanticInvalidForJsonSchema, PydanticUserError, TypeAdapter
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
-from pydantic_core import PydanticSerializationError
+from pydantic import PydanticUserError, TypeAdapter
 from typing_extensions import TypeAliasType
 
 from .constants import BASE_ATTR, BASE_STATUS_ATTR, REQUEST_CONTENT, RESPONSE_CONTENT
 from .function_metadata import FunctionMetadata
 from .logger import logger
+from .pydantic_schema_generator import GenerateTypedJsonSchema
 from .utils import die
 
 if TYPE_CHECKING:
-    from pydantic_core import CoreSchema, core_schema
+    from pydantic.json_schema import JsonSchemaMode
 
 ASYNCAPI_VERSION = '2.6.0'
 
@@ -40,346 +37,6 @@ For Pydantic specific type, https://docs.pydantic.dev/latest/api/types/
 For networking types, https://docs.pydantic.dev/latest/api/networks/
 For a complete reference, https://docs.pydantic.dev/latest/concepts/conversion_table
 """
-
-
-class GenerateTypedJsonSchema(GenerateJsonSchema):
-    """This extends Pydantic's default JSON schema generation class.
-
-    With any type which returns an empty dictionary or missing types, we want to invalidate these schemas.
-    We can't construct a meaningful schema from these types.
-    """
-
-    def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches any value.
-
-        OVERRIDE: We get no type hints from this schema, so we need to invalidate this.
-        The two big annotations to watch out for are 'object' and "typing.Any".
-        This will handle 'object' in _most_ other types (i.e. List[object]), but NOT i.e. List[Any].
-
-        It will not handle Tuples or classes in all cases; it will catch invalid types, but not missing types.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        return self.handle_invalid_for_json_schema(
-            schema, 'Any or object : dynamic typing is not allowed for INTERSECT schemas'
-        )
-
-    def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that checks if a value is a subclass of a class, equivalent to Python's `issubclass` method.
-
-        OVERRIDE: Pydantic v2 returned an empty dictionary to maintain backwards compat. with v1, but we don't need this.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        return self.handle_invalid_for_json_schema(
-            schema, f'core_schema.IsSubclassSchema ({schema["cls"]})'
-        )
-
-    def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
-        """Returns a schema that matches a list schema.
-
-        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        if not schema.get('items_schema'):
-            return self.handle_invalid_for_json_schema(
-                schema, 'list subtyping may not be dynamic in INTERSECT'
-            )
-        return super().list_schema(schema)
-
-    def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int,str, bool]` or `Tuple[int, ...]`.
-
-        OVERRIDE: disallow bare tuple typing, Tuple[()], and tuple[()] types, otherwise defer to Pydantic's handling
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        json_schema = super().tuple_schema(schema)
-        if not json_schema.get('items') and not json_schema.get('prefixItems'):
-            return self.handle_invalid_for_json_schema(
-                schema,
-                'core_schema.TupleSchema: Tuple must have non-empty types and not use () as a type for INTERSECT',
-            )
-        return json_schema
-
-    def set_schema(self, schema: core_schema.SetSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a set schema.
-
-        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        if not schema.get('items_schema'):
-            return self.handle_invalid_for_json_schema(
-                schema, 'set subtyping may not be dynamic in INTERSECT'
-            )
-        return super().set_schema(schema)
-
-    def frozenset_schema(self, schema: core_schema.FrozenSetSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a frozenset schema.
-
-        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        if not schema.get('items_schema'):
-            return self.handle_invalid_for_json_schema(
-                schema, 'frozenset subtyping may not be dynamic in INTERSECT'
-            )
-        return super().frozenset_schema(schema)
-
-    def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
-        """Returns a JSON schema that represents the provided GeneratorSchema.
-
-        OVERRIDES: we need to make sure we have an items schema, defer to Pydantic's implementation otherwise
-        NOTE: at time of writing (pydantic v2.5.3), this never seems to execute when there's an error, but the superclass function
-        suggests that it should. This function is kept in for backwards compatibility purposes.
-
-        Args:
-            schema: The schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        if not schema.get('items_schema'):
-            return self.handle_invalid_for_json_schema(
-                schema, 'generator yield subtyping (first argument) may not be dynamic in INTERSECT'
-            )
-        json_schema = super().generator_schema(schema)
-        if not json_schema.get('items'):
-            return self.handle_invalid_for_json_schema(
-                schema, 'generator yield subtyping (first argument) may not be dynamic in INTERSECT'
-            )
-        return json_schema
-
-    def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a dict schema.
-
-        OVERRIDE: This is a reimplementation of Pydantic's handling, because we need to check two things:
-        1) We need to make sure that "additionalProperties" has typing information (don't allow "Any" or "object" as the Value type)
-        2) In JSON, mapping "keys" must always be strings, so check that the Key type is either "str" or integer/float.
-        With integer/float, we can generate a "patternProperties" schema for the key automatically.
-
-        NOTE: if you are using integer/float as the dictionary type, you CANNOT set strict_validation=True on the @intersect_message handler.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        if 'keys_schema' not in schema:
-            return self.handle_invalid_for_json_schema(
-                schema,
-                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT. You may use typing_extensions.Annotated in conjunction with Pydantic.Field to specify a string pattern if desired.",
-            )
-        if 'values_schema' not in schema:
-            return self.handle_invalid_for_json_schema(
-                schema, 'dict or mapping: value type cannot be Any/object for INTERSECT'
-            )
-        keys_schema = self.generate_inner(schema['keys_schema']).copy()
-        values_schema = self.generate_inner(schema['values_schema']).copy()
-        values_schema.pop('title', None)  # don't give a title to the additionalProperties
-
-        # this is actually the Python type, not the jsonschema type.
-        # Only strings are valid JSON keys, but integers/floats are still useful for many use-cases.
-        # Other key types should be discouraged due to how their implementation would be obfuscated.
-        keys_type = schema['keys_schema']['type']
-
-        json_schema: JsonSchemaValue = {'type': 'object'}
-        if keys_type == 'int':
-            json_schema['patternProperties'] = {'^-?[0-9]+$': values_schema}
-        elif keys_type == 'float':
-            # this regex disallows '1237.', which can be handled by Python but not every programming language
-            json_schema['patternProperties'] = {
-                '^-?[0-9]*\\.?[0-9]+([eE]-?[0-9]+)?$': values_schema
-            }
-        elif keys_type == 'str':
-            keys_pattern = keys_schema.pop('pattern', None)
-            if keys_pattern is None:
-                json_schema['additionalProperties'] = values_schema
-            else:
-                json_schema['patternProperties'] = {keys_pattern: values_schema}
-        else:
-            return self.handle_invalid_for_json_schema(
-                schema,
-                "dict or mapping: key type needs to be 'str', 'int', or 'float' for INTERSECT. You may use typing_extensions.Annotated in conjunction with Pydantic.Field to specify a string pattern if desired.",
-            )
-        self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
-        return json_schema
-
-    def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema with a default value.
-
-        Mostly follows Pydantic's implementation, but we need to override because we actually do schema validation here.
-
-        One way we could do this use "validate_default" in Pydantic's ConfigDict, but this has too many problems.
-        First, we can't specify a ConfigDict on the TypeAdapter if the type is a pydantic.BaseModel, a dataclass, or a TypedDict; and our TypeAdapter handles ALL generic types.
-        See https://docs.pydantic.dev/2.6/errors/usage_errors/#type-adapter-config-unused
-        You also would ideally leave this as "False" anyways, because it is a performance cost every time the object is validated.
-        Since user types are never actually created until reacting to a userspace message, we check their schema instead.
-
-        We only want to do the validation step once, during configuration. Additionally, we only care if the default SCHEMA
-        value doesn't validate against the rest of the SCHEMA - otherwise, user defaults are fine.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        json_schema = self.generate_inner(schema['schema'])
-
-        # Skip verification if there's not actually a default value
-        # Users are free to use pydantic.Field's 'default_factory' if they want, but those values generally shouldn't be represented in schema
-        # and we ideally don't want to call a function (which we would need to do for default_factory).
-        if 'default' not in schema:
-            return json_schema
-        default = schema['default']
-
-        try:
-            encoded_default = self.encode_default(default)
-        except PydanticSerializationError:
-            # normally, Pydantic would only emit a warning here, but we'll error out.
-            self.handle_invalid_for_json_schema(
-                schema,
-                f"Default value '{default}' is not JSON serializable; use pydantic.Field's 'default_factory' argument for this.",
-            )
-
-        try:
-            Draft202012Validator(json_schema).validate(encoded_default)
-        except SchemaValidationError as e:
-            self.handle_invalid_for_json_schema(
-                schema, f"Default value '{default}' does not validate against schema\n{e}"
-            )
-
-        if '$ref' in json_schema:
-            # Since reference schemas do not support child keys, we wrap the reference schema in a single-case allOf:
-            return {'allOf': [json_schema], 'default': encoded_default}
-
-        json_schema['default'] = encoded_default
-        return json_schema
-
-    def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema that defines a typed dict.
-
-        OVERRIDE: make sure TypedDict class has at least one property, otherwise defer to Pydantic's handling
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        json_schema = super().typed_dict_schema(schema)
-        if not json_schema.get('properties'):
-            return self.handle_invalid_for_json_schema(
-                schema, 'TypedDict (empty TypedDict not allowed in INTERSECT)'
-            )
-        return json_schema
-
-    def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema that defines a model.
-
-        OVERRIDE: make sure BaseModel class has at least one property, otherwise defer to Pydantic's handling
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        json_schema = super().model_schema(schema)
-        if not json_schema.get('properties'):
-            return self.handle_invalid_for_json_schema(
-                schema,
-                f'pydantic.BaseModel "{schema["cls"].__name__}" (needs at least one property for INTERSECT)',
-            )
-        return json_schema
-
-    def dataclass_schema(self, schema: core_schema.DataclassSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema that defines a dataclass.
-
-        OVERRIDE: make sure dataclass has at least one property, otherwise defer to Pydantic's handling
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        json_schema = super().dataclass_schema(schema)
-        if not json_schema.get('properties'):
-            return self.handle_invalid_for_json_schema(
-                schema,
-                f'dataclass "{schema["cls"].__name__}" (needs at least one property for INTERSECT)',
-            )
-        return json_schema
-
-    def kw_arguments_schema(
-        self,
-        arguments: list[core_schema.ArgumentsParameter],
-        var_kwargs_schema: CoreSchema | None,
-    ) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema that defines a function's keyword arguments.
-
-        OVERRIDE: Make sure at least one argument is present, otherwise defer to Pydantic's handling. (This is done to ensure future compatibility, but it currently doesn't appear to be used by Pydantic.)
-
-        Args:
-            arguments: The core schema.
-            var_kwargs_schema: The JSON schema for the function keyword arguments.
-
-        Returns:
-            The generated JSON schema.
-        """
-        if not arguments:
-            err_msg = 'Cannot generate a JsonSchema for core_schema.ArgumentsSchema (missing keyword arguments, needed for INTERSECT)'
-            raise PydanticInvalidForJsonSchema(err_msg)
-        return super().kw_arguments_schema(arguments, var_kwargs_schema)
-
-    def p_arguments_schema(
-        self, arguments: list[core_schema.ArgumentsParameter], var_args_schema: CoreSchema | None
-    ) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema that defines a function's positional arguments.
-
-        OVERRIDE: Make sure at least one argument is present, otherwise defer to Pydantic's handling. This is used for NamedTuples.
-
-        Args:
-            arguments: The core schema.
-            var_args_schema: The JSON schema for the function positional arguments.
-
-        Returns:
-            The generated JSON schema.
-        """
-        if not arguments:
-            err_msg = 'Cannot generate a JsonSchema for core_schema.ArgumentsSchema (missing arguments, needed for INTERSECT - are you using a NamedTuple class with no properties?)'
-            raise PydanticInvalidForJsonSchema(err_msg)
-        return super().p_arguments_schema(arguments, var_args_schema)
 
 
 def _get_functions(
@@ -415,6 +72,7 @@ def _merge_schema_definitions(
     adapter: TypeAdapter[Any],
     schemas: dict[str, Any],
     annotation: type,
+    mode: JsonSchemaMode,
 ) -> dict[str, Any]:
     """This contains the core logic for generating a schema from the user's type definitions.
 
@@ -426,7 +84,9 @@ def _merge_schema_definitions(
     various types internally.
     """
     schema = adapter.json_schema(
-        ref_template='#/components/schemas/{model}', schema_generator=GenerateTypedJsonSchema
+        ref_template='#/components/schemas/{model}',
+        schema_generator=GenerateTypedJsonSchema,
+        mode=mode,
     )
     definitions = schema.pop('$defs', None)
     if definitions:
@@ -508,7 +168,9 @@ def _status_fn_schema(
         return (
             status_fn_name,
             status_fn,
-            _merge_schema_definitions(status_adapter, schemas, status_signature.return_annotation),
+            _merge_schema_definitions(
+                status_adapter, schemas, status_signature.return_annotation, 'serialization'
+            ),
             status_adapter,
         )
     except PydanticUserError as e:
@@ -597,7 +259,7 @@ def get_schemas_and_functions(
             try:
                 function_cache_request_adapter = TypeAdapter(annotation)
                 channels[name]['subscribe']['message']['payload'] = _merge_schema_definitions(
-                    function_cache_request_adapter, schemas, annotation
+                    function_cache_request_adapter, schemas, annotation, 'validation'
                 )
             except PydanticUserError as e:
                 die(
@@ -615,7 +277,7 @@ def get_schemas_and_functions(
         try:
             function_cache_response_adapter = TypeAdapter(return_annotation)
             channels[name]['publish']['message']['payload'] = _merge_schema_definitions(
-                function_cache_response_adapter, schemas, return_annotation
+                function_cache_response_adapter, schemas, return_annotation, 'serialization'
             )
         except PydanticUserError as e:
             die(

@@ -30,7 +30,7 @@ dependencies = [
     "retrying>=1.3.4,<2.0.0",
     "paho-mqtt>=1.6.1,<2.0.0",
     "minio>=7.2.3",
-    "jsonschema>=4.21.1",
+    "jsonschema[format-nongpl]>=4.21.1", # extras necessary for enforcing formats
 ]
 
 [project.optional-dependencies]
@@ -179,7 +179,7 @@ addopts = "-ra"
 omit = [
     '*__init__*', # __init__ files should just re-export other classes and functions
 ]
-exclude_lines = [
+exclude_also = [
     'pragma: no-cover', # standard
     'if (typing\\.)?TYPE_CHECKING:', # type checking blocks are not executed in coverage, but we don't care
     '@(abc\\.)?abstractmethod', # don't try to cover abstract methods

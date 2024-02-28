@@ -230,14 +230,7 @@
             "$ref": "#/components/messageTraits/commonHeaders"
           },
           "payload": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "type": "string"
           }
         },
         "description": "take in decimal input\nreturn decimal divided by PI (20 precision digits)"

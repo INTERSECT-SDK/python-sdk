@@ -13,6 +13,7 @@ General rules of "invalids":
 - annotation or nested annotation resolves to Any/object typing (this provides no typing information in schema, so cannot be used)
 """
 
+import datetime
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any, Dict, FrozenSet, Generator, List, NamedTuple, Set, Tuple, TypeVar
@@ -683,6 +684,7 @@ def test_mismatching_default_type_nested_2(caplog: pytest.LogCaptureFixture):
     assert 'does not validate against schema' in caplog.text
 
 
+# should fail because lambda x: x is a default which can't be serialized
 class DefaultNotSerializable:
     class Nested(BaseModel):
         one: int = lambda x: x  # noqa: E731 (we're testing bad code)
@@ -696,3 +698,50 @@ def test_default_not_serializable(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper(DefaultNotSerializable)
     assert 'is not JSON serializable' in caplog.text
+
+
+# should fail because we cannot serialize the defaults
+class InvalidNestedDefaults:
+    # note that it's import for each level of nesting to have the exact same field names in this instance, since everything is a default
+    # if the two inner classes had different property names, the classes would validate successfully UNLESS you use Pydantic's ConfigDict "Extra.forbid"
+    # (this translates to "additionalProperties = false" in JSON schema)
+    @dataclass
+    class NestedInt:
+        @dataclass
+        class Inner:
+            field: int = 4
+
+        field: Inner = Inner()  # noqa: RUF009 (testing bad code)
+
+    @dataclass
+    class NestedStr:
+        @dataclass
+        class Inner:
+            field: str = 'red'
+
+        field: Inner = Inner()  # noqa: RUF009 (testing bad code)
+
+    @intersect_message()
+    def mismatching_default_type(
+        self, one: Annotated[NestedStr, Field(default=NestedInt())]
+    ) -> bool:
+        ...
+
+
+def test_invalid_nested_defaults(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(InvalidNestedDefaults)
+    assert "Invalid nested validation regarding defaults: 4 is not of type 'string'" in caplog.text
+
+
+# fails because default string doesn't match the format - note that this is not handled by Pydantic (unless a user sets their own ConfigDict flag)
+class MismatchedFormat:
+    @intersect_message()
+    def mismatching_default_type(self, one: Annotated[datetime.datetime, Field(default='aaa')]):
+        ...
+
+
+def test_mismatched_format(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(MismatchedFormat)
+    assert "Default value 'aaa' does not validate against schema" in caplog.text
