@@ -29,6 +29,10 @@ class DataPlaneManager:
         self._hierarchy = hierarchy
         self._minio_providers = list(map(create_minio_store, data_configs.minio))
 
+        # warn users about missing data plane
+        if not self._minio_providers:
+            logger.warn('WARNING: This service cannot support any MINIO instances')
+
     def incoming_message_data_handler(self, message: UserspaceMessage) -> bytes:
         """Get data from the request data provider.
 

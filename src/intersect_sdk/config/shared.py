@@ -145,7 +145,7 @@ class DataStoreConfig(BaseModel):
 class DataStoreConfigMap(BaseModel):
     """Configurations for any data stores the application should talk to."""
 
-    minio: List[DataStoreConfig] = Field(min_length=1)  # noqa: FA100 (Pydantic uses runtime annotations)
+    minio: List[DataStoreConfig] = Field(default=[])  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     minio configurations
     """
