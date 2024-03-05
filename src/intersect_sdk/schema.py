@@ -42,6 +42,7 @@ from .version import __version__
 
 if TYPE_CHECKING:
     from ._internal.function_metadata import FunctionMetadata
+    from .annotations import IntersectDataHandler
     from .config.shared import HierarchyConfig
 
 
@@ -49,6 +50,7 @@ def _get_schema_and_functions_from_model(
     capability_type: type,
     capability_name: HierarchyConfig,
     schema_version: str,
+    excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[dict[str, Any], dict[str, FunctionMetadata], str | None, TypeAdapter[Any] | None]:
     """This returns both the schema and the function mapping.
 
@@ -59,7 +61,7 @@ def _get_schema_and_functions_from_model(
         (status_fn_name, status_schema, status_type_adapter),
         channels,
         function_map,
-    ) = get_schemas_and_functions(capability_type)
+    ) = get_schemas_and_functions(capability_type, excluded_data_handlers)
 
     asyncapi_spec = {
         'asyncapi': ASYNCAPI_VERSION,
@@ -139,5 +141,6 @@ def get_schema_from_model(
         capability_type,
         capability_name,
         schema_version,
+        set(),  # assume all data handlers are configured if user is just checking their schema
     )
     return schemas

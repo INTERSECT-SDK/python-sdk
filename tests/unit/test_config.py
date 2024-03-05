@@ -98,40 +98,29 @@ def test_invalid_data_plane_config():
     assert {'type': 'greater_than', 'loc': ('port',)} in errors
 
 
-def test_empty_data_configmap():
-    with pytest.raises(ValidationError) as ex:
-        _config = DataStoreConfigMap(minio=[])
-    errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 1
-    assert {'type': 'too_short', 'loc': ('minio',)} in errors
-
-
 def test_missing_client_config():
     with pytest.raises(ValidationError) as ex:
         _config = IntersectClientConfig()
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 2
+    assert len(errors) == 1
     assert {'type': 'missing', 'loc': ('brokers',)} in errors
-    assert {'type': 'missing', 'loc': ('data_stores',)} in errors
 
 
 def test_empty_client_config():
     with pytest.raises(ValidationError) as ex:
         _config = IntersectClientConfig(brokers=[])
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 3
+    assert len(errors) == 2
     assert {'loc': ('brokers', 'list[ControlPlaneConfig]'), 'type': 'too_short'}
     assert {'loc': ('brokers', "literal['discovery']"), 'type': 'literal_error'} in errors
-    assert {'type': 'missing', 'loc': ('data_stores',)} in errors
 
 
 def test_missing_service_config():
     with pytest.raises(ValidationError) as ex:
         _config = IntersectServiceConfig()
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 4
+    assert len(errors) == 3
     assert {'type': 'missing', 'loc': ('brokers',)} in errors
-    assert {'type': 'missing', 'loc': ('data_stores',)} in errors
     assert {'type': 'missing', 'loc': ('hierarchy',)} in errors
     assert {'type': 'missing', 'loc': ('schema_version',)} in errors
 
@@ -146,11 +135,10 @@ def test_invalid_service_config():
             schema_version='0.0.0+20200101000000',
         )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 6
+    assert len(errors) == 5
     assert {'loc': ('hierarchy',), 'type': 'model_type'} in errors
     assert {'loc': ('brokers', 'list[ControlPlaneConfig]'), 'type': 'too_short'} in errors
     assert {'loc': ('brokers', "literal['discovery']"), 'type': 'literal_error'} in errors
-    assert {'loc': ('data_stores', 'minio'), 'type': 'missing'} in errors
     assert {'loc': ('status_interval',), 'type': 'greater_than_equal'} in errors
     assert {'loc': ('schema_version',), 'type': 'string_pattern_mismatch'} in errors
 

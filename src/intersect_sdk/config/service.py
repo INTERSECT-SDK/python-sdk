@@ -2,7 +2,7 @@
 
 from typing import List, Literal, Union
 
-from pydantic import BaseModel, Field, PositiveFloat
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat
 from typing_extensions import Annotated
 
 from .shared import ControlPlaneConfig, DataStoreConfigMap, HierarchyConfig
@@ -23,7 +23,7 @@ class IntersectServiceConfig(BaseModel):
     use literal "discovery" string to discover brokers, use list of brokers otherwise
     """
 
-    data_stores: DataStoreConfigMap
+    data_stores: Annotated[DataStoreConfigMap, Field(default_factory=lambda: DataStoreConfigMap())]
     """
     Configurations for any data stores the application should talk to
     """
@@ -42,3 +42,6 @@ class IntersectServiceConfig(BaseModel):
     """
     SemVer string of your application's version, needed for compatibility purposes
     """
+
+    # pydantic config
+    model_config = ConfigDict(revalidate_instances='always')

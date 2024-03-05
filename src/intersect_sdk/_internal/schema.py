@@ -16,7 +16,7 @@ from typing import (
 from pydantic import PydanticUserError, TypeAdapter
 from typing_extensions import TypeAliasType
 
-from .constants import BASE_ATTR, BASE_STATUS_ATTR, REQUEST_CONTENT, RESPONSE_CONTENT
+from .constants import BASE_ATTR, BASE_STATUS_ATTR, REQUEST_CONTENT, RESPONSE_CONTENT, RESPONSE_DATA
 from .function_metadata import FunctionMetadata
 from .logger import logger
 from .pydantic_schema_generator import GenerateTypedJsonSchema
@@ -24,6 +24,8 @@ from .utils import die
 
 if TYPE_CHECKING:
     from pydantic.json_schema import JsonSchemaMode
+
+    from ..annotations import IntersectDataHandler
 
 ASYNCAPI_VERSION = '2.6.0'
 
@@ -181,6 +183,7 @@ def _status_fn_schema(
 
 def get_schemas_and_functions(
     capability: type,
+    excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[
     dict[Any, Any],
     tuple[str | None, dict[str, Any] | None, TypeAdapter[Any] | None],
@@ -202,6 +205,16 @@ def get_schemas_and_functions(
     channels = {}
 
     for name, method, min_params in _get_functions(capability, BASE_ATTR):
+        # TODO - I'm placing this here for now because we'll eventually want to capture data plane and broker configs in the schema.
+        # (It's possible we may want to separate the backing service schema from the application logic, but it's unlikely.)
+        # At the moment, we're just validating that users can support their response_data_handler property.
+        # (We probably want to eventually deprecate/remove that property.)
+        data_handler = getattr(method, RESPONSE_DATA)
+        if data_handler in excluded_data_handlers:
+            die(
+                f"On capability '{capability.__name__}', function '{name}' should not set response_data_type as {data_handler} unless an instance is configured in IntersectConfig.data_stores ."
+            )
+
         docstring = inspect.cleandoc(method.__doc__) if method.__doc__ else None
         signature = inspect.signature(method)
         method_params = tuple(signature.parameters.values())

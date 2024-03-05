@@ -114,6 +114,7 @@ class IntersectService(Generic[CAPABILITY]):
             capability.__class__,
             capability_name=config.hierarchy,
             schema_version=config.schema_version,
+            excluded_data_handlers=config.data_stores.get_missing_data_store_types(),
         )
         self._schema = schema
         """

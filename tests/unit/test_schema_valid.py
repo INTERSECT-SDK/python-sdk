@@ -41,7 +41,7 @@ def test_verify_status_fn():
         status_fn_name,
         status_type_adapter,
     ) = _get_schema_and_functions_from_model(
-        DummyCapabilityImplementation, FAKE_HIERARCHY_CONFIG, '0.0.1'
+        DummyCapabilityImplementation, FAKE_HIERARCHY_CONFIG, '0.0.1', set()
     )
     assert status_fn_name == 'get_status'
 
@@ -54,7 +54,10 @@ def test_verify_status_fn():
 
 def test_verify_attributes():
     _, function_map, _, _ = _get_schema_and_functions_from_model(
-        DummyCapabilityImplementation, FAKE_HIERARCHY_CONFIG, '0.0.1'
+        DummyCapabilityImplementation,
+        FAKE_HIERARCHY_CONFIG,
+        '0.0.1',
+        set(),
     )
     # test defaults
     assert (

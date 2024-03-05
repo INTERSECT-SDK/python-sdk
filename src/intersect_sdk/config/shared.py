@@ -1,8 +1,10 @@
 """Configuration types shared across both Clients and Services."""
 
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+
+from ..annotations import IntersectDataHandler
 
 HIERARCHY_REGEX = r'^[a-z]((?!--)[a-z0-9-]){2,62}$'
 """
@@ -145,7 +147,17 @@ class DataStoreConfig(BaseModel):
 class DataStoreConfigMap(BaseModel):
     """Configurations for any data stores the application should talk to."""
 
-    minio: List[DataStoreConfig] = Field(default=[])  # noqa: FA100 (Pydantic uses runtime annotations)
+    minio: List[DataStoreConfig] = Field(default_factory=list)  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     minio configurations
     """
+
+    def get_missing_data_store_types(self) -> Set[IntersectDataHandler]:  # noqa: FA100 (not technically a runtime annotation)
+        """Return a set of IntersectDataHandlers which will not be permitted, due to a configuration type missing.
+
+        If all data configurations exist, returns an empty set
+        """
+        missing = set()
+        if not self.minio:
+            missing.add(IntersectDataHandler.MINIO)
+        return missing

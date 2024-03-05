@@ -47,6 +47,7 @@ class DataPlaneManager:
         if request_data_handler == IntersectDataHandler.MESSAGE:
             return message['payload']  # type: ignore[return-value]
         if request_data_handler == IntersectDataHandler.MINIO:
+            # TODO - we may want to send additional provider information in the payload
             payload: MinioPayload = message['payload']  # type: ignore[assignment]
             provider = None
             for store in self._minio_providers:
@@ -86,7 +87,12 @@ class DataPlaneManager:
         if data_handler == IntersectDataHandler.MESSAGE:
             return function_response
         if data_handler == IntersectDataHandler.MINIO:
-            provider = random.choice(self._minio_providers)  # noqa: S311 (TODO choose a MINIO provider better than at random)
+            if not self._minio_providers:
+                logger.error(
+                    'No MINIO provider configured, so you cannot set response_data_handler on @intersect_message to equal IntersectDataHandler.MINIO .'
+                )
+                raise IntersectError
+            provider = random.choice(self._minio_providers)  # noqa: S311 (TODO choose a MINIO provider better than at random - this may be determined from external message params)
             return send_minio_object(function_response, provider, content_type, self._hierarchy)
 
         logger.error(
