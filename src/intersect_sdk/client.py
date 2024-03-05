@@ -145,7 +145,7 @@ class IntersectClient:
         initial_messages: list[IntersectClientMessageParams],
         user_callback: INTERSECT_CLIENT_CALLBACK_TYPE,
         resend_initial_messages_on_secondary_startup: bool = False,
-        terminate_after_initial_messages: bool = False
+        terminate_after_initial_messages: bool = False,
     ) -> None:
         """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
 
