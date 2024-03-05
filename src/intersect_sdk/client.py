@@ -145,6 +145,7 @@ class IntersectClient:
         initial_messages: list[IntersectClientMessageParams],
         user_callback: INTERSECT_CLIENT_CALLBACK_TYPE,
         resend_initial_messages_on_secondary_startup: bool = False,
+        terminate_after_initial_messages: bool = False
     ) -> None:
         """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
 
@@ -165,6 +166,7 @@ class IntersectClient:
         self._initial_messages = initial_messages
         self._resend_initial_messages = resend_initial_messages_on_secondary_startup
         self._sent_initial_messages = False
+        self._terminate_after_initial_messages = terminate_after_initial_messages
 
         # use a fake hierarchy so that backing service logic utilizes the same API
         self._hierarchy = HierarchyConfig(
@@ -213,6 +215,11 @@ class IntersectClient:
         self._sent_initial_messages = True
 
         logger.info('Client startup complete')
+
+        if self._terminate_after_initial_messages:
+            logger.info('Client terminating')
+            send_os_signal()
+
         return self
 
     def shutdown(self, reason: str | None = None) -> Self:
