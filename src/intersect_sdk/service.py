@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 from uuid import uuid4
 
 from pydantic import ValidationError
+from pydantic_core import PydanticSerializationError
 from typing_extensions import Self
 
 from ._internal.constants import (
@@ -93,12 +94,6 @@ class IntersectService(Generic[CAPABILITY]):
         Parameters:
           capability: Your capability implementation class
           config: The IntersectConfig class
-          status_retrieval_fn: Optional (but should almost always be provided) callback function from your capability implementation class;
-            this function should be able to retrieve your domain-specific state. Some rules:
-            - When calling this function, it should NOT mutate any state!
-            - You should be returning an object which is JSON serializable (this will be checked during the constructor, prior to startup)
-            - When providing a status retrieval callback, you should essentially be returning all relevant stateful properties;
-              the function will be called frequently, so calling it should be a cheap operation.
         """
         if isinstance(capability, type):
             die(f'{capability.__name__} is not an instance of a class')
@@ -424,16 +419,20 @@ class IntersectService(Generic[CAPABILITY]):
 
         Returns:
             If the capability executed with no problems, a byte-string of the response will be returned.
+            Note: if the python response type does not match
 
         Raises:
           IntersectApplicationException - this catches both invalid message arguments, as well as if the capability itself throws an Exception.
             It's meant to be for control-flow, it doesn't represent a fatal error.
+          ValidationError - this is a Pydantic error which occurs if the input fails to validate against the user's model.
+            Note that this error is never raised outside this function if the USER's code causes this exception (by doing internal pydantic validation themselves),
+            but only as related to the actual request parameters.
 
         NOTE: running this function should normally not cause application failure. Users can terminate their application inside their capability class,
         but in almost all circumstances, this should be discouraged (outside of the constructor).
         """
-        try:
-            if fn_meta.request_adapter:
+        if fn_meta.request_adapter:
+            try:
                 if not fn_params or fn_params == b'null':
                     # strict=True here does nothing, because ConfigDict property validate_default may not be set and we validate defaults when generating the schema
                     default_value = fn_meta.request_adapter.get_default_value()
@@ -448,17 +447,31 @@ class IntersectService(Generic[CAPABILITY]):
                         fn_params,
                         strict=getattr(fn_meta.method, STRICT_VALIDATION),
                     )
+            except ValidationError as e:
+                err_msg = f'Bad arguments to application:\n{e}\n'
+                logger.warning(err_msg)
+                raise
+            try:
                 response = getattr(self.capability, fn_name)(request_obj)
-            else:
+            except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
+                logger.warning(f'Capability raised exception:\n{e}\n')
+                raise IntersectApplicationError from e
+        else:
+            try:
                 response = getattr(self.capability, fn_name)()
+            except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
+                logger.warning(f'Capability raised exception:\n{e}\n')
+                raise IntersectApplicationError from e
 
+        # TODO - we don't want to return a response if the user's response serialization doesn't match their type, but dump_json currently only emits a warning
+        # follow https://github.com/pydantic/pydantic/issues/8978 to track this problem
+        try:
             return fn_meta.response_adapter.dump_json(response, by_alias=True)
-        except ValidationError as e:
-            err_msg = f'Bad arguments to application:\n{e}\n'
-            logger.warning(err_msg)
-            raise
-        except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
-            logger.warning(f'Capability raised exception:\n{e}\n')
+        except PydanticSerializationError as e:
+            # TODO this code should ALSO be executed if there's a serialization type mismatch, not just on serialization failure
+            logger.error(
+                f'IMPORTANT!!!! Your INTERSECT capability function did not return a value matching your response type. You MUST fix this for your message to be sent out! Full error:\n{e}\n'
+            )
             raise IntersectApplicationError from e
 
     def _make_error_message(

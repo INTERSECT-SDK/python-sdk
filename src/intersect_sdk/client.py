@@ -151,8 +151,12 @@ class IntersectClient:
 
         Parameters:
           config: The IntersectConfig class
+          initial_messages: list of initial messages to send, following the message specification type (IntersectClientMessageParams).
+            Note that you must send at least one initial message, as the client will otherwise not do anything.
           user_callback: The callback function you can use to handle response messages from the other Service.
             If this is left empty, you can only send a single message
+          resend_initial_messages_on_secondary_startup: boolean value (default: False); if set to True, resend the initial messages if the client is restarted
+          terminate_after_initial_messages: boolean value (default: False); if set to True, will never enter the pub/sub loop and will never wait for responses from the services.
         """
         # this is called here in case a user created the object using "IntersectClientConfig.model_construct()" to skip validation
         config = IntersectClientConfig.model_validate(config)
@@ -257,6 +261,10 @@ class IntersectClient:
 
     def _handle_userspace_message_raw(self, raw: bytes) -> None:
         """Broker callback, deserialize and validate a userspace message from a broker."""
+        if self._terminate_after_initial_messages:
+            # safety check in case we get messages back faster than we can send them
+            return
+
         self._heartbeat = time.time()
         try:
             message = deserialize_and_validate_userspace_message(raw)
