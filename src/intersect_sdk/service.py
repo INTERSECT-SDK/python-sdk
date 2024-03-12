@@ -419,7 +419,7 @@ class IntersectService(Generic[CAPABILITY]):
 
         Returns:
             If the capability executed with no problems, a byte-string of the response will be returned.
-            Note: if the python response type does not match
+            NOTE: You should make sure you are returning a type which matches your return annotation; if you don't, this causes later issues.
 
         Raises:
           IntersectApplicationException - this catches both invalid message arguments, as well as if the capability itself throws an Exception.
