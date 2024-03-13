@@ -25,7 +25,7 @@ WORKDIR /sdk
 # add minimal files needed for build
 COPY pyproject.toml pdm.lock README.md ./
 COPY src/intersect_sdk/version.py src/intersect_sdk/version.py
-RUN pdm install -G:all
+RUN pdm sync --dev -G:all
 
 # use this stage in CI/CD, not useful in development
 FROM minimal as complete
