@@ -68,7 +68,8 @@ if __name__ == '__main__':
     step two: construct the initial messages you want to send. In this case we will only send a single starting message.
 
     - The destination should match info.title in the service's schema. Another way to look at this is to see the service's
-      HierarchyConfig, and then use
+      HierarchyConfig, and then write it as a single string: <ORGANIZATION>.<FACILITY>.<SYSTEM>.<SUBSYSTEM>.<SERVICE> .
+      If you don't have a subsystem, use a "-" character instead.
     - The operation should match one of the channels listed in the schema. In this case, 'say_hello_to_name' is the only
       operation exposed in the service.
     - The payload should represent what you want to send to the service's operation. You can determine the valid format
