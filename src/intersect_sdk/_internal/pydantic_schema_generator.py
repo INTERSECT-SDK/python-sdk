@@ -10,8 +10,9 @@ from typing import (
     Any,
 )
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator as SchemaValidator
 from jsonschema import ValidationError as SchemaValidationError
+from jsonschema.validators import validator_for
 from pydantic import PydanticInvalidForJsonSchema
 from pydantic.json_schema import (
     GenerateJsonSchema,
@@ -39,27 +40,49 @@ def build_nested_dict(keys: list[str], val: Any) -> dict[str, Any]:
 
     This function is fairly generic, but not really useful outside of a specific use-case in the Pydantic JSON schema generator.
     """
-    defs_schema: dict[str, Any] = {}
-    tmp = defs_schema
+    nested_dict: dict[str, Any] = {}
+    pointer = nested_dict
     for part in keys[:-1]:
-        tmp[part] = {}
-        tmp = tmp[part]
-    tmp[keys[-1]] = val
-    return defs_schema
+        pointer[part] = {}
+        pointer = pointer[part]
+    pointer[keys[-1]] = val
+    return nested_dict
 
 
-def validate_default(
+def validate_against_schema(
     json_schema: Any,
-    encoded_default: Any,
+    value: Any,
 ) -> None:
-    """Validates "encoded_default" (a python object) against "json_schema" (a python object).
+    """Validates "value" (a python object) against "json_schema" (a python object).
+
+    We also validate default values against a few predefined formats - see https://python-jsonschema.readthedocs.io/en/stable/validate/#validating-formats
+    for a complete reference.
+
+    NOTE: While the JSON schema specification *does not* require defaults validate against the schema, we *do*.
+    However, we *do not* validate examples against the schema.
+    This is because examples are only used for autocomplete assistance in UIs, while defaults are used in actual API calls.
 
     Raises jsonschema.ValidationError if it fails to validate
     """
-    Draft202012Validator(
+    SchemaValidator(
         json_schema,
-        format_checker=Draft202012Validator.FORMAT_CHECKER,
-    ).validate(encoded_default)
+        format_checker=SchemaValidator.FORMAT_CHECKER,
+    ).validate(value)
+
+
+def validate_schema(json_schema: Any) -> list[str]:
+    """Checks that json_schema is itself a valid JSON schema - specifically, against draft 2020-12.
+
+    Returns a list of error strings. If list is empty, there were no errors.
+    """
+    # custom impl. of check_schema() , gather all errors instead of throwing on first error
+    validator_cls = validator_for(SchemaValidator.META_SCHEMA, default=SchemaValidator)
+    metavalidator: SchemaValidator = validator_cls(
+        SchemaValidator.META_SCHEMA, format_checker=SchemaValidator.FORMAT_CHECKER
+    )
+    return [
+        f'{error.json_path} : {error.message}' for error in metavalidator.iter_errors(json_schema)
+    ]
 
 
 class GenerateTypedJsonSchema(GenerateJsonSchema):
@@ -77,13 +100,24 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         """
         self.intersect_sdk_postgeneration_defaults: list[tuple[Any, dict[str, Any]]] = []
         """
-        TODO - not best way to handle this, look for Pydantic API changes
-
         This is a custom item we store for postvalidation of some defaults after the entire json schema has been generated.
         We need to validate EACH default (tuple item 0) against its ref (tuple item 1)
         """
+
         json_schema = super().generate(schema, mode)
 
+        # 1) Check that the user's own JSON schema is a valid JSON schema.
+        # Pydantic can check most things, but not the pydantic "WithJsonSchema" wrapper, json_schema_extra (from Field or ConfigDict), or any of __get_pydantic_json_schema__ / __get_pydantic_core_schema__ implementations
+        # Note that this does NOT check that the user's JSON schema would validate against their Pydantic model,
+        # but if they're explicitly using any of the aforementioned methods or the "SkipJsonSchema" wrapper (which will almost always be a horrid mistake), we have to trust they know what they are doing.
+        json_schema_errors = validate_schema(json_schema)
+        if json_schema_errors:
+            error_str = '\n    '.join(json_schema_errors)
+            msg = f'Invalid JSON schema generated for INTERSECT - make sure any JSON schema you custom write is valid under Draft 2020-12.\n{error_str}'
+            raise PydanticInvalidForJsonSchema(msg)
+
+        # 2): check that all default ref values are valid (it's easier to analyze non-ref'd defaults as we're analyzing the Pydantic core schema)
+        # Note that we do NOT check 'examples', though these are only useful for giving form hints for non-enumerated values
         if self.intersect_sdk_postgeneration_defaults:
             tmp_schema = json_schema.copy()
             defs = tmp_schema.pop('$defs')  # this SHOULD ALWAYS exist if we have values in our list
@@ -94,7 +128,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             for default, inner_schema in self.intersect_sdk_postgeneration_defaults:
                 final_schema = {**defs_schema, **inner_schema}
                 try:
-                    validate_default(final_schema, default)
+                    validate_against_schema(final_schema, default)
                 except SchemaValidationError as e:
                     err_msg = f'Invalid nested validation regarding defaults: {e.message}'
                     raise PydanticInvalidForJsonSchema(err_msg) from e
@@ -333,7 +367,7 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
 
         # if this schema does not have a $ref, we should instead validate immediately
         try:
-            validate_default(json_schema, encoded_default)
+            validate_against_schema(json_schema, encoded_default)
         except SchemaValidationError as e:
             err_msg = f"Default value '{default}' does not validate against schema\n{e}"
             raise PydanticInvalidForJsonSchema(err_msg) from e

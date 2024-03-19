@@ -737,7 +737,9 @@ def test_invalid_nested_defaults(caplog: pytest.LogCaptureFixture):
 # fails because default string doesn't match the format - note that this is not handled by Pydantic (unless a user sets their own ConfigDict flag)
 class MismatchedFormat:
     @intersect_message()
-    def mismatching_default_type(self, one: Annotated[datetime.datetime, Field(default='aaa')]):
+    def mismatching_default_type(
+        self, one: Annotated[datetime.datetime, Field(default='aaa')]
+    ) -> int:
         ...
 
 
@@ -745,3 +747,20 @@ def test_mismatched_format(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper(MismatchedFormat)
     assert "Default value 'aaa' does not validate against schema" in caplog.text
+
+
+# fails because "json_schema_extra" is using a reserved JSON schema key 'maximum', even though this otherwise passes for Pydantic
+class InvalidJsonSchema:
+    @intersect_message()
+    def invalid_schema_config(
+        self, one: Annotated[int, Field(json_schema_extra={'maximum': 'should be an integer'})]
+    ) -> bool:
+        ...
+
+
+def test_invalid_json_schema(caplog: pytest.LogCaptureFixture):
+    with pytest.raises(SystemExit):
+        get_schema_helper(InvalidJsonSchema)
+    assert 'Invalid JSON schema generated for INTERSECT' in caplog.text
+    assert '$.maximum' in caplog.text
+    assert "is not of type 'number'" in caplog.text
