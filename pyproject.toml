@@ -170,6 +170,15 @@ ignore = [
 strict = true
 ignore_missing_imports = true # don't require typing for library stubs if they don't exist
 disallow_untyped_decorators = false # this is needed for library decorator compatibility, i.e. "retrying"
+plugins = [
+  "pydantic.mypy"
+]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
 
 [tool.pytest.ini_options]
 log_cli = true
