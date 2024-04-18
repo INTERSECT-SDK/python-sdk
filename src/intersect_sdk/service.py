@@ -143,7 +143,7 @@ class IntersectService(Generic[CAPABILITY]):
         self._status_retrieval_fn: Callable[[], bytes] = (
             (
                 lambda: status_type_adapter.dump_json(
-                    getattr(self.capability, status_fn_name)(), by_alias=True
+                    getattr(self.capability, status_fn_name)(), by_alias=True, warnings='error'
                 )
             )
             if status_type_adapter and status_fn_name
@@ -463,12 +463,9 @@ class IntersectService(Generic[CAPABILITY]):
                 logger.warning(f'Capability raised exception:\n{e}\n')
                 raise IntersectApplicationError from e
 
-        # TODO - we don't want to return a response if the user's response serialization doesn't match their type, but dump_json currently only emits a warning
-        # follow https://github.com/pydantic/pydantic/issues/8978 to track this problem
         try:
-            return fn_meta.response_adapter.dump_json(response, by_alias=True)
+            return fn_meta.response_adapter.dump_json(response, by_alias=True, warnings='error')
         except PydanticSerializationError as e:
-            # TODO this code should ALSO be executed if there's a serialization type mismatch, not just on serialization failure
             logger.error(
                 f'IMPORTANT!!!! Your INTERSECT capability function did not return a value matching your response type. You MUST fix this for your message to be sent out! Full error:\n{e}\n'
             )

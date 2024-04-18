@@ -323,7 +323,7 @@ class IntersectClient:
                 message['headers']['source'],
                 message['operationId'],
                 message['headers']['has_error'],
-                request_params,  # type: ignore[arg-type]
+                request_params,
             )
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
             logger.warning(f"Exception from user's callback function:\n{e}")

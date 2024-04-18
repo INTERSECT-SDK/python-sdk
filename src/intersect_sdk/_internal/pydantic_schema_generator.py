@@ -13,13 +13,14 @@ from typing import (
 from jsonschema import Draft202012Validator as SchemaValidator
 from jsonschema import ValidationError as SchemaValidationError
 from jsonschema.validators import validator_for
-from pydantic import PydanticInvalidForJsonSchema
+from pydantic import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError, TypeAdapter
 from pydantic.json_schema import (
     GenerateJsonSchema,
     JsonSchemaMode,
     JsonSchemaValue,
 )
-from pydantic_core import PydanticSerializationError
+from pydantic.type_adapter import _type_has_config
+from pydantic_core import PydanticSerializationError, to_jsonable_python
 
 if TYPE_CHECKING:
     from pydantic_core import CoreSchema, core_schema
@@ -374,6 +375,37 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
 
         json_schema['default'] = encoded_default
         return json_schema
+
+    def encode_default(self, dft: Any) -> Any:
+        """Encode a default value to a JSON-serializable value.
+
+        This is used to encode default values for fields in the generated JSON schema.
+
+        OVERRIDE: overriding because Pydantic's implementation currently has an error when handling regular dataclass defaults.
+        (This is a temporary fix, see https://github.com/pydantic/pydantic/issues/9253 to track this.)
+
+        Args:
+            dft: The default value to encode.
+
+        Returns:
+            The encoded default value.
+        """
+        config = self._config
+        try:
+            default = (
+                dft
+                if _type_has_config(type(dft))
+                else TypeAdapter(type(dft), config=config.config_dict).dump_python(dft, mode='json')
+            )
+        except PydanticSchemaGenerationError as e:
+            msg = f'Unable to encode default value {dft}'
+            raise PydanticSerializationError(msg) from e
+
+        return to_jsonable_python(
+            default,
+            timedelta_mode=config.ser_json_timedelta,
+            bytes_mode=config.ser_json_bytes,
+        )
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a typed dict.
