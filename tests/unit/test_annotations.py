@@ -15,8 +15,7 @@ def test_invalid_annotation_params():
                 response_data_transfer_handler='MESSAGE',
                 strict_request_validation='red',
             )
-            def bad_annotations(self, param: bool) -> bool:
-                ...
+            def bad_annotations(self, param: bool) -> bool: ...
 
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 4
@@ -33,8 +32,7 @@ def test_classmethod_rejected(caplog: pytest.LogCaptureFixture):
         class ClassMethod1:
             @intersect_message()
             @classmethod
-            def bad_annotations(cls, param: bool) -> bool:
-                ...
+            def bad_annotations(cls, param: bool) -> bool: ...
 
     assert 'The `@classmethod` decorator cannot be used with `@intersect_message()`' in str(ex)
 
@@ -43,8 +41,7 @@ def test_classmethod_rejected(caplog: pytest.LogCaptureFixture):
         class ClassMethod2:
             @intersect_status()
             @classmethod
-            def bad_annotations(cls, param: bool) -> bool:
-                ...
+            def bad_annotations(cls, param: bool) -> bool: ...
 
     assert 'The `@classmethod` decorator cannot be used with `@intersect_status()`' in str(ex2)
 
@@ -55,8 +52,7 @@ def test_staticmethod_invalids():
         class Test1:
             @intersect_message()
             @staticmethod
-            def bad_annotations(param: bool) -> bool:
-                ...
+            def bad_annotations(param: bool) -> bool: ...
 
     assert 'The `@staticmethod` decorator should be applied after `@intersect_message`' in str(ex)
 
@@ -65,7 +61,6 @@ def test_staticmethod_invalids():
         class Test2:
             @intersect_status()
             @staticmethod
-            def bad_annotations(param: bool) -> bool:
-                ...
+            def bad_annotations(param: bool) -> bool: ...
 
     assert 'The `@staticmethod` decorator should be applied after `@intersect_status`' in str(ex2)

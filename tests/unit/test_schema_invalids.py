@@ -48,8 +48,7 @@ def get_schema_helper(test_type: type):
 
 # this class has no @intersect_message annotation
 class MissingIntersectMessage:
-    def do_something(self, one: int) -> int:
-        ...
+    def do_something(self, one: int) -> int: ...
 
 
 def test_disallow_missing_annotation(caplog: pytest.LogCaptureFixture):
@@ -61,8 +60,7 @@ def test_disallow_missing_annotation(caplog: pytest.LogCaptureFixture):
 # more than one parameter is forbidden
 class TooManyParametersOnIntersectMessage:
     @intersect_message()
-    def too_many_params(self, one: int, two: int) -> int:
-        ...
+    def too_many_params(self, one: int, two: int) -> int: ...
 
 
 def test_disallow_too_many_parameters(caplog: pytest.LogCaptureFixture):
@@ -75,8 +73,7 @@ def test_disallow_too_many_parameters(caplog: pytest.LogCaptureFixture):
 # so this is really just catching the lack of a "self" annotation
 class MissingParametersOnIntersectMessage:
     @intersect_message()
-    def forgot_params() -> int:
-        ...
+    def forgot_params() -> int: ...
 
 
 def test_disallow_zero_parameters(caplog: pytest.LogCaptureFixture):
@@ -104,8 +101,7 @@ def test_disallow_missing_parameter_annotation(caplog: pytest.LogCaptureFixture)
 # should fail because the function return annotation is missing
 class MissingReturnTypeAnnotation:
     @intersect_message()
-    def forgot_return_annotation(self, param: int):
-        ...
+    def forgot_return_annotation(self, param: int): ...
 
 
 def test_disallow_missing_return_annotation(caplog: pytest.LogCaptureFixture):
@@ -122,8 +118,7 @@ class PydanticUnparsable:
         three: str
 
     @intersect_message()
-    def cant_parse_annotation(self, unparseable: PydanticUnparsableInner) -> None:
-        ...
+    def cant_parse_annotation(self, unparseable: PydanticUnparsableInner) -> None: ...
 
 
 def test_disallow_unparsable_annotation(caplog: pytest.LogCaptureFixture):
@@ -138,8 +133,7 @@ def test_disallow_unparsable_annotation(caplog: pytest.LogCaptureFixture):
 # should fail because return type is object (dynamic typing)
 class MockObject:
     @intersect_message()
-    def mock_message(self) -> object:
-        ...
+    def mock_message(self) -> object: ...
 
 
 def test_disallow_object_typing(caplog: pytest.LogCaptureFixture):
@@ -153,8 +147,7 @@ def test_disallow_object_typing(caplog: pytest.LogCaptureFixture):
 # note that 'object' is evalutated exactly like it is as a root type
 class MockObjectSubtype:
     @intersect_message()
-    def mock_message(self) -> List[object]:
-        ...
+    def mock_message(self) -> List[object]: ...
 
 
 def test_disallow_object_subtyping(caplog: pytest.LogCaptureFixture):
@@ -167,8 +160,7 @@ def test_disallow_object_subtyping(caplog: pytest.LogCaptureFixture):
 # should fail because annotation type is Any (dynamic typing)
 class MockAny:
     @intersect_message()
-    def mock_message(self, param: Any) -> None:
-        ...
+    def mock_message(self, param: Any) -> None: ...
 
 
 def test_disallow_any_typing(caplog: pytest.LogCaptureFixture):
@@ -181,8 +173,7 @@ def test_disallow_any_typing(caplog: pytest.LogCaptureFixture):
 # should fail because List has an Any typing
 class MockAnyList:
     @intersect_message()
-    def mock_message(self, param: List[Any]) -> None:
-        ...
+    def mock_message(self, param: List[Any]) -> None: ...
 
 
 def test_disallow_dynamic_list_subtyping(caplog: pytest.LogCaptureFixture):
@@ -210,8 +201,7 @@ def test_disallow_dynamic_list_subtyping_complex(caplog: pytest.LogCaptureFixtur
 # should fail because Set has an Any typing
 class MockAnySet:
     @intersect_message()
-    def mock_message(self, param: Set[Any]) -> None:
-        ...
+    def mock_message(self, param: Set[Any]) -> None: ...
 
 
 def test_disallow_dynamic_set_subtyping(caplog: pytest.LogCaptureFixture):
@@ -224,8 +214,7 @@ def test_disallow_dynamic_set_subtyping(caplog: pytest.LogCaptureFixture):
 # should fail because FrozenSet has an Any typing
 class MockAnyFrozenSet:
     @intersect_message()
-    def mock_message(self, param: FrozenSet[Any]) -> None:
-        ...
+    def mock_message(self, param: FrozenSet[Any]) -> None: ...
 
 
 def test_disallow_dynamic_frozenset_subtyping(caplog: pytest.LogCaptureFixture):
@@ -239,8 +228,7 @@ def test_disallow_dynamic_frozenset_subtyping(caplog: pytest.LogCaptureFixture):
 # NOTE: for some reason, the generator
 class MockAnyGenerator:
     @intersect_message()
-    def mock_message(self, param: Generator[Any, int, int]) -> None:
-        ...
+    def mock_message(self, param: Generator[Any, int, int]) -> None: ...
 
 
 def test_disallow_dynamic_generator_subtyping(caplog: pytest.LogCaptureFixture):
@@ -255,8 +243,7 @@ def test_disallow_dynamic_generator_subtyping(caplog: pytest.LogCaptureFixture):
 # we can't guarantee that we can cast the keys to any other type.
 class MockNonStrDictKey:
     @intersect_message()
-    def mock_message(self, param: Dict[List[int], str]) -> None:
-        ...
+    def mock_message(self, param: Dict[List[int], str]) -> None: ...
 
 
 def test_disallow_non_str_dict_key_type(caplog: pytest.LogCaptureFixture):
@@ -272,8 +259,7 @@ def test_disallow_non_str_dict_key_type(caplog: pytest.LogCaptureFixture):
 # should fail because Dict value has an Any typing (this should cover all other mapping types as well)
 class MockAnyDictValue:
     @intersect_message()
-    def mock_message(self, param: Dict[str, Any]) -> None:
-        ...
+    def mock_message(self, param: Dict[str, Any]) -> None: ...
 
 
 def test_disallow_dynamic_dict_value_type(caplog: pytest.LogCaptureFixture):
@@ -286,8 +272,7 @@ def test_disallow_dynamic_dict_value_type(caplog: pytest.LogCaptureFixture):
 # should fail because Tuple has an Any typing
 class MockAnyTuple:
     @intersect_message()
-    def mock_message(self, param: Tuple[int, str, Any, bool]) -> None:
-        ...
+    def mock_message(self, param: Tuple[int, str, Any, bool]) -> None: ...
 
 
 def test_disallow_dynamic_tuple_subtyping(caplog: pytest.LogCaptureFixture):
@@ -302,8 +287,7 @@ class MockAnyNamedTuple:
     InnerType = namedtuple('Point', ['x', 'y'])  # noqa: PYI024 (we're explicitly checking the untyped version...)
 
     @intersect_message()
-    def mock_message(self, param: InnerType) -> None:
-        ...
+    def mock_message(self, param: InnerType) -> None: ...
 
 
 def test_disallow_dynamic_typing_namedtuple(caplog: pytest.LogCaptureFixture):
@@ -325,8 +309,7 @@ class MockAnyNestedClass:
         two: Inner
 
     @intersect_message()
-    def mock_message(self, param: Outer) -> None:
-        ...
+    def mock_message(self, param: Outer) -> None: ...
 
 
 def test_disallow_dynamic_typing_nested(caplog: pytest.LogCaptureFixture):
@@ -339,8 +322,7 @@ def test_disallow_dynamic_typing_nested(caplog: pytest.LogCaptureFixture):
 # should fail because trying to use bare list without item type annotation
 class MockBareList:
     @intersect_message()
-    def mock_message(self) -> list:
-        ...
+    def mock_message(self) -> list: ...
 
 
 def test_disallow_typeless_list(caplog: pytest.LogCaptureFixture):
@@ -353,8 +335,7 @@ def test_disallow_typeless_list(caplog: pytest.LogCaptureFixture):
 # should fail because trying to use tuple with no type annotations (tuples are a special case regarding generics)
 class MockBareTuple:
     @intersect_message()
-    def mock_message(self) -> tuple:
-        ...
+    def mock_message(self) -> tuple: ...
 
 
 def test_disallow_typeless_tuple(caplog: pytest.LogCaptureFixture):
@@ -367,8 +348,7 @@ def test_disallow_typeless_tuple(caplog: pytest.LogCaptureFixture):
 # should fail because we're explicitly checking for this tuple type annotation
 class MockAmbiguousTuple:
     @intersect_message()
-    def mock_message(self, param: Tuple[()]) -> None:
-        ...
+    def mock_message(self, param: Tuple[()]) -> None: ...
 
 
 def test_disallow_ambiguous_tuple(caplog: pytest.LogCaptureFixture):
@@ -384,8 +364,7 @@ class EmptyNamedTuple:
         pass
 
     @intersect_message()
-    def mock_message(self, param: Inner) -> None:
-        ...
+    def mock_message(self, param: Inner) -> None: ...
 
 
 def test_disallow_empty_namedtuple(caplog: pytest.LogCaptureFixture):
@@ -401,8 +380,7 @@ class EmptyTypedDict:
         pass
 
     @intersect_message()
-    def mock_message(self, param: Inner) -> None:
-        ...
+    def mock_message(self, param: Inner) -> None: ...
 
 
 def test_disallow_empty_typeddict(caplog: pytest.LogCaptureFixture):
@@ -419,8 +397,7 @@ class EmptyBaseModel:
             pass
 
     @intersect_message()
-    def mock_message(self, param: Inner) -> None:
-        ...
+    def mock_message(self, param: Inner) -> None: ...
 
 
 def test_disallow_empty_basemodel(caplog: pytest.LogCaptureFixture):
@@ -438,8 +415,7 @@ class EmptyDataclass:
             pass
 
     @intersect_message()
-    def mock_message(self, param: Inner) -> None:
-        ...
+    def mock_message(self, param: Inner) -> None: ...
 
 
 def test_disallow_empty_dataclass(caplog: pytest.LogCaptureFixture):
@@ -455,8 +431,7 @@ class AmbiguousTypeAliasType:
     PositiveList = TypeAliasType('PositiveList', List[Annotated[T, Gt(0)]], type_params=(T,))
 
     @intersect_message()
-    def mock_message(self, param: PositiveList) -> None:
-        ...
+    def mock_message(self, param: PositiveList) -> None: ...
 
 
 def test_disallow_ambiguous_typealiastype(caplog: pytest.LogCaptureFixture):
@@ -472,16 +447,13 @@ def test_disallow_ambiguous_typealiastype(caplog: pytest.LogCaptureFixture):
 # should fail because only one status function is allowed
 class TooManyStatusFunctions:
     @intersect_message()
-    def not_the_problem(self, one: int) -> int:
-        ...
+    def not_the_problem(self, one: int) -> int: ...
 
     @intersect_status()
-    def status_one(self, one: int) -> int:
-        ...
+    def status_one(self, one: int) -> int: ...
 
     @intersect_status
-    def status_two(self, one: str) -> str:
-        ...
+    def status_two(self, one: str) -> str: ...
 
 
 def test_disallow_too_many_status_functions(caplog: pytest.LogCaptureFixture):
@@ -496,12 +468,10 @@ def test_disallow_too_many_status_functions(caplog: pytest.LogCaptureFixture):
 # should fail because intersect_status function may not have ANY parameters
 class TooManyParametersOnIntersectStatus:
     @intersect_message()
-    def not_the_problem(self, one: int) -> int:
-        ...
+    def not_the_problem(self, one: int) -> int: ...
 
     @intersect_status()
-    def too_many_params(self, one: int) -> int:
-        ...
+    def too_many_params(self, one: int) -> int: ...
 
 
 def test_disallow_too_many_parameters_status(caplog: pytest.LogCaptureFixture):
@@ -514,12 +484,10 @@ def test_disallow_too_many_parameters_status(caplog: pytest.LogCaptureFixture):
 # so this is really just catching the lack of a "self" annotation
 class MissingSelfOnIntersectStatus:
     @intersect_message()
-    def not_the_problem(self, one: int) -> int:
-        ...
+    def not_the_problem(self, one: int) -> int: ...
 
     @intersect_status()
-    def forgot_params() -> int:
-        ...
+    def forgot_params() -> int: ...
 
 
 def test_disallow_zero_parameters_status(caplog: pytest.LogCaptureFixture):
@@ -531,12 +499,10 @@ def test_disallow_zero_parameters_status(caplog: pytest.LogCaptureFixture):
 # should fail because return annotation is missing
 class MissingReturnAnnotationOnStatus:
     @intersect_message()
-    def not_the_problem(self, one: int) -> int:
-        ...
+    def not_the_problem(self, one: int) -> int: ...
 
     @intersect_status()
-    def missing_return_annotation(self):
-        ...
+    def missing_return_annotation(self): ...
 
 
 def test_disallow_missing_return_annotation_status(caplog: pytest.LogCaptureFixture):
@@ -549,12 +515,10 @@ def test_disallow_missing_return_annotation_status(caplog: pytest.LogCaptureFixt
 # (we're only testing one example here, for more extensive examples look at the @intersect_message() tests)
 class InvalidReturnAnnotationOnStatus:
     @intersect_message()
-    def not_the_problem(self, one: int) -> int:
-        ...
+    def not_the_problem(self, one: int) -> int: ...
 
     @intersect_status()
-    def missing_return_annotation(self) -> Any:
-        ...
+    def missing_return_annotation(self) -> Any: ...
 
 
 def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixture):
@@ -571,8 +535,7 @@ def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixt
 # (we do allow the '/' "positional only" annotation, but we also prohibit *args and **kwargs because they are misleading)
 class FunctionHasKeywordOnlyParameters:
     @intersect_message()
-    def keyword_only_params(self, *, kw: int) -> int:
-        ...
+    def keyword_only_params(self, *, kw: int) -> int: ...
 
 
 def test_disallow_keyword_only(caplog: pytest.LogCaptureFixture):
@@ -585,8 +548,7 @@ def test_disallow_keyword_only(caplog: pytest.LogCaptureFixture):
 class ClassMethod:
     @classmethod
     @intersect_message()
-    def bad_annotations(cls, param: bool) -> bool:
-        ...
+    def bad_annotations(cls, param: bool) -> bool: ...
 
 
 def test_disallow_classmethod(caplog: pytest.LogCaptureFixture):
@@ -599,8 +561,7 @@ def test_disallow_classmethod(caplog: pytest.LogCaptureFixture):
 class StaticMethodTooManyParams:
     @staticmethod
     @intersect_message()
-    def too_many_params(one: bool, two: bool) -> bool:
-        ...
+    def too_many_params(one: bool, two: bool) -> bool: ...
 
 
 def test_disallow_staticmethod_too_many_params(caplog: pytest.LogCaptureFixture):
@@ -629,8 +590,7 @@ def test_disallow_staticmethod_missing_param_annotation(caplog: pytest.LogCaptur
 # this just tests the Pythonic "default" style argument, you can use defaults with Annotated[int, Field(default=1)]
 class DefaultArgumentInFunctionSignature:
     @intersect_message()
-    def disallow_default_param(self, one: int = 4) -> int:
-        ...
+    def disallow_default_param(self, one: int = 4) -> int: ...
 
 
 def test_disallow_default_argument_in_function_signature(caplog: pytest.LogCaptureFixture):
@@ -642,8 +602,7 @@ def test_disallow_default_argument_in_function_signature(caplog: pytest.LogCaptu
 # should fail because default value mismatches annotation
 class MismatchingDefaultType:
     @intersect_message()
-    def mismatching_default_type(self, one: Annotated[int, Field(default='red')]) -> bool:
-        ...
+    def mismatching_default_type(self, one: Annotated[int, Field(default='red')]) -> bool: ...
 
 
 def test_mismatching_default_type(caplog: pytest.LogCaptureFixture):
@@ -658,8 +617,7 @@ class MismatchingDefaultTypeNested:
         one: int = 'red'
 
     @intersect_message()
-    def mismatching_default_type(self, one: Nested) -> bool:
-        ...
+    def mismatching_default_type(self, one: Nested) -> bool: ...
 
 
 def test_mismatching_default_type_nested(caplog: pytest.LogCaptureFixture):
@@ -674,8 +632,7 @@ class MismatchingDefaultTypeNested2:
         one: int = 'red'
 
     @intersect_message()
-    def mismatching_default_type(self, one: Annotated[Nested, Field(default=Nested())]) -> bool:
-        ...
+    def mismatching_default_type(self, one: Annotated[Nested, Field(default=Nested())]) -> bool: ...
 
 
 def test_mismatching_default_type_nested_2(caplog: pytest.LogCaptureFixture):
@@ -690,8 +647,7 @@ class DefaultNotSerializable:
         one: int = lambda x: x
 
     @intersect_message()
-    def mismatching_default_type(self, one: Annotated[Nested, Field(default=Nested())]) -> bool:
-        ...
+    def mismatching_default_type(self, one: Annotated[Nested, Field(default=Nested())]) -> bool: ...
 
 
 def test_default_not_serializable(caplog: pytest.LogCaptureFixture):
@@ -724,8 +680,7 @@ class InvalidNestedDefaults:
     @intersect_message()
     def mismatching_default_type(
         self, one: Annotated[NestedStr, Field(default=NestedInt())]
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
 
 def test_invalid_nested_defaults(caplog: pytest.LogCaptureFixture):
@@ -739,8 +694,7 @@ class MismatchedFormat:
     @intersect_message()
     def mismatching_default_type(
         self, one: Annotated[datetime.datetime, Field(default='aaa')]
-    ) -> int:
-        ...
+    ) -> int: ...
 
 
 def test_mismatched_format(caplog: pytest.LogCaptureFixture):
@@ -754,8 +708,7 @@ class InvalidJsonSchema:
     @intersect_message()
     def invalid_schema_config(
         self, one: Annotated[int, Field(json_schema_extra={'maximum': 'should be an integer'})]
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
 
 def test_invalid_json_schema(caplog: pytest.LogCaptureFixture):

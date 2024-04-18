@@ -19,8 +19,7 @@ from ..fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 
 class CapabilityWithMinio:
     @intersect_message(response_data_transfer_handler=IntersectDataHandler.MINIO)
-    def arbitrary_function(self, param: int) -> int:
-        ...
+    def arbitrary_function(self, param: int) -> int: ...
 
 
 def test_minio_not_allowed_without_config(caplog: pytest.LogCaptureFixture):
