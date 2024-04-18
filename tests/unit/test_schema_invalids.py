@@ -687,7 +687,7 @@ def test_mismatching_default_type_nested_2(caplog: pytest.LogCaptureFixture):
 # should fail because lambda x: x is a default which can't be serialized
 class DefaultNotSerializable:
     class Nested(BaseModel):
-        one: int = lambda x: x  # noqa: E731 (we're testing bad code)
+        one: int = lambda x: x
 
     @intersect_message()
     def mismatching_default_type(self, one: Annotated[Nested, Field(default=Nested())]) -> bool:
