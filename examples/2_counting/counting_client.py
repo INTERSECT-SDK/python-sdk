@@ -96,7 +96,7 @@ class SampleOrchestrator:
 
     def client_callback(
         self, source: str, operation: str, _has_error: bool, payload: INTERSECT_JSON_VALUE
-    ) -> IntersectClientMessageParams:
+    ) -> IntersectClientCallback:
         """This simply prints the response from the Service to your console.
 
         In this case, we only send one message at a time, and will not send another message until we get a response back from the Service.

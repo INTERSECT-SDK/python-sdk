@@ -2,43 +2,17 @@
   "asyncapi": "2.6.0",
   "x-intersect-version": "0.5.7",
   "info": {
-    "title": "hello-organization.hello-facility.hello-system.hello-subsystem.hello-service",
+    "title": "counting-organization.counting-facility.counting-system.counting-subsystem.counting-service",
     "version": "0.0.0",
-    "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload."
+    "description": "This example is meant to showcase a simple event emitter.\n\nThis service does not have any endpoints, but simply fires off a single event every three seconds."
   },
   "defaultContentType": "application/json",
-  "channels": {
-    "say_hello_to_name": {
-      "publish": {
-        "message": {
-          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-          "contentType": "application/json",
-          "traits": {
-            "$ref": "#/components/messageTraits/commonHeaders"
-          },
-          "payload": {
-            "type": "string"
-          }
-        },
-        "description": "Takes in a string parameter and says 'Hello' to the parameter!"
-      },
-      "subscribe": {
-        "message": {
-          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-          "contentType": "application/json",
-          "traits": {
-            "$ref": "#/components/messageTraits/commonHeaders"
-          },
-          "payload": {
-            "type": "string"
-          }
-        },
-        "description": "Takes in a string parameter and says 'Hello' to the parameter!"
-      },
-      "events": []
+  "channels": {},
+  "events": {
+    "increment_counter": {
+      "type": "integer"
     }
   },
-  "events": {},
   "components": {
     "schemas": {},
     "messageTraits": {
@@ -163,8 +137,5 @@
         }
       }
     }
-  },
-  "status": {
-    "type": "string"
   }
 }

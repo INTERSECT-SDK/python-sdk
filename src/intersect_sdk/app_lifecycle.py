@@ -123,9 +123,9 @@ def default_intersect_lifecycle_loop(
       - intersect_gateway: This can be either an IntersectClient or an IntersectService.
       - delay: how often the loop should wait for (default: 30 seconds)
       - post_startup_callback: Optional callback function which is called after service startup, once.
-          The callback function provides no parameters.
-          This can be useful if you want to start up some event-emitting threads inside your capability,
-            which you should only do AFTER you've connected to the brokers.
+        The callback function provides no parameters.
+        This can be useful if you want to start up some event-emitting threads inside your capability,
+        which you should only do AFTER you've connected to the brokers.
       - cleanup_callback: This is an optional callback function which will be
         called once a signal is caught. The callback function takes in a single
         integer parameter, which will be the signal code intercepted. The function

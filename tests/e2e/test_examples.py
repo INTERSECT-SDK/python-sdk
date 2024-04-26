@@ -113,3 +113,7 @@ def test_example_2_counter():
     payload = json.loads(lines[26][9:])
     assert payload['state']['counting'] is False
     assert abs(payload['state']['count'] - 4) <= 3
+
+
+def test_example_2_count_examples():
+    assert run_example_test('2_counting_events') == '3\n9\n27\n'

@@ -1,10 +1,10 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.5.0",
+  "x-intersect-version": "0.5.7",
   "info": {
     "title": "counting-organization.counting-facility.counting-system.counting-subsystem.counting-service",
-    "version": "0.0.1",
-    "description": "This example is meant to showcase that your implementation is able to track state\nif you want it to.\n\nPlease note that this is not an especially robust implementation, as in the instance\nthe service gets two messages at the same time, it may manage to create\ntwo threads at once."
+    "version": "0.0.0",
+    "description": "This example is meant to showcase that your implementation is able to track state if you want it to.\n\nPlease note that this is not an especially robust implementation, as in the instance\nthe service gets two messages at the same time, it may manage to create\ntwo threads at once."
   },
   "defaultContentType": "application/json",
   "channels": {
@@ -20,7 +20,7 @@
             "$ref": "#/components/schemas/CountingServiceCapabilityImplementationState"
           }
         },
-        "description": "Set the counter back to 0\n\nParams\n  start_again: if True, start the counter again; if False, the\n    counter will remain off.\nReturns\n  the state BEFORE the counter was reset"
+        "description": "Set the counter back to 0.\n\nParams\n  start_again: if True, start the counter again; if False, the\n    counter will remain off.\n\nReturns:\n  the state BEFORE the counter was reset"
       },
       "subscribe": {
         "message": {
@@ -33,8 +33,9 @@
             "type": "boolean"
           }
         },
-        "description": "Set the counter back to 0\n\nParams\n  start_again: if True, start the counter again; if False, the\n    counter will remain off.\nReturns\n  the state BEFORE the counter was reset"
-      }
+        "description": "Set the counter back to 0.\n\nParams\n  start_again: if True, start the counter again; if False, the\n    counter will remain off.\n\nReturns:\n  the state BEFORE the counter was reset"
+      },
+      "events": []
     },
     "start_count": {
       "publish": {
@@ -48,7 +49,7 @@
             "$ref": "#/components/schemas/CountingServiceCapabilityImplementationResponse"
           }
         },
-        "description": "Start the counter (potentially from any number). \"Fails\" if the counter is already running.\n\nReturns\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was started successfully\n    False - if counter was already running and this was called"
+        "description": "Start the counter (potentially from any number). \"Fails\" if the counter is already running.\n\nReturns:\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was started successfully\n    False - if counter was already running and this was called"
       },
       "subscribe": {
         "message": {
@@ -58,8 +59,9 @@
             "$ref": "#/components/messageTraits/commonHeaders"
           }
         },
-        "description": "Start the counter (potentially from any number). \"Fails\" if the counter is already running.\n\nReturns\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was started successfully\n    False - if counter was already running and this was called"
-      }
+        "description": "Start the counter (potentially from any number). \"Fails\" if the counter is already running.\n\nReturns:\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was started successfully\n    False - if counter was already running and this was called"
+      },
+      "events": []
     },
     "stop_count": {
       "publish": {
@@ -73,7 +75,7 @@
             "$ref": "#/components/schemas/CountingServiceCapabilityImplementationResponse"
           }
         },
-        "description": "Stop the new ticker\n\nReturns\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was stopped successfully\n    False - if counter was already not running and this was called"
+        "description": "Stop the new ticker.\n\nReturns:\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was stopped successfully\n    False - if counter was already not running and this was called"
       },
       "subscribe": {
         "message": {
@@ -83,14 +85,16 @@
             "$ref": "#/components/messageTraits/commonHeaders"
           }
         },
-        "description": "Stop the new ticker\n\nReturns\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was stopped successfully\n    False - if counter was already not running and this was called"
-      }
+        "description": "Stop the new ticker.\n\nReturns:\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was stopped successfully\n    False - if counter was already not running and this was called"
+      },
+      "events": []
     }
   },
+  "events": {},
   "components": {
     "schemas": {
       "CountingServiceCapabilityImplementationState": {
-        "description": "We can't just use any class to represent state. This class either needs to\nextend Pydantic's BaseModel class, or be a dataclass. Both the Python\nstandard library's dataclass and Pydantic's dataclass are valid.",
+        "description": "We can't just use any class to represent state. This class either needs to extend Pydantic's BaseModel class, or be a dataclass. Both the Python standard library's dataclass and Pydantic's dataclass are valid.",
         "properties": {
           "count": {
             "default": 0,
@@ -127,7 +131,7 @@
     },
     "messageTraits": {
       "commonHeaders": {
-        "headers": {
+        "messageHeaders": {
           "$defs": {
             "IntersectDataHandler": {
               "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
@@ -159,12 +163,6 @@
               "title": "Created At",
               "type": "string"
             },
-            "service_version": {
-              "description": "SemVer string of service's version, used to check for compatibility",
-              "pattern": "^\\d+\\.\\d+\\.\\d+$",
-              "title": "Service Version",
-              "type": "string"
-            },
             "sdk_version": {
               "description": "SemVer string of SDK's version, used to check for compatibility",
               "pattern": "^\\d+\\.\\d+\\.\\d+$",
@@ -174,7 +172,7 @@
             "data_handler": {
               "allOf": [
                 {
-                  "$ref": "#/components/messageTraits/commonHeaders/headers/$defs/IntersectDataHandler"
+                  "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler"
                 }
               ],
               "default": 0,
@@ -191,10 +189,64 @@
             "source",
             "destination",
             "created_at",
-            "service_version",
             "sdk_version"
           ],
           "title": "UserspaceMessageHeader",
+          "type": "object"
+        },
+        "eventHeaders": {
+          "$defs": {
+            "IntersectDataHandler": {
+              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
+              "enum": [
+                0,
+                1
+              ],
+              "title": "IntersectDataHandler",
+              "type": "integer"
+            }
+          },
+          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "properties": {
+            "source": {
+              "description": "source of the message",
+              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "title": "Source",
+              "type": "string"
+            },
+            "created_at": {
+              "description": "the UTC timestamp of message creation",
+              "format": "date-time",
+              "title": "Created At",
+              "type": "string"
+            },
+            "sdk_version": {
+              "description": "SemVer string of SDK's version, used to check for compatibility",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "title": "Sdk Version",
+              "type": "string"
+            },
+            "data_handler": {
+              "allOf": [
+                {
+                  "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler"
+                }
+              ],
+              "default": 0,
+              "description": "Code signifying where data is stored."
+            },
+            "event_name": {
+              "title": "Event Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "source",
+            "created_at",
+            "sdk_version",
+            "event_name"
+          ],
+          "title": "EventMessageHeaders",
           "type": "object"
         }
       }

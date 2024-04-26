@@ -86,7 +86,7 @@ if __name__ == '__main__':
 ## Dependencies
 
 1) Try to avoid any dependency not installed as a mandatory `intersect_sdk` dependency. `pydantic`, `typing_extensions`, and `annotated_types` are dependencies which are mandatory as part of an `intersect_sdk` installation, and usage of these libraries is encouraged.
-2) All broker examples should use MQTT for the configuration, with the exception of `1_hello_world`.
+2) All broker examples should use MQTT for the configuration, with the exception of `1_hello_world_amqp`.
 
 ## Validation
 
