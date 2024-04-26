@@ -3,13 +3,14 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
-from ...annotations import IntersectDataHandler, IntersectMimeType
+from ...core_definitions import IntersectDataHandler, IntersectMimeType
 from ..exceptions import IntersectError
 from ..logger import logger
 from .minio_utils import MinioPayload, create_minio_store, get_minio_object, send_minio_object
 
 if TYPE_CHECKING:
     from ...config.shared import DataStoreConfigMap, HierarchyConfig
+    from ..messages.event import EventMessage
     from ..messages.userspace import UserspaceMessage
 
 
@@ -33,7 +34,7 @@ class DataPlaneManager:
         if not self._minio_providers:
             logger.warn('WARNING: This service cannot support any MINIO instances')
 
-    def incoming_message_data_handler(self, message: UserspaceMessage) -> bytes:
+    def incoming_message_data_handler(self, message: UserspaceMessage | EventMessage) -> bytes:
         """Get data from the request data provider.
 
         Params:

@@ -1,4 +1,4 @@
-"""This module defines some generic lifecycle utilities users can implement for themselves.
+"""This module defines some generic lifecycle utilities users can implement for themselves. Both Clients and Services can use these utilities, but they should be considered optional.
 
 It IS essential for an application to be able to shut down gracefully, as the adapter can communicate
 to the broader INTERSECT ecosystem that they have shut down. Obviously, not all shutdowns can be detected.
@@ -106,10 +106,10 @@ class SignalHandler:
 
 
 def default_intersect_lifecycle_loop(
-    intersect_gateway: IntersectClient | IntersectService[Any],
+    intersect_gateway: IntersectClient | IntersectService,
     delay: float = 30.0,
     cleanup_callback: Callable[[int], None] | None = None,
-    waiting_callback: Callable[[IntersectClient | IntersectService[Any]], None] | None = None,
+    waiting_callback: Callable[[IntersectClient | IntersectService], None] | None = None,
 ) -> None:
     """If users don't have their own lifecycle manager, they can import this function to begin a lifecycle loop.
 

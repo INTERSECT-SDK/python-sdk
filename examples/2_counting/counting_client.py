@@ -5,6 +5,7 @@ import time
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
     IntersectClient,
+    IntersectClientCallback,
     IntersectClientConfig,
     IntersectClientMessageParams,
     default_intersect_lifecycle_loop,
@@ -153,9 +154,7 @@ if __name__ == '__main__':
             },
         ],
     }
-    config = IntersectClientConfig(
-        **from_config_file,
-    )
+
     # The counter will start after the initial message.
     # If the service is already active and counting, this may do nothing.
     initial_messages = [
@@ -165,10 +164,13 @@ if __name__ == '__main__':
             payload=None,
         )
     ]
+    config = IntersectClientConfig(
+        initial_message_event_config=IntersectClientCallback(messages_to_send=initial_messages),
+        **from_config_file,
+    )
     orchestrator = SampleOrchestrator()
     client = IntersectClient(
         config=config,
-        initial_messages=initial_messages,
         user_callback=orchestrator.client_callback,
     )
     default_intersect_lifecycle_loop(

@@ -10,17 +10,19 @@ Users do not need to interact with the service other than through its constructo
 The service will automatically handle all system-level interfaces (i.e. status broadcasts).
 User-level interfaces are all handled on the same messaging channel, so users should not need to configure
 message brokers or the data layer beyond defining credentials in their "IntersectConfig" class.
+
+Most useful definitions and typings will be found in the service_definitions module.
 """
 
 from __future__ import annotations
 
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Callable
 from uuid import uuid4
 
 from pydantic import ValidationError
 from pydantic_core import PydanticSerializationError
-from typing_extensions import Self
+from typing_extensions import Self, final
 
 from ._internal.constants import (
     RESPONSE_CONTENT,
@@ -31,28 +33,30 @@ from ._internal.constants import (
 from ._internal.control_plane.control_plane_manager import ControlPlaneManager
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectApplicationError, IntersectError
+from ._internal.interfaces import IntersectEventObserver
 from ._internal.logger import logger
+from ._internal.messages.event import create_event_message
 from ._internal.messages.lifecycle import LifecycleType, create_lifecycle_message
 from ._internal.messages.userspace import (
     UserspaceMessage,
     create_userspace_message,
     deserialize_and_validate_userspace_message,
 )
+from ._internal.schema import get_schema_and_functions_from_model
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die
 from ._internal.version_resolver import resolve_user_version
-from .annotations import IntersectDataHandler, IntersectMimeType
+from .capability.base import IntersectBaseCapabilityImplementation
 from .config.service import IntersectServiceConfig
-from .schema import _get_schema_and_functions_from_model
+from .core_definitions import IntersectDataHandler, IntersectMimeType
 from .version import __version__
 
 if TYPE_CHECKING:
     from ._internal.function_metadata import FunctionMetadata
 
-CAPABILITY = TypeVar('CAPABILITY')
 
-
-class IntersectService(Generic[CAPABILITY]):
+@final
+class IntersectService(IntersectEventObserver):
     """This is the core gateway class for a user's application into INTERSECT.
 
     A service receives messages from a source, then sends a response message to that same source.
@@ -86,7 +90,7 @@ class IntersectService(Generic[CAPABILITY]):
 
     def __init__(
         self,
-        capability: CAPABILITY,
+        capability: IntersectBaseCapabilityImplementation,
         config: IntersectServiceConfig,
     ) -> None:
         """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
@@ -95,20 +99,26 @@ class IntersectService(Generic[CAPABILITY]):
           capability: Your capability implementation class
           config: The IntersectConfig class
         """
-        if isinstance(capability, type):
-            die(f'{capability.__name__} is not an instance of a class')
+        if not isinstance(capability, IntersectBaseCapabilityImplementation):
+            die(
+                f'IntersectService parameter must inherit from intersect_sdk.IntersectBaseCapabilityImplementation instead of "{capability.__class__.__name__}" .'
+            )
+        if not hasattr(capability, '__intersect_sdk_observers__'):
+            die(
+                f'{capability.__class__.__name__} needs to call "super().__init__()" in the constructor.'
+            )
         # this is called here in case a user created the object using "IntersectServiceConfig.model_construct()" to skip validation
         config = IntersectServiceConfig.model_validate(config)
-        self.capability: CAPABILITY = capability
+        self.capability = capability
         (
             schema,
             function_map,
+            event_map,
             status_fn_name,
             status_type_adapter,
-        ) = _get_schema_and_functions_from_model(
+        ) = get_schema_and_functions_from_model(
             capability.__class__,
             capability_name=config.hierarchy,
-            schema_version=config.schema_version,
             excluded_data_handlers=config.data_stores.get_missing_data_store_types(),
         )
         self._schema = schema
@@ -124,6 +134,13 @@ class IntersectService(Generic[CAPABILITY]):
         You can get user-defined properties from the method via getattr(_function_map.method, KEY), the keys get set
         in the intersect_message decorator function (annotations.py).
         """
+        self._event_map = MappingProxyType(event_map)
+        """
+        INTERNAL USE ONLY
+
+        Immutable mapping of event names to actual function implementations.
+        """
+
         self._function_keys: set[str] = set()
         """
         INTERNAL USE ONLY
@@ -136,7 +153,6 @@ class IntersectService(Generic[CAPABILITY]):
         """
 
         self._hierarchy = config.hierarchy
-        self._version = config.schema_version
 
         self._status_thread: StoppableThread | None = None
         self._status_ticker_interval = config.status_interval
@@ -155,6 +171,8 @@ class IntersectService(Generic[CAPABILITY]):
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
         # we PUBLISH messages on this channel
         self._lifecycle_channel_name = f"{config.hierarchy.hierarchy_string('/')}/lifecycle"
+        # we PUBLISH event messages on this channel
+        self._events_channel_name = f"{config.hierarchy.hierarchy_string('/')}/events"
         # we SUBSCRIBE to messages on this channel
         self._userspace_channel_name = f"{config.hierarchy.hierarchy_string('/')}/userspace"
         self._control_plane_manager = ControlPlaneManager(
@@ -163,6 +181,9 @@ class IntersectService(Generic[CAPABILITY]):
         self._control_plane_manager.add_subscription_channel(
             self._userspace_channel_name, {self._handle_userspace_message_raw}
         )
+
+        # we generally start observing and don't stop, doesn't really matter if we startup or shutdown
+        self.capability._intersect_sdk_register_observer(self)  # noqa: SLF001 (we don't want users calling or overriding it, but this is fine.)
 
     def startup(self) -> Self:
         """This function connects the service to all INTERSECT systems.
@@ -340,7 +361,7 @@ class IntersectService(Generic[CAPABILITY]):
             return None
         if not resolve_user_version(message):
             return self._make_error_message(
-                f'SDK version incompatibility. Service version: {__version__} . Sender version: {message["headers"]["service_version"]}',
+                f'SDK version incompatibility. Service version: {__version__} . Sender version: {message["headers"]["sdk_version"]}',
                 message,
             )
 
@@ -389,7 +410,6 @@ class IntersectService(Generic[CAPABILITY]):
         return create_userspace_message(
             source=message['headers']['destination'],
             destination=message['headers']['source'],
-            service_version=self._version,
             content_type=response_content_type,
             data_handler=response_data_handler,
             operation_id=message['operationId'],
@@ -471,6 +491,51 @@ class IntersectService(Generic[CAPABILITY]):
             )
             raise IntersectApplicationError from e
 
+    def _on_observe_event(self, event_name: str, event_value: Any, operation: str) -> None:
+        """This is the service function which handles events from the capabilities (as opposed to handling messages).
+
+        This function needs to:
+          1) verify that "event_name" is correctly registered for the user "entrypoint" function
+          2) verify that "event_name" can emit "event_value" for "operation"
+          3) try to parse "event_value" into the type the user specified (there will be an event name to type annotation mapping)
+          4) If the value correctly passes schema validation, fire the event
+
+        Note that if validation fails, we simply log the error out and return. We do not broadcast an error message.
+        """
+        event_meta = self._event_map.get(event_name)
+        if event_meta is None or operation not in event_meta.operations:
+            logger.error(
+                f"Event name '{event_name}' was not registered on operation '{operation}', so event will not be emitted.\nEvent value: {event_value}"
+            )
+            return
+        try:
+            response = event_meta.type_adapter.dump_json(
+                event_value, by_alias=True, warnings='error'
+            )
+        except PydanticSerializationError as e:
+            logger.error(
+                f"Value emitted for event name '{event_name}' from operation '{operation}' does not match schema.\nEvent value: {event_value}\nPydantic error: {e}"
+            )
+            return
+        try:
+            response_payload = self._data_plane_manager.outgoing_message_data_handler(
+                response, event_meta.content_type, event_meta.data_transfer_handler
+            )
+        except IntersectError:
+            # error should already be logged from the outgoing_message_data_handler function
+            return
+
+        msg = create_event_message(
+            source=self._hierarchy.hierarchy_string('.'),
+            operation_id=operation,
+            content_type=event_meta.content_type,
+            data_handler=event_meta.data_transfer_handler,
+            event_name=event_name,
+            payload=response_payload,
+        )
+
+        self._control_plane_manager.publish_message(self._events_channel_name, msg)
+
     def _make_error_message(
         self, error_string: str, original_message: UserspaceMessage
     ) -> UserspaceMessage:
@@ -485,7 +550,6 @@ class IntersectService(Generic[CAPABILITY]):
         return create_userspace_message(
             source=original_message['headers']['destination'],
             destination=original_message['headers']['source'],
-            service_version=self._version,
             content_type=IntersectMimeType.STRING,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id=original_message['operationId'],
@@ -498,7 +562,6 @@ class IntersectService(Generic[CAPABILITY]):
         msg = create_lifecycle_message(
             source=self._hierarchy.hierarchy_string('.'),
             destination=self._lifecycle_channel_name,
-            service_version=self._version,
             lifecycle_type=lifecycle_type,
             payload=payload,
         )

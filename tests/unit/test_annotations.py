@@ -1,5 +1,5 @@
 import pytest
-from intersect_sdk import intersect_message, intersect_status
+from intersect_sdk import IntersectBaseCapabilityImplementation, intersect_message, intersect_status
 from pydantic import ValidationError
 
 
@@ -8,7 +8,7 @@ from pydantic import ValidationError
 def test_invalid_annotation_params():
     with pytest.raises(ValidationError) as ex:
 
-        class BadAnnotationArgs:
+        class BadAnnotationArgs(IntersectBaseCapabilityImplementation):
             @intersect_message(
                 request_content_type=0,
                 response_content_type=0,
@@ -29,7 +29,7 @@ def test_invalid_annotation_params():
 def test_classmethod_rejected(caplog: pytest.LogCaptureFixture):
     with pytest.raises(TypeError) as ex:
 
-        class ClassMethod1:
+        class ClassMethod1(IntersectBaseCapabilityImplementation):
             @intersect_message()
             @classmethod
             def bad_annotations(cls, param: bool) -> bool: ...
@@ -38,7 +38,7 @@ def test_classmethod_rejected(caplog: pytest.LogCaptureFixture):
 
     with pytest.raises(TypeError) as ex2:
 
-        class ClassMethod2:
+        class ClassMethod2(IntersectBaseCapabilityImplementation):
             @intersect_status()
             @classmethod
             def bad_annotations(cls, param: bool) -> bool: ...
@@ -49,7 +49,7 @@ def test_classmethod_rejected(caplog: pytest.LogCaptureFixture):
 def test_staticmethod_invalids():
     with pytest.raises(TypeError) as ex:
 
-        class Test1:
+        class Test1(IntersectBaseCapabilityImplementation):
             @intersect_message()
             @staticmethod
             def bad_annotations(param: bool) -> bool: ...
@@ -58,7 +58,7 @@ def test_staticmethod_invalids():
 
     with pytest.raises(TypeError) as ex2:
 
-        class Test2:
+        class Test2(IntersectBaseCapabilityImplementation):
             @intersect_status()
             @staticmethod
             def bad_annotations(param: bool) -> bool: ...

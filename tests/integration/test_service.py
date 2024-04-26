@@ -19,9 +19,6 @@ from intersect_sdk import (
     IntersectService,
     IntersectServiceConfig,
 )
-from intersect_sdk import (
-    __version__ as intersect_version,
-)
 from intersect_sdk._internal.control_plane.control_plane_manager import ControlPlaneManager
 from intersect_sdk._internal.data_plane.minio_utils import MinioPayload, get_minio_object
 from intersect_sdk._internal.messages.lifecycle import (
@@ -126,7 +123,6 @@ def test_call_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='calculate_fibonacci',
@@ -161,7 +157,6 @@ def test_call_static_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='test_generator',
@@ -195,7 +190,6 @@ def test_call_user_function_with_default_and_empty_payload():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='valid_default_argument',
@@ -230,7 +224,6 @@ def test_call_user_function_with_invalid_payload():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='calculate_fibonacci',
@@ -269,7 +262,6 @@ def test_call_nonexistent_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='THIS_FUNCTION_DOES_NOT_EXIST',
@@ -306,7 +298,6 @@ def test_call_minio_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='test_datetime',
@@ -357,7 +348,6 @@ def test_lifecycle_messages():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='verify_float_dict',

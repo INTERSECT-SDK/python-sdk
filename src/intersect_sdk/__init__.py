@@ -7,17 +7,14 @@ In general, most breaking changes on version updates will relate to:
   - When a new data service is integrated into INTERSECT, ALL adapters will need to update to support this data service, which will include new dependencies.
 """
 
-from .annotations import (
-    IntersectDataHandler,
-    IntersectMimeType,
-    intersect_message,
-    intersect_status,
-)
 from .app_lifecycle import default_intersect_lifecycle_loop
-from .client import (
-    INTERSECT_CLIENT_CALLBACK_TYPE,
+from .capability.base import IntersectBaseCapabilityImplementation
+from .client import IntersectClient
+from .client_callback_definitions import (
+    INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
+    INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
     INTERSECT_JSON_VALUE,
-    IntersectClient,
+    IntersectClientCallback,
     IntersectClientMessageParams,
 )
 from .config.client import IntersectClientConfig
@@ -28,21 +25,33 @@ from .config.shared import (
     DataStoreConfigMap,
     HierarchyConfig,
 )
+from .core_definitions import IntersectDataHandler, IntersectMimeType
 from .schema import get_schema_from_model
 from .service import IntersectService
+from .service_definitions import (
+    IntersectEventDefinition,
+    intersect_event,
+    intersect_message,
+    intersect_status,
+)
 from .version import __version__, version_info
 
 __all__ = [
     'IntersectDataHandler',
+    'IntersectEventDefinition',
     'IntersectMimeType',
+    'intersect_event',
     'intersect_message',
     'intersect_status',
     'get_schema_from_model',
     'IntersectService',
     'IntersectClient',
+    'IntersectClientCallback',
     'IntersectClientMessageParams',
-    'INTERSECT_CLIENT_CALLBACK_TYPE',
+    'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE',
+    'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE',
     'INTERSECT_JSON_VALUE',
+    'IntersectBaseCapabilityImplementation',
     'default_intersect_lifecycle_loop',
     'IntersectClientConfig',
     'IntersectServiceConfig',

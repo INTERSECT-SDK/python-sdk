@@ -2,6 +2,7 @@ import logging
 
 from intersect_sdk import (
     HierarchyConfig,
+    IntersectBaseCapabilityImplementation,
     IntersectService,
     IntersectServiceConfig,
     default_intersect_lifecycle_loop,
@@ -13,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class HelloServiceCapabilityImplementation:
+class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation):
     """Rudimentary capability implementation example.
 
     All capability implementations are required to have an @intersect_status decorated function,
@@ -68,7 +69,6 @@ if __name__ == '__main__':
             subsystem='hello-subsystem',
             service='hello-service',
         ),
-        schema_version='0.0.1',
         **from_config_file,
     )
 

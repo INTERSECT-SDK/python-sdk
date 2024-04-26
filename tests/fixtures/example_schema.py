@@ -28,6 +28,7 @@ from uuid import UUID
 from annotated_types import Ge, Le
 from intersect_sdk import (
     HierarchyConfig,
+    IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectMimeType,
     intersect_message,
@@ -147,7 +148,7 @@ class DummyStatus(TypedDict):
     """
 
 
-class DummyCapabilityImplementation:
+class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
     """
     This is an example of the overarching capability class a user creates that we want to inject into the service.
 
@@ -222,6 +223,7 @@ class DummyCapabilityImplementation:
         Note that everything in the constructor will need to execute before starting up the capability,
         which handles talking to the various INTERSECT-related backing services.
         """
+        super().__init__()
         self._status_example = DummyStatus(
             functions_called=0,
             last_function_called='',
@@ -440,7 +442,7 @@ class DummyCapabilityImplementation:
     @intersect_message(
         response_content_type=IntersectMimeType.STRING,
     )
-    def ip4_to_ip6(self, ip4: IPv6Address) -> IPv4Address:
+    def ip4_to_ip6(self, ip4: IPv4Address) -> IPv6Address:
         """
         example of IPaddress conversion
         return value will always start with '2002::' based on implementation
@@ -451,7 +453,7 @@ class DummyCapabilityImplementation:
         return IPv6Address(42545680458834377588178886921629466624 | (int(ip4) << 80))
 
     @intersect_message()
-    def get_url_parts(self, url: Url) -> Dict[str, Optional[str]]:
+    def get_url_parts(self, url: Url) -> Dict[str, Optional[Union[str, int]]]:
         """
         example of automatic URL parsing and schema validation
         """

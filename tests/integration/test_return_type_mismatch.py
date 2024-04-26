@@ -13,14 +13,12 @@ from intersect_sdk import (
     ControlPlaneConfig,
     DataStoreConfig,
     DataStoreConfigMap,
+    IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectMimeType,
     IntersectService,
     IntersectServiceConfig,
     intersect_message,
-)
-from intersect_sdk import (
-    __version__ as intersect_version,
 )
 from intersect_sdk._internal.control_plane.control_plane_manager import (
     ControlPlaneManager,
@@ -36,7 +34,7 @@ from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 # FIXTURE #############################
 
 
-class ReturnTypeMismatchCapabilityImplementation:
+class ReturnTypeMismatchCapabilityImplementation(IntersectBaseCapabilityImplementation):
     @intersect_message()
     def wrong_return_annotation(self, param: int) -> int:
         return 'this is not an integer!'
@@ -109,7 +107,6 @@ def test_call_user_function_with_invalid_payload():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            service_version=intersect_version,
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='wrong_return_annotation',

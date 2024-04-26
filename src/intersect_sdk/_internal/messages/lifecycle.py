@@ -7,8 +7,6 @@ Services should NEVER be CONSUMING messages on the lifecycle channel.
 (consumption is for INTERSECT core services only).
 """
 
-from __future__ import annotations
-
 import datetime
 import uuid
 from enum import IntEnum
@@ -17,7 +15,7 @@ from typing import Any, Literal
 from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
 
-from ...constants import SYSTEM_OF_SYSTEM_REGEX  # noqa: TCH001 (Pydantic uses runtime annotations)
+from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...version import __version__
 
 
@@ -98,21 +96,6 @@ class LifecycleMessageHeaders(TypedDict):
     created timestamp - should meet ISO-8601 format, always in UTC
     """
 
-    service_version: Annotated[
-        str,
-        Field(
-            pattern=r'^\d+\.\d+\.\d+$',
-            description="SemVer string of service's version, used to check for compatibility",
-        ),
-    ]
-    """
-    The version of the SERVICE sending over the messages. Will be used to determine:
-    - When a campaign is created with an older version, and the version is updated,
-      parsing the version will determine if the old campaign can still be executed.
-      Ideally, you'd use semantic versioning, and only bump the major version
-      on backwards incompatibilities.
-    """
-
     sdk_version: Annotated[
         str,
         Field(
@@ -162,7 +145,6 @@ class LifecycleMessage(TypedDict):
 def create_lifecycle_message(
     source: str,
     destination: str,
-    service_version: str,
     lifecycle_type: LifecycleType,
     payload: Any,
 ) -> LifecycleMessage:
@@ -173,7 +155,6 @@ def create_lifecycle_message(
             source=source,
             destination=destination,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
-            service_version=service_version,
             sdk_version=__version__,
             lifecycle_type=lifecycle_type,
         ),
@@ -185,7 +166,7 @@ def create_lifecycle_message(
 LIFECYCLE_MESSAGE_ADAPTER = TypeAdapter(LifecycleMessage)
 
 
-def deserialize_and_validate_lifecycle_message(msg: str | bytes) -> LifecycleMessage:
+def deserialize_and_validate_lifecycle_message(msg: bytes) -> LifecycleMessage:
     """If the "msg" param is a valid userspace message, return the object.
 
     Raises Pydantic ValidationError if "msg" is not a valid userspace message

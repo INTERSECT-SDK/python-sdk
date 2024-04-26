@@ -1,4 +1,4 @@
-"""Core decorators (and their associated types) for INTERSECT.
+"""Core decorators (and their associated types) for INTERSECT. Only relevant for Service authors.
 
 Users annotate their endpoints with these decorators (chiefly @intersect_message()) much as they would when
 developing a traditional REST API. The decorator allows for users to
@@ -14,60 +14,55 @@ If you are not able to create a schema, the service will refuse to start.
 from __future__ import annotations
 
 import functools
-from enum import Enum, IntEnum
-from typing import Any, Callable, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set
 
-from pydantic import validate_call
+from pydantic import BaseModel, validate_call
+from typing_extensions import final
 
 from ._internal.constants import (
-    BASE_ATTR,
+    BASE_EVENT_ATTR,
+    BASE_RESPONSE_ATTR,
     BASE_STATUS_ATTR,
+    EVENT_ATTR_KEY,
     REQUEST_CONTENT,
     RESPONSE_CONTENT,
     RESPONSE_DATA,
     SHUTDOWN_KEYS,
     STRICT_VALIDATION,
 )
+from .core_definitions import IntersectDataHandler, IntersectMimeType
 
 
-class IntersectDataHandler(IntEnum):
-    """What data transfer type do you want to use for handling the request/response?
+@final
+class IntersectEventDefinition(BaseModel):
+    """When defining your dictionary/map of events, the values will be represented by an EventDefinition."""
 
-    Default: MESSAGE
+    event_type: type
     """
+    The data type of your event. Note that any event you emit must map to this type.
 
-    MESSAGE = 0
-    MINIO = 1
-
-
-class IntersectMimeType(Enum):
-    """Roughly corresponds to "Content-Type" values, but enforce standardization of values.
-
-    Default: JSON
-
-    The value should be a MIME type; references can be found at:
-
-    - https://www.iana.org/assignments/media-types/media-types.xhtml
-
-    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-
-    JSON is acceptable for any file which contains non-binary data.
-
-    BINARY is acceptable for any file which contains binary data and can reasonably be handled as application/octet-string.
-
-    This list is not exhaustive and should be regularly updated. If this list is missing a MIME type you would like to use, please contact the developers or open an issue.
+    The type you provide must be parsable by Pydantic.
     """
+    content_type: IntersectMimeType = IntersectMimeType.JSON
+    """
+    The IntersectMimeType (aka Content-Type) of your event.
 
-    JSON = 'application/json'
-    STRING = 'text/plain'
-    BINARY = 'application/octet-string'
-    HDF5 = 'application/x-hdf5'
+    default: IntersectMimeType.JSON
+    """
+    data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE
+    """
+    The IntersectDataHandler you want to use (most people can just use IntersectDataHandler.MESSAGE here, unless your data is very large)
+
+    default: IntersectDataHandler.MESSAGE
+    """
 
 
 @validate_call
 def intersect_message(
     __func: Callable[..., Any] | None = None,
+    /,
     *,
+    events: Optional[Dict[str, IntersectEventDefinition]] = None,  # noqa: UP006, UP007 (runtime type annotation)
     ignore_keys: Optional[Set[str]] = None,  # noqa: UP006, UP007 (runtime type annotation)
     request_content_type: IntersectMimeType = IntersectMimeType.JSON,
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
@@ -107,6 +102,14 @@ def intersect_message(
     In general, if you are able to create a service from this class, you should be okay.
 
     Params:
+      - events: dictionary of event names (strings) to IntersectEventDefninitions.
+        An IntersectEventDefinition contains metadata about your event, including its type.
+        Note that the type defined on the IntersectEventDefinition must be parsable by Pydantic.
+        Note that while multiple functions can emit the same event name, they MUST advertise the SAME type
+        for this event name.
+        Inside your function, you may call "self.intersect_sdk_emit_event(event_name, event_value)" to fire off the event.
+        You may call this in an inner, non-annotated function, but NOTE: EVERY function which calls this function MUST
+        advertise the same event.
       - ignore_keys: Hashset of keys. The service class maintains a set of keys to ignore, and will ignore
         this function if at least one key is present in the service set.
         By default, all functions will always be allowed.
@@ -132,17 +135,18 @@ def intersect_message(
             raise TypeError(msg)
 
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def __intersect_sdk_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        setattr(wrapper, BASE_ATTR, True)
-        setattr(wrapper, REQUEST_CONTENT, request_content_type)
-        setattr(wrapper, RESPONSE_CONTENT, response_content_type)
-        setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler)
-        setattr(wrapper, STRICT_VALIDATION, strict_request_validation)
-        setattr(wrapper, SHUTDOWN_KEYS, set(ignore_keys) if ignore_keys else set())
+        setattr(__intersect_sdk_wrapper, BASE_RESPONSE_ATTR, True)
+        setattr(__intersect_sdk_wrapper, REQUEST_CONTENT, request_content_type)
+        setattr(__intersect_sdk_wrapper, RESPONSE_CONTENT, response_content_type)
+        setattr(__intersect_sdk_wrapper, RESPONSE_DATA, response_data_transfer_handler)
+        setattr(__intersect_sdk_wrapper, STRICT_VALIDATION, strict_request_validation)
+        setattr(__intersect_sdk_wrapper, SHUTDOWN_KEYS, set(ignore_keys) if ignore_keys else set())
+        setattr(__intersect_sdk_wrapper, EVENT_ATTR_KEY, events or {})
 
-        return wrapper
+        return __intersect_sdk_wrapper
 
     if __func:
         return inner_decorator(__func)
@@ -153,6 +157,7 @@ def intersect_message(
 @validate_call
 def intersect_status(
     __func: Callable[..., Any] | None = None,
+    /,
     *,
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
     response_content_type: IntersectMimeType = IntersectMimeType.JSON,
@@ -163,6 +168,8 @@ def intersect_status(
 
     Your status retrieval function may not have any parameters (other than "self"). Return annotation rules mirror
     the typing rules for @intersect_message().
+
+    A status message MUST NOT send events out. It should be a simple query of the general service (no specifics).
 
     Params:
         - response_content_type: how to serialize outgoing requests (default: JSON)
@@ -179,17 +186,62 @@ def intersect_status(
             raise TypeError(msg)
 
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def __intersect_sdk_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        setattr(wrapper, BASE_STATUS_ATTR, True)
-        setattr(wrapper, REQUEST_CONTENT, IntersectMimeType.JSON)
-        setattr(wrapper, RESPONSE_CONTENT, response_content_type)
-        setattr(wrapper, RESPONSE_DATA, response_data_transfer_handler)
-        setattr(wrapper, STRICT_VALIDATION, False)
-        setattr(wrapper, SHUTDOWN_KEYS, set())
+        setattr(__intersect_sdk_wrapper, BASE_STATUS_ATTR, True)
+        setattr(__intersect_sdk_wrapper, REQUEST_CONTENT, IntersectMimeType.JSON)
+        setattr(__intersect_sdk_wrapper, RESPONSE_CONTENT, response_content_type)
+        setattr(__intersect_sdk_wrapper, RESPONSE_DATA, response_data_transfer_handler)
+        setattr(__intersect_sdk_wrapper, STRICT_VALIDATION, False)
+        setattr(__intersect_sdk_wrapper, SHUTDOWN_KEYS, set())
 
-        return wrapper
+        return __intersect_sdk_wrapper
+
+    if __func:
+        return inner_decorator(__func)
+    return inner_decorator
+
+
+@validate_call
+def intersect_event(
+    __func: Callable[..., Any] | None = None,
+    /,
+    *,
+    events: Optional[Dict[str, IntersectEventDefinition]] = None,  # noqa: UP006, UP007 (runtime type annotation)
+) -> Callable[..., Any]:
+    """Use this annotation to mark a function as an event emitter.
+
+    This annotation is meant to be used in conjunction with secondary threads that you start on your CapabilityImplementation.
+    You should ONLY annotate the function which is the direct thread target.
+
+    Note that you should NOT use this annotation in combination with any other annotation. If you are exposing an endpoint
+    which ALSO emits messages, use @intersect_message(events={...}) instead.
+
+    Also note that the events you register here should be compatible with all events registered on @intersect_message annotations.
+
+    Params:
+      - events: dictionary of event names (strings) to IntersectEventDefninitions.
+        An IntersectEventDefinition contains metadata about your event, including its type.
+        Note that the type defined on the IntersectEventDefinition must be parsable by Pydantic.
+        Note that while multiple functions can emit the same event name, they MUST advertise the SAME type
+        for this event name.
+        Inside your function, you may call "self.intersect_sdk_emit_event(event_name, event_value)" to fire off the event.
+        You may call this in an inner, non-annotated function, but NOTE: EVERY function which calls this function MUST
+        advertise the same event.
+    """
+
+    def inner_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        # NOTE: we don't actually care how users decorate their @intersect_event functions, because we don't call them.
+
+        @functools.wraps(func)
+        def __intersect_sdk_wrapper(*args: Any, **kwargs: Any) -> Any:
+            return func(*args, **kwargs)
+
+        setattr(__intersect_sdk_wrapper, BASE_EVENT_ATTR, True)
+        setattr(__intersect_sdk_wrapper, EVENT_ATTR_KEY, events or {})
+
+        return __intersect_sdk_wrapper
 
     if __func:
         return inner_decorator(__func)

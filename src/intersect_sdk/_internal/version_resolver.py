@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..annotations import IntersectDataHandler
+from ..core_definitions import IntersectDataHandler
 from ..version import __version__, version_info
 from .logger import logger
 
 if TYPE_CHECKING:
+    from .messages.event import EventMessage
     from .messages.userspace import UserspaceMessage
 
 
 def _resolve_user_version(
-    msg: UserspaceMessage, our_version: str, our_version_info: tuple[int, int, int]
+    msg: UserspaceMessage | EventMessage, our_version: str, our_version_info: tuple[int, int, int]
 ) -> bool:
     """Function which handles version resolution information.
 
@@ -41,7 +42,7 @@ def _resolve_user_version(
     return True
 
 
-def resolve_user_version(msg: UserspaceMessage) -> bool:
+def resolve_user_version(msg: UserspaceMessage | EventMessage) -> bool:
     """This function handles all version compatibilities between our SDK version and an incoming message's SDK version.
 
     Params

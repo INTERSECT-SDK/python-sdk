@@ -6,6 +6,7 @@ from typing import Optional
 
 from intersect_sdk import (
     HierarchyConfig,
+    IntersectBaseCapabilityImplementation,
     IntersectService,
     IntersectServiceConfig,
     default_intersect_lifecycle_loop,
@@ -52,7 +53,7 @@ class CountingServiceCapabilityImplementationResponse:
     """
 
 
-class CountingServiceCapabilityImplementation:
+class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementation):
     """This example is meant to showcase that your implementation is able to track state if you want it to.
 
     Please note that this is not an especially robust implementation, as in the instance
@@ -185,7 +186,6 @@ if __name__ == '__main__':
             subsystem='counting-subsystem',
             service='counting-service',
         ),
-        schema_version='0.0.1',
         status_interval=30.0,
         **from_config_file,
     )

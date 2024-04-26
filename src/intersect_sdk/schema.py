@@ -1,4 +1,4 @@
-"""This module is responsible for generating the core interface definitions of any service.
+"""This module is responsible for generating the core interface definitions of any Service.
 
 There are two things to generate:
 
@@ -28,95 +28,27 @@ The SDK needs to be able to dynamically look up functions, validate the request 
 
 from __future__ import annotations
 
-import inspect
 from typing import (
     TYPE_CHECKING,
     Any,
 )
 
-from pydantic import TypeAdapter
-
-from ._internal.messages.userspace import UserspaceMessageHeader
-from ._internal.schema import ASYNCAPI_VERSION, get_schemas_and_functions
-from .version import __version__
+from ._internal.schema import get_schema_and_functions_from_model
 
 if TYPE_CHECKING:
-    from ._internal.function_metadata import FunctionMetadata
-    from .annotations import IntersectDataHandler
+    from .capability.base import IntersectBaseCapabilityImplementation
     from .config.shared import HierarchyConfig
 
 
-def _get_schema_and_functions_from_model(
-    capability_type: type,
-    capability_name: HierarchyConfig,
-    schema_version: str,
-    excluded_data_handlers: set[IntersectDataHandler],
-) -> tuple[dict[str, Any], dict[str, FunctionMetadata], str | None, TypeAdapter[Any] | None]:
-    """This returns both the schema and the function mapping.
-
-    This is meant for internal use - see "get_schema_from_model" for more comprehensive documentation.
-    """
-    (
-        schemas,
-        (status_fn_name, status_schema, status_type_adapter),
-        channels,
-        function_map,
-    ) = get_schemas_and_functions(capability_type, excluded_data_handlers)
-
-    asyncapi_spec = {
-        'asyncapi': ASYNCAPI_VERSION,
-        'x-intersect-version': __version__,
-        'info': {
-            'title': capability_name.hierarchy_string('.'),
-            'version': schema_version,
-        },
-        # applies to how an incoming message payload will be parsed.
-        # can be changed per channel
-        'defaultContentType': 'application/json',
-        'channels': channels,
-        'components': {
-            'schemas': schemas,
-            'messageTraits': {
-                # this is where we can define our message headers
-                'commonHeaders': {
-                    'headers': TypeAdapter(UserspaceMessageHeader).json_schema(
-                        ref_template='#/components/messageTraits/commonHeaders/headers/$defs/{model}',
-                        mode='serialization',
-                    ),
-                }
-            },
-        },
-    }
-    if capability_type.__doc__:
-        asyncapi_spec['info']['description'] = inspect.cleandoc(capability_type.__doc__)  # type: ignore[index]
-
-    if status_schema:
-        asyncapi_spec['status'] = status_schema
-
-    """
-    TODO - might want to include these fields
-    "securitySchemes": {},
-    "operationTraits": {},
-    "externalDocumentation": {
-        "url": "https://example.com",  # REQUIRED
-    },
-    """
-
-    return asyncapi_spec, function_map, status_fn_name, status_type_adapter
-
-
 def get_schema_from_model(
-    capability_type: type,
+    capability_type: type[IntersectBaseCapabilityImplementation],
     capability_name: HierarchyConfig,
-    schema_version: str,
 ) -> dict[str, Any]:
     """The goal of this function is to be able to generate a complete schema matching the AsyncAPI spec 2.6.0 from a BaseModel class.
 
     Params:
       - capability_type - the SDK user will provide the class of their capability handler, which generates the schema
       - capability_name - ideally, this could be scanned by the package name. Meant to be descriptive, i.e. "nionswift"
-      - schema_version - ideally, this could be parsed from the package.
-      - status_fn: the function from your capability which retrieves its status
 
 
     SOME NOTES ABOUT THE SCHEMA
@@ -137,10 +69,9 @@ def get_schema_from_model(
 
     - Channel names just mimic the function names for now
     """
-    schemas, _, _, _ = _get_schema_and_functions_from_model(
+    schemas, _, _, _, _ = get_schema_and_functions_from_model(
         capability_type,
         capability_name,
-        schema_version,
         set(),  # assume all data handlers are configured if user is just checking their schema
     )
     return schemas

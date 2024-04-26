@@ -9,8 +9,8 @@ from typing_extensions import TypedDict
 from urllib3.exceptions import MaxRetryError
 from urllib3.util import parse_url
 
-from ...annotations import IntersectMimeType
 from ...config.shared import DataStoreConfig, HierarchyConfig
+from ...core_definitions import IntersectMimeType
 from ..exceptions import IntersectError
 from ..logger import logger
 from ..utils import die

@@ -3,6 +3,7 @@ import logging
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
     IntersectClient,
+    IntersectClientCallback,
     IntersectClientConfig,
     IntersectClientMessageParams,
     default_intersect_lifecycle_loop,
@@ -60,10 +61,6 @@ if __name__ == '__main__':
             },
         ],
     }
-    config = IntersectClientConfig(
-        **from_config_file,
-    )
-
     """
     step two: construct the initial messages you want to send. In this case we will only send a single starting message.
 
@@ -83,6 +80,10 @@ if __name__ == '__main__':
             payload='hello_client',
         )
     ]
+    config = IntersectClientConfig(
+        initial_message_event_config=IntersectClientCallback(messages_to_send=initial_messages),
+        **from_config_file,
+    )
 
     """
     step three: create the client.
@@ -91,7 +92,6 @@ if __name__ == '__main__':
     """
     client = IntersectClient(
         config=config,
-        initial_messages=initial_messages,
         user_callback=simple_client_callback,
     )
 

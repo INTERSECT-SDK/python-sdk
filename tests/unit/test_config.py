@@ -4,6 +4,7 @@ from intersect_sdk import (
     DataStoreConfig,
     DataStoreConfigMap,
     HierarchyConfig,
+    IntersectClientCallback,
     IntersectClientConfig,
     IntersectServiceConfig,
 )
@@ -102,13 +103,16 @@ def test_missing_client_config():
     with pytest.raises(ValidationError) as ex:
         _config = IntersectClientConfig()
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 1
+    assert len(errors) == 2
     assert {'type': 'missing', 'loc': ('brokers',)} in errors
+    assert {'type': 'missing', 'loc': ('initial_message_event_config',)} in errors
 
 
 def test_empty_client_config():
     with pytest.raises(ValidationError) as ex:
-        _config = IntersectClientConfig(brokers=[])
+        _config = IntersectClientConfig(
+            brokers=[], initial_message_event_config=IntersectClientCallback()
+        )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 2
     assert {'loc': ('brokers', 'list[ControlPlaneConfig]'), 'type': 'too_short'}
@@ -119,10 +123,9 @@ def test_missing_service_config():
     with pytest.raises(ValidationError) as ex:
         _config = IntersectServiceConfig()
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 3
+    assert len(errors) == 2
     assert {'type': 'missing', 'loc': ('brokers',)} in errors
     assert {'type': 'missing', 'loc': ('hierarchy',)} in errors
-    assert {'type': 'missing', 'loc': ('schema_version',)} in errors
 
 
 def test_invalid_service_config():
@@ -135,12 +138,11 @@ def test_invalid_service_config():
             schema_version='0.0.0+20200101000000',
         )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 5
+    assert len(errors) == 4
     assert {'loc': ('hierarchy',), 'type': 'model_type'} in errors
     assert {'loc': ('brokers', 'list[ControlPlaneConfig]'), 'type': 'too_short'} in errors
     assert {'loc': ('brokers', "literal['discovery']"), 'type': 'literal_error'} in errors
     assert {'loc': ('status_interval',), 'type': 'greater_than_equal'} in errors
-    assert {'loc': ('schema_version',), 'type': 'string_pattern_mismatch'} in errors
 
 
 # VALIDS ################

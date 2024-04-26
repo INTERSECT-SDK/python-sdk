@@ -3,11 +3,13 @@
 from typing import List, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Annotated
+from typing_extensions import Annotated, final
 
+from ..client_callback_definitions import IntersectClientCallback
 from .shared import ControlPlaneConfig, DataStoreConfigMap
 
 
+@final
 class IntersectClientConfig(BaseModel):
     """The user-provided configuration needed to integrate with INTERSECT as a client."""
 
@@ -21,6 +23,29 @@ class IntersectClientConfig(BaseModel):
     data_stores: Annotated[DataStoreConfigMap, Field(default_factory=lambda: DataStoreConfigMap())]
     """
     Configurations for any data stores the application should talk to
+    """
+
+    initial_message_event_config: IntersectClientCallback
+    """
+    configuration for:
+    1) the initial messages you want to send out
+    2) the initial events you want to listen to
+
+    Note that at LEAST one of these should be non-empty.
+    """
+
+    resend_initial_messages_on_secondary_startup: bool = False
+    """
+    if set to True, resend the initial messages if the client is restarted
+
+    (default: False)
+    """
+
+    terminate_after_initial_messages: bool = False
+    """
+    if set to True, will never enter the pub/sub loop and will never wait for responses from the services
+
+    (default: False)
     """
 
     # pydantic config

@@ -38,14 +38,14 @@ def run_example_test(example: str, timeout: int = 60) -> str:
     service_procs = [subprocess.Popen([sys.executable, '-m', file]) for file in service_modules]  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
     # make sure all service processes have been initialized before starting client process
     time.sleep(1.0)
-    client_output = subprocess.run(
-        [sys.executable, '-m', client_module],  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
     try:
+        client_output = subprocess.run(
+            [sys.executable, '-m', client_module],  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
         assert client_output.returncode == 0
         return client_output.stdout
     finally:

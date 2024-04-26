@@ -7,19 +7,17 @@ beyond how they would be managed in the SDK's own IntersectService class.
 Users do not need to interact with the client other than through its constructor and the lifecycle
 "start" and "stop" methods.
 
-The service will automatically handle all system-level interfaces (i.e. status broadcasts).
-User-level interfaces are all handled on the same messaging channel, so users should not need to configure
-message brokers or the data layer beyond defining credentials in their "IntersectConfig" class.
+Most useful definitions and typings will be found in the client_callback_definitions module.
 """
 
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Dict, List, Sequence, Union
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, ValidationError
-from typing_extensions import Self, TypeAlias
+from pydantic import ValidationError
+from typing_extensions import Self, final
 
 from ._internal.control_plane.control_plane_manager import (
     GENERIC_MESSAGE_SERIALIZER,
@@ -28,6 +26,7 @@ from ._internal.control_plane.control_plane_manager import (
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectError
 from ._internal.logger import logger
+from ._internal.messages.event import EventMessage, deserialize_and_validate_event_message
 from ._internal.messages.userspace import (
     UserspaceMessage,
     create_userspace_message,
@@ -36,95 +35,18 @@ from ._internal.messages.userspace import (
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
-from .annotations import IntersectDataHandler, IntersectMimeType
+from .client_callback_definitions import IntersectClientCallback, IntersectClientMessageParams
 from .config.client import IntersectClientConfig
 from .config.shared import HierarchyConfig
-from .constants import SYSTEM_OF_SYSTEM_REGEX
+
+if TYPE_CHECKING:
+    from .client_callback_definitions import (
+        INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
+        INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
+    )
 
 
-class IntersectClientMessageParams(BaseModel):
-    """The user implementing the IntersectClient class will need to return this object in order to send a message to another Service."""
-
-    destination: str = Field(pattern=SYSTEM_OF_SYSTEM_REGEX)
-    """
-    The destination string. You'll need to know the system-of-system representation of the Service.
-
-    Note that this should match what you would see in the schema.
-    """
-
-    operation: str
-    """
-    The name of the operation you want to call from the Service - this should be represented as it is in the Service's schema.
-    """
-
-    payload: Any
-    """
-    The raw Python object you want to have serialized as the payload.
-
-    If you want to just use the service's default value for a request (assuming it has a default value for a request), you may set this as None.
-    """
-
-    response_content_type: IntersectMimeType = IntersectMimeType.JSON
-    """
-    The IntersectMimeType of your response. You'll want this to match with the ContentType of the function from the schema.
-
-    default: IntersectMimeType.JSON
-    """
-
-    response_data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE
-    """
-    The InteresectDataHandler you want to use (most people can just use IntersectDataHandler.MESSAGE here, unless your data is very large)
-
-    default: IntersectDataHandler.MESSAGE
-    """
-
-
-INTERSECT_JSON_VALUE: TypeAlias = Union[
-    List['INTERSECT_JSON_VALUE'],
-    Dict[str, 'INTERSECT_JSON_VALUE'],
-    str,
-    bool,
-    int,
-    float,
-    None,
-]
-"""
-This is a simple type representation of JSON as a Python object. INTERSECT will automatically deserialize service payloads into one of these types.
-
-(Pydantic has a similar type, "JsonValue", which should be used if you desire functionality beyond type hinting. This is strictly a type hint.)
-"""
-
-
-INTERSECT_CLIENT_CALLBACK_TYPE = Callable[
-    [str, str, bool, INTERSECT_JSON_VALUE],
-    Union[IntersectClientMessageParams, Sequence[IntersectClientMessageParams], None],
-]
-"""
-This is a callable function type which should be defined by the user.
-
-Note: DO NOT handle serialization/deserialization yourself, the SDK will take care of this.
-
-Params
-  The SDK will send the function four arguments:
-    1) The message source - this is mostly useful for your own control flow loops you write in the function
-    2) The name of the operation that triggered the response from your ORIGINAL message - needed for your own control flow loops if sending multiple messages.
-    3) A boolean - if True, there was an error; if False, there was not.
-    4) The response, as a Python object - the type should be based on the corresponding Service's schema response.
-       The Python object will already be deserialized for you. If parameter 3 was "True", then this will be the error message, as a string.
-       If parameter 3 was "False", then this will be either an integer, boolean, float, string, None,
-       a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
-
-Returns
-  If you want to send one or many messages in reaction to a message, the function should return an IntersectClientMessageParams object or a list/tuple of IntersectClientMessageParams objects.
-
-  If you are DONE listening to messages, raise a generic Exception from your function.
-
-  If you DON'T want to send another message, but want to continue listening for messages, you can just return None.
-Raises
-  Any uncaught or raised exceptions the callback function throws will terminate the INTERSECT lifecycle.
-"""
-
-
+@final
 class IntersectClient:
     """If you're just wanting to connect into INTERSECT temporarily to send messages between services, use the IntersectClient class.
 
@@ -142,35 +64,54 @@ class IntersectClient:
     def __init__(
         self,
         config: IntersectClientConfig,
-        initial_messages: list[IntersectClientMessageParams],
-        user_callback: INTERSECT_CLIENT_CALLBACK_TYPE,
-        resend_initial_messages_on_secondary_startup: bool = False,
-        terminate_after_initial_messages: bool = False,
+        user_callback: INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE | None = None,
+        event_callback: INTERSECT_CLIENT_EVENT_CALLBACK_TYPE | None = None,
     ) -> None:
         """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
 
         Parameters:
-          config: The IntersectConfig class
-          initial_messages: list of initial messages to send, following the message specification type (IntersectClientMessageParams).
-            Note that you must send at least one initial message, as the client will otherwise not do anything.
+          config: The IntersectClientConfig class
           user_callback: The callback function you can use to handle response messages from the other Service.
             If this is left empty, you can only send a single message
-          resend_initial_messages_on_secondary_startup: boolean value (default: False); if set to True, resend the initial messages if the client is restarted
-          terminate_after_initial_messages: boolean value (default: False); if set to True, will never enter the pub/sub loop and will never wait for responses from the services.
+          event_callback: The callback function you can use to handle events from any Service.
         """
         # this is called here in case a user created the object using "IntersectClientConfig.model_construct()" to skip validation
         config = IntersectClientConfig.model_validate(config)
-        if not callable(user_callback):
-            die('user_callback function should be defined in argument to IntersectClient')
-        self._user_callback = user_callback
 
-        if not initial_messages or not isinstance(initial_messages, list):
-            die('must provide at least one initial message to send')
+        if user_callback is not None and not callable(user_callback):
+            die('user_callback function should be a callable function if defined')
+        if event_callback is not None and not callable(event_callback):
+            die('event_callback function should be a callable function if defined')
+        if not user_callback and not event_callback:
+            die('must define at least one of user_callback or event_callback')
+        if not user_callback:
+            logger.warning(
+                'IntersectClient does not have user_callback defined, so cannot react to responses from other services.'
+            )
+        if not event_callback:
+            logger.warning(
+                'IntersectClient does not have event_callback defined, so cannot react to events from other services.'
+            )
+        # special validation block regarding config
+        if (
+            not config.initial_message_event_config.messages_to_send
+            and not config.initial_message_event_config.services_to_start_listening_for_events
+        ):
+            die(
+                'IntersectClientConfig.initial_message_event_config: must define at least one of: initial messages to send, or initial services to listen for events'
+            )
+        if (
+            config.terminate_after_initial_messages
+            and not config.initial_message_event_config.messages_to_send
+        ):
+            die(
+                'IntersectClientConfig.initial_message_event_config.messages_to_send must have at least one message if "IntersectClientConfig.terminate_after_initial_messages" is true'
+            )
 
-        self._initial_messages = initial_messages
-        self._resend_initial_messages = resend_initial_messages_on_secondary_startup
+        self._initial_messages = config.initial_message_event_config.messages_to_send
+        self._resend_initial_messages = config.resend_initial_messages_on_secondary_startup
         self._sent_initial_messages = False
-        self._terminate_after_initial_messages = terminate_after_initial_messages
+        self._terminate_after_initial_messages = config.terminate_after_initial_messages
 
         # use a fake hierarchy so that backing service logic utilizes the same API
         self._hierarchy = HierarchyConfig(
@@ -181,15 +122,27 @@ class IntersectClient:
         self._heartbeat = 0.0
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
-        # we SUBSCRIBE to messages on this channel.
-        self._userspace_channel_name = f"{self._hierarchy.hierarchy_string('/')}/userspace"
         self._control_plane_manager = ControlPlaneManager(
             control_configs=config.brokers,
         )
-        self._control_plane_manager.add_subscription_channel(
-            self._userspace_channel_name, {self._handle_userspace_message_raw}
-        )
+        if not config.terminate_after_initial_messages:
+            # we only SUBSCRIBE to this channel, and we only need to register it if we have a user callback in the first place
+            if user_callback:
+                self._control_plane_manager.add_subscription_channel(
+                    f"{self._hierarchy.hierarchy_string('/')}/userspace",
+                    {self._handle_userspace_message_raw},
+                )
+            if event_callback:
+                for (
+                    service
+                ) in config.initial_message_event_config.services_to_start_listening_for_events:
+                    self._control_plane_manager.add_subscription_channel(
+                        f"{service.replace('.', '/')}/events", {self._handle_event_message_raw}
+                    )
+        self._user_callback = user_callback
+        self._event_callback = event_callback
 
+    @final
     def startup(self) -> Self:
         """This function connects the client to all INTERSECT systems.
 
@@ -226,6 +179,7 @@ class IntersectClient:
 
         return self
 
+    @final
     def shutdown(self, reason: str | None = None) -> Self:
         """This function disconnects the client from INTERSECT configurations. It does NOT otherwise drop anything else from memory.
 
@@ -251,6 +205,7 @@ class IntersectClient:
         logger.info('Client shutdown complete')
         return self
 
+    @final
     def is_connected(self) -> bool:
         """Check if we're currently connected to the INTERSECT brokers.
 
@@ -261,8 +216,8 @@ class IntersectClient:
 
     def _handle_userspace_message_raw(self, raw: bytes) -> None:
         """Broker callback, deserialize and validate a userspace message from a broker."""
+        # safety check in case we get messages back faster than we can send them
         if self._terminate_after_initial_messages:
-            # safety check in case we get messages back faster than we can send them
             return
 
         self._heartbeat = time.time()
@@ -324,7 +279,8 @@ class IntersectClient:
                 message['operationId'],
                 message['headers']['has_error'],
                 request_params,
-            )
+            )  # type: ignore[misc]
+            # mypy note: when we are in this function, we know that the callback has been defined
         except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
             logger.warning(f"Exception from user's callback function:\n{e}")
             # NOTE
@@ -335,33 +291,119 @@ class IntersectClient:
             # In the future, we may want to allow users to specify an alternate callback.
             send_os_signal()
             return
-        if not user_function_return:
-            # continue listening for additional messages, but no need to send one out
+
+        self._handle_client_callback(user_function_return)
+
+    def _handle_event_message_raw(self, raw: bytes) -> None:
+        """Broker callback, deserialize and validate an event message from a broker."""
+        # safety check in case we get messages back faster than we can send them
+        if self._terminate_after_initial_messages:
+            # safety check in case we get messages back faster than we can send them
             return
 
-        if isinstance(user_function_return, Sequence):
-            for msg in user_function_return:
-                self._send_userspace_message(msg)
-        else:
-            self._send_userspace_message(user_function_return)
+        self._heartbeat = time.time()
+        try:
+            message = deserialize_and_validate_event_message(raw)
+            logger.debug(f'Received userspace message:\n{message}')
+            self._handle_event_message(message)
+        except ValidationError as e:
+            logger.warning(
+                f'Invalid message received on event message channel, ignoring. Full message:\n{e}'
+            )
+            # NOTE
+            # Unlike Userspace messages, we can safely discard bad event messages without dropping the pubsub loop.
+
+    def _handle_event_message(self, message: EventMessage) -> None:
+        """Handle a deserialized event message."""
+        # ONE: HANDLE CORE COMPAT ISSUES
+        if not resolve_user_version(message):
+            # NOTE
+            # Again, I would argue that while this may seem drastic, it's fine here.
+            # A client should also know enough about service SDK versions to know if
+            # it's even possible to try to send messages between them.
+            send_os_signal()
+            return
+
+        # TWO: GET DATA FROM APPROPRIATE DATA STORE AND DESERIALIZE IT
+        try:
+            request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(
+                self._data_plane_manager.incoming_message_data_handler(message)
+            )
+        except ValidationError as e:
+            logger.warning(f'Service sent back invalid response:\n{e}')
+            # NOTE
+            # If the service sent something back which caused ValidationError
+            # to fail on an Any-typed TypeAdapter, the problem is with the service.
+            # I'd kill the client just to be safe.
+            send_os_signal()
+            return
+        except IntersectError:
+            # NOTE
+            # This is less controversial here. This indicates that the client
+            # couldn't talk to the data plane instance.
+            send_os_signal()
+            return
+
+        # THREE: CALL USER FUNCTION AND GET RETURN
+        try:
+            # NOTE: the way the service sends a message, errors and non-errors can be handled identically.
+            # Leave it to the user to determine how they want to handle an error.
+            event_function_return = self._event_callback(
+                message['headers']['source'],
+                message['operationId'],
+                message['headers']['event_name'],
+                request_params,
+            )  # type: ignore[misc]
+            # mypy note: when we are in this function, we know that the callback has been defined
+        except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
+            logger.warning(f"Exception from user's callback function:\n{e}")
+            # NOTE
+            # This is a DELIBERATE design decision. ALL uncaught Exceptions should terminate the pub/sub loop!
+            # Users are even encouraged to deliberately raise Exceptions!
+            # Almost every application will want to loop forever until a certain condition.
+            # You could argue that OS signals can interfere with other parts of the application.
+            # In the future, we may want to allow users to specify an alternate callback.
+            send_os_signal()
+            return
+        self._handle_client_callback(event_function_return)
+
+    def _handle_client_callback(self, user_value: IntersectClientCallback | None) -> None:
+        """Validate the user's return value from a callback, and send messages + change events listened to as dictated."""
+        if not user_value:
+            # continue listening for additional messages, but no need to send one out
+            return
+        try:
+            validated_result = IntersectClientCallback.model_validate(user_value)
+        except ValidationError as e:
+            logger.error(f'Return value does not match IntersectClientCallback specification\n{e}')
+            # NOTE - this is deliberate because a user should be returning correct values
+            send_os_signal()
+            return
+
+        if self._event_callback:
+            for add_event in validated_result.services_to_start_listening_for_events:
+                self._control_plane_manager.add_subscription_channel(
+                    f"{add_event.replace('.', '/')}/events", {self._handle_event_message_raw}
+                )
+            for remove_event in validated_result.services_to_stop_listening_for_events:
+                self._control_plane_manager.remove_subscription_channel(
+                    f"{remove_event.replace('.', '/')}/events"
+                )
+
+        # sending userspace messages without the callback is okay, we just won't get the response
+        for message in validated_result.messages_to_send:
+            self._send_userspace_message(message)
 
     def _send_userspace_message(self, params: IntersectClientMessageParams) -> None:
         """Send a userspace message, be it an initial message from the user or from the user's callback function."""
-        # ONE: VALIDATE AND SERIALIZE FUNCTION RESULTS
-        try:
-            params = IntersectClientMessageParams.model_validate(params)
-        except ValidationError as e:
-            logger.error(f'Invalid message parameters:\n{e}')
-            # NOTE
-            # this is always the client's fault, so probably best to terminate here
-            send_os_signal()
-            return
-        response = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
+        # ONE: SERIALIZE FUNCTION RESULTS
+        # (function input should already be validated at this point)
+        response = GENERIC_MESSAGE_SERIALIZER.dump_json(params['payload'], warnings=False)
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
         try:
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
-                response, params.response_content_type, params.response_data_handler
+                response, params['response_content_type'], params['response_data_handler']
             )
         except IntersectError:
             # NOTE
@@ -373,17 +415,17 @@ class IntersectClient:
         # THREE: SEND MESSAGE
         msg = create_userspace_message(
             source=self._hierarchy.hierarchy_string('.'),
-            destination=params.destination,
-            service_version='0.0.0',
-            content_type=params.response_content_type,
-            data_handler=params.response_data_handler,
-            operation_id=params.operation,
+            destination=params['destination'],
+            content_type=params['response_content_type'],
+            data_handler=params['response_data_handler'],
+            operation_id=params['operation'],
             payload=response_payload,
         )
         logger.debug(f'Send userspace message:\n{msg}')
-        response_channel = f"{params.destination.replace('.', '/')}/userspace"
+        response_channel = f"{params['destination'].replace('.', '/')}/userspace"
         self._control_plane_manager.publish_message(response_channel, msg)
 
+    # TODO - consider removing this entire concept
     def _heartbeat_ticker(self) -> None:
         """Separate thread which checks to see how long it has been since a broker message was received.
 
@@ -400,5 +442,8 @@ class IntersectClient:
                     # just call os.abort() here (this way so the Python application can't catch the SIGABRT),
                     # but SIGTERM is the soundest to ensure graceful application shutdown.
                     # However, graceful application shutdown is not as important for clients as it is for services...
+                    logger.warning(
+                        'Client has sat 5 minutes without sending or receiving any messages, exiting'
+                    )
                     send_os_signal()
                 self._heartbeat_thread.wait(300.0)

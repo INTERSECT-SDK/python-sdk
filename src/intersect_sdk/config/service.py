@@ -38,10 +38,5 @@ class IntersectServiceConfig(BaseModel):
     as a potential time buffer.)
     """
 
-    schema_version: str = Field(pattern=r'^\d+\.\d+\.\d+$')
-    """
-    SemVer string of your application's version, needed for compatibility purposes
-    """
-
     # pydantic config
     model_config = ConfigDict(revalidate_instances='always')

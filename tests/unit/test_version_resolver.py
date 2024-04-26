@@ -39,7 +39,6 @@ def message_generator(service_sdk_version: str) -> UserspaceMessage:
         headers=UserspaceMessageHeader(
             source='source.test.test.test',
             destination='destination.test.test.test',
-            service_version='0.0.1',
             sdk_version=service_sdk_version,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             data_handler=IntersectDataHandler.MESSAGE,

@@ -4,7 +4,7 @@ from typing import List, Literal, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
-from ..annotations import IntersectDataHandler
+from ..core_definitions import IntersectDataHandler
 
 HIERARCHY_REGEX = r'^[a-z]((?!--)[a-z0-9-]){2,62}$'
 """

@@ -1,12 +1,10 @@
-"""This module contains core messaging definitions relating to user-defined functions.
+"""This module contains core messaging definitions relating to INTERSECT events.
 
 This module is internal-facing and should not be used directly by users.
 
-Services should ALWAYS be CONSUMING from their userspace channel.
-They should NEVER be PRODUCING messages on their userspace channel.
-
-Clients should be CONSUMING from their userspace channel, but should only get messages
-from services they explicitly messaged.
+Event messages are ALWAYS PRODUCED on the events channel.
+Services should NEVER be CONSUMING messages on the events channel.
+Clients/orchestrators are expected to consume these events themselves.
 """
 
 import datetime
@@ -21,25 +19,26 @@ from ...core_definitions import IntersectDataHandler, IntersectMimeType
 from ...version import __version__
 from ..data_plane.minio_utils import MinioPayload
 
+# TODO - another property we should consider is an optional max_wait_time for events which are fired from functions.
+# This would mostly be useful for clients/orchestrators that are waiting for a specific event.
+# This should probably be configured on the schema level...
 
-class UserspaceMessageHeader(TypedDict):
+
+class EventMessageHeaders(TypedDict):
     """Matches the current header definition for INTERSECT messages.
 
     ALL messages should contain this header.
     """
 
     source: Annotated[
-        str, Field(description='source of the message', pattern=SYSTEM_OF_SYSTEM_REGEX)
+        str,
+        Field(
+            description='source of the message',
+            pattern=SYSTEM_OF_SYSTEM_REGEX,
+        ),
     ]
     """
     source of the message
-    """
-
-    destination: Annotated[
-        str, Field(description='destination of the message', pattern=SYSTEM_OF_SYSTEM_REGEX)
-    ]
-    """
-    destination of the message
     """
 
     created_at: Annotated[
@@ -79,27 +78,17 @@ class UserspaceMessageHeader(TypedDict):
     usage, the payload would indicate the URI to where the data is stored on MinIO.
     """
 
-    has_error: Annotated[
-        bool,
-        Field(
-            False,
-            description='If this value is True, the payload will contain the error message (a string)',
-        ),
-    ]
+    event_name: str
     """
-    If this flag is set to True, the payload will contain the error message (always a string).
+    The name of an event. You can reasonably determine the structure of the message payload by parsing:
 
-    This should only be set to "True" on return messages sent by services - NEVER clients.
+    1) the source of this message header
+    2) this "name" property
+    3) the service schema itself
     """
 
 
-class UserspaceMessage(TypedDict):
-    """Core definition of a message.
-
-    The structure of this class is meant to somewhat closely mirror the AsyncAPI definition of a message:
-    https://www.asyncapi.com/docs/reference/specification/v2.6.0#messageObject
-    """
-
+class EventMessage(TypedDict):
     messageId: uuid.UUID
     """
     ID of the message. (NOTE: this is defined here to conform to the AsyncAPI spec)
@@ -107,10 +96,10 @@ class UserspaceMessage(TypedDict):
 
     operationId: str
     """
-    The name of the operation we want to call. These would map to the names of user functions.
+    The name of the operation that was called when an event was emitted. These would map to the names of user functions.
     """
 
-    headers: UserspaceMessageHeader
+    headers: EventMessageHeaders
     """
     the headers of the message
     """
@@ -120,7 +109,6 @@ class UserspaceMessage(TypedDict):
     main payload of the message. Needs to match the schema format, including the content type.
 
     NOTE: The payload's contents will differ based on the data_handler property in the message header.
-    NOTE: If "has_error" flag in the message headers is set to "True", the payload will instead contain an error string.
     """
 
     contentType: Annotated[IntersectMimeType, Field(IntersectMimeType.JSON)]
@@ -134,38 +122,36 @@ class UserspaceMessage(TypedDict):
     """
 
 
-def create_userspace_message(
+def create_event_message(
     source: str,
-    destination: str,
     operation_id: str,
     content_type: IntersectMimeType,
     data_handler: IntersectDataHandler,
+    event_name: str,
     payload: Any,
-    has_error: bool = False,
-) -> UserspaceMessage:
-    """Payloads depend on the data_handler and has_error."""
-    return UserspaceMessage(
+) -> EventMessage:
+    """Payloads depend on the data handler."""
+    return EventMessage(
         messageId=uuid.uuid4(),
         operationId=operation_id,
         contentType=content_type,
         payload=payload,
-        headers=UserspaceMessageHeader(
+        headers=EventMessageHeaders(
             source=source,
-            destination=destination,
-            sdk_version=__version__,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
+            sdk_version=__version__,
+            event_name=event_name,
             data_handler=data_handler,
-            has_error=has_error,
         ),
     )
 
 
-USERSPACE_MESSAGE_ADAPTER = TypeAdapter(UserspaceMessage)
+EVENT_MESSAGE_ADAPTER = TypeAdapter(EventMessage)
 
 
-def deserialize_and_validate_userspace_message(msg: bytes) -> UserspaceMessage:
+def deserialize_and_validate_event_message(msg: bytes) -> EventMessage:
     """If the "msg" param is a valid userspace message, return the object.
 
     Raises Pydantic ValidationError if "msg" is not a valid userspace message
     """
-    return USERSPACE_MESSAGE_ADAPTER.validate_json(msg, strict=True)
+    return EVENT_MESSAGE_ADAPTER.validate_json(msg, strict=True)

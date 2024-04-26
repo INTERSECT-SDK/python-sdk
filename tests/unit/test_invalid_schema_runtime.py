@@ -8,6 +8,7 @@ check that service configuration is valid.
 import pytest
 from intersect_sdk import (
     ControlPlaneConfig,
+    IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectService,
     IntersectServiceConfig,
@@ -17,7 +18,7 @@ from intersect_sdk import (
 from ..fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 
 
-class CapabilityWithMinio:
+class CapabilityWithMinio(IntersectBaseCapabilityImplementation):
     @intersect_message(response_data_transfer_handler=IntersectDataHandler.MINIO)
     def arbitrary_function(self, param: int) -> int: ...
 
