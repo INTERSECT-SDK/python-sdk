@@ -31,10 +31,12 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    api/config_service
    api/config_client
    api/config_shared
-   api/annotations
+   api/core_definitions
    api/schema
    api/capability
+   api/service_definitions
    api/service
+   api/client_callback_definitions
    api/client
    api/app_lifecycle
    api/constants
