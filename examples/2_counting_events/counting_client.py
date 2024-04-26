@@ -16,24 +16,13 @@ class SampleOrchestrator:
 
     It uses a class because we want to modify our own state from the callback function.
 
-    State is managed through a message stack. We initialize a request-reply-request-reply... chain with the Service,
-    and the chain ends once we've popped all messages from our message stack.
+    State is managed through counting the events we receive - we'll process a certain number of events, then stop.
     """
 
     MAX_EVENTS_TO_PROCESS = 3
 
     def __init__(self) -> None:
-        """Basic constructor for the orchestrator class, call before creating the IntersectClient.
-
-        As the only thing exposed to the Client is the callback function, the orchestrator class may otherwise be
-        created and managed as the SDK developer sees fit.
-
-        The messages are initialized in the order they are sent for readability purposes.
-        The message stack is a tuple: the message, and the time to wait before sending it.
-
-        All approximations in comments come from the first run against the service, but the values can potentially vary
-        if you run the client multiple times!
-        """
+        """Straightforward constructor, initializes a global variable we modify on getting an event."""
         self.events_encountered = 0
 
     def event_callback(

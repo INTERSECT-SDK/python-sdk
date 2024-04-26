@@ -64,6 +64,13 @@ def test_example_1_hello_world_mqtt():
     assert run_example_test('1_hello_world') == 'Hello, hello_client!\n'
 
 
+def test_example_1_hello_world_events():
+    assert (
+        run_example_test('1_hello_world_events')
+        == 'hello_client requested a salutation!\nHello, hello_client!\n'
+    )
+
+
 def test_example_2_counter():
     actual_stdout = run_example_test('2_counting')
     # the value of the actual counter can sometimes vary a little bit, don't fail the test if so
@@ -117,3 +124,7 @@ def test_example_2_counter():
 
 def test_example_2_count_examples():
     assert run_example_test('2_counting_events') == '3\n9\n27\n'
+
+
+def test_example_3_ping_pong_events():
+    assert run_example_test('3_ping_pong_events') == 'ping\npong\nping\npong\n'
