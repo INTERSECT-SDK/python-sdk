@@ -67,6 +67,7 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
         You are free to provide whatever parameters you like to the constructor, and
         do whatever you like in the constructor. In this instance, we just initialize our state.
         """
+        super().__init__()
         self.state = CountingServiceCapabilityImplementationState()
         self.counter_thread: Optional[threading.Thread] = None
 

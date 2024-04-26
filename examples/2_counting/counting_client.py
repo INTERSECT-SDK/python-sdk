@@ -131,7 +131,7 @@ class SampleOrchestrator:
             raise Exception
         message, wait_time = self.message_stack.pop()
         time.sleep(wait_time)
-        return message
+        return IntersectClientCallback(messages_to_send=[message])
 
 
 if __name__ == '__main__':
