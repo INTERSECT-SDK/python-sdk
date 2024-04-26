@@ -108,6 +108,7 @@ class SignalHandler:
 def default_intersect_lifecycle_loop(
     intersect_gateway: IntersectClient | IntersectService,
     delay: float = 30.0,
+    post_startup_callback: Callable[[], None] | None = None,
     cleanup_callback: Callable[[int], None] | None = None,
     waiting_callback: Callable[[IntersectClient | IntersectService], None] | None = None,
 ) -> None:
@@ -121,6 +122,10 @@ def default_intersect_lifecycle_loop(
     Params:
       - intersect_gateway: This can be either an IntersectClient or an IntersectService.
       - delay: how often the loop should wait for (default: 30 seconds)
+      - post_startup_callback: Optional callback function which is called after service startup, once.
+          The callback function provides no parameters.
+          This can be useful if you want to start up some event-emitting threads inside your capability,
+            which you should only do AFTER you've connected to the brokers.
       - cleanup_callback: This is an optional callback function which will be
         called once a signal is caught. The callback function takes in a single
         integer parameter, which will be the signal code intercepted. The function
@@ -132,6 +137,8 @@ def default_intersect_lifecycle_loop(
     """
     sighandler = SignalHandler(cleanup_callback=cleanup_callback)
     intersect_gateway.startup()
+    if post_startup_callback:
+        post_startup_callback()
     logger.debug('INTERSECT: starting default loop')
     while not sighandler.should_stop():
         sighandler.wait(delay)
