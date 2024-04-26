@@ -15,7 +15,7 @@ Modules are allowed but should be contained within the example directory. Any mo
 All example services should have an associated schema file (.json) in the repository. Here are a few ways we can
 generate the schema for the HelloWorld Service:
 
-1) Write your own script which uses `get_schema_from_model` from the INTERSECT-SDK, which returns a dictionary. You'll need to provide this function your CapabilityImplementation class, your HierarchyConfig, and your application version. You can then dump the dictionary to JSON (please use `indent=2` as an argument).
+1) Write your own script which uses `get_schema_from_capability_implementation` from the INTERSECT-SDK, which returns a dictionary. You'll need to provide this function your CapabilityImplementation class, your HierarchyConfig, and your application version. You can then dump the dictionary to JSON (please use `indent=2` as an argument).
 
 ```python
 # imports condensed for readability
@@ -24,7 +24,7 @@ from ...sdk import (
     HierarchyConfig,
     intersect_message,
     intersect_status,
-    get_schema_from_model,
+    get_schema_from_capability_implementation,
 )
 
 # copy the CapabilityImplementation EXACTLY as-is. Note that docstrings will be added to the schema!
@@ -65,7 +65,7 @@ if __name__ == '__main__':
         subsystem='subsystem',
         service='service',
     )
-    schema = get_schema_from_model(HelloServiceCapabilityImplementation, hierarchy, schema_version)
+    schema = get_schema_from_capability_implementation(HelloServiceCapabilityImplementation, hierarchy, schema_version)
 
 
     print(json.dumps(schema, indent=2))

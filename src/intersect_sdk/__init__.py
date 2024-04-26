@@ -26,7 +26,7 @@ from .config.shared import (
     HierarchyConfig,
 )
 from .core_definitions import IntersectDataHandler, IntersectMimeType
-from .schema import get_schema_from_model
+from .schema import get_schema_from_capability_implementation
 from .service import IntersectService
 from .service_definitions import (
     IntersectEventDefinition,
@@ -43,7 +43,7 @@ __all__ = [
     'intersect_event',
     'intersect_message',
     'intersect_status',
-    'get_schema_from_model',
+    'get_schema_from_capability_implementation',
     'IntersectService',
     'IntersectClient',
     'IntersectClientCallback',

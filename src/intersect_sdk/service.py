@@ -42,7 +42,7 @@ from ._internal.messages.userspace import (
     create_userspace_message,
     deserialize_and_validate_userspace_message,
 )
-from ._internal.schema import get_schema_and_functions_from_model
+from ._internal.schema import get_schema_and_functions_from_capability_implementation
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die
 from ._internal.version_resolver import resolve_user_version
@@ -116,7 +116,7 @@ class IntersectService(IntersectEventObserver):
             event_map,
             status_fn_name,
             status_type_adapter,
-        ) = get_schema_and_functions_from_model(
+        ) = get_schema_and_functions_from_capability_implementation(
             capability.__class__,
             capability_name=config.hierarchy,
             excluded_data_handlers=config.data_stores.get_missing_data_store_types(),

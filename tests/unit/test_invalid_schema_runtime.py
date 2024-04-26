@@ -1,7 +1,7 @@
 """
 This module runs some edge cases: we need to verify that some schemas are invalid.
 
-HOWEVER - we can only do this through the Service class, as get_schema_from_model does not
+HOWEVER - we can only do this through the Service class, as get_schema_from_capability_implementation does not
 check that service configuration is valid.
 """
 

@@ -33,14 +33,14 @@ from typing import (
     Any,
 )
 
-from ._internal.schema import get_schema_and_functions_from_model
+from ._internal.schema import get_schema_and_functions_from_capability_implementation
 
 if TYPE_CHECKING:
     from .capability.base import IntersectBaseCapabilityImplementation
     from .config.shared import HierarchyConfig
 
 
-def get_schema_from_model(
+def get_schema_from_capability_implementation(
     capability_type: type[IntersectBaseCapabilityImplementation],
     capability_name: HierarchyConfig,
 ) -> dict[str, Any]:
@@ -69,7 +69,7 @@ def get_schema_from_model(
 
     - Channel names just mimic the function names for now
     """
-    schemas, _, _, _, _ = get_schema_and_functions_from_model(
+    schemas, _, _, _, _ = get_schema_and_functions_from_capability_implementation(
         capability_type,
         capability_name,
         set(),  # assume all data handlers are configured if user is just checking their schema

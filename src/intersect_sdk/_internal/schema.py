@@ -480,7 +480,7 @@ def _introspection_baseline(
     )
 
 
-def get_schema_and_functions_from_model(
+def get_schema_and_functions_from_capability_implementation(
     capability_type: type[IntersectBaseCapabilityImplementation],
     capability_name: HierarchyConfig,
     excluded_data_handlers: set[IntersectDataHandler],

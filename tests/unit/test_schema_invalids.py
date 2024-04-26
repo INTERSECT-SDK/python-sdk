@@ -23,7 +23,7 @@ from annotated_types import Gt
 from intersect_sdk import (
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
-    get_schema_from_model,
+    get_schema_from_capability_implementation,
     intersect_message,
     intersect_status,
 )
@@ -41,7 +41,7 @@ TEST_HIERARCHY_CONFIG = HierarchyConfig(
 
 
 def get_schema_helper(test_type: type):
-    return get_schema_from_model(test_type, TEST_HIERARCHY_CONFIG)
+    return get_schema_from_capability_implementation(test_type, TEST_HIERARCHY_CONFIG)
 
 
 # MESSAGE TESTS ###########################
