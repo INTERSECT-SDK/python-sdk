@@ -1,7 +1,7 @@
 Counting
 ========
 
-This is a slightly more complext on how to communicate with the INTERSECT SDK, how to manage state on the service, complex entrypoints on the service, and how to send multiple messages with the client.
+This is a slightly more complex example on how to communicate with the INTERSECT SDK, how to manage state on the service, complex entrypoints on the service, and how to send multiple messages with the client.
 
 The counting_service class has three entrypoints: start_count, stop_count, and reset_count. These entrypoints all return complex responses, and reset_count allows for specifying if the counter should count again or not.
 

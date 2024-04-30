@@ -22,7 +22,10 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    :caption: Examples
 
    examples/hello-world
+   examples/hello-world-events
    examples/counting
+   examples/counting-events
+   examples/ping-pong-events
 
 .. toctree::
    :maxdepth: 2

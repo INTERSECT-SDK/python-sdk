@@ -22,8 +22,9 @@ CapabilityImplementation
 ------------------------
 
 If you've written REST APIs, writing a CapabilityImplementation will look very similar. You need to provide a single CapabilityImplementation class; you have complete control over your constructor, your class state variables, and your class methods.
+The only restriction is that your class will have to extend ``IntersectBaseCapabilityImplementation``. If you override the ``__init__()`` function, be sure to call ``super().__init__()``
 
-A CapabilityImplementation class contains several ``@intersect_message()`` annotated function, and one ``@intersect_status()`` annotation.
+A CapabilityImplementation class contains several ``@intersect_message()`` annotated functions, and one ``@intersect_status()`` annotated function.
 These functions are INTERSECT's entrypoints into your application.
 
 Message functions should take in up to one argument, and should produce a return value. Status functions should take in no parameters,
@@ -33,6 +34,19 @@ When writing a message function or a status function, all parameters and return 
 Please see the :doc:`pydantic` page for more information about valid types.
 
 Arguments to the ``@intersect_message()`` decorator can be used to specify specific details about your function; for example, the Content-Types of both the request and response parameter, the data provider for the response data, and whether you want to allow type coercion in the request.
+
+CapabilityImplementation - Events
+---------------------------------
+
+You can emit events globally as part of an ``@intersect_message()`` annotated function by configuring the ``events`` argument to the decorator as a dictionary/mapping of event names (as strings) to IntersectEventDefinitions.
+An IntersectEventDefinition consists of an event_type, which is the typing of the event you'll emit.
+
+You can also emit events without having to react to an external request by annotating a function with ``@intersect_event()`` and providing the ``events`` argument to the decorator.
+
+You can emit an event by calling ``self.intersect_sdk_emit_event(event_name, event)`` . The typing of ``event`` must match the typing in the decorator configuration.
+Calling this function will only be effective if called from either an ``@intersect_message`` or ``@intersect_event`` decorated function, or an inner function called from a decorated function.
+
+You can specify the same event name on multiple functions, but it must always contain the same IntersectEventDefinition configuration.
 
 Client
 ------
