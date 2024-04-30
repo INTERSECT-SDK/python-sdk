@@ -41,7 +41,7 @@ class IntersectBaseCapabilityImplementation:
             or cls.intersect_sdk_emit_event
             is not IntersectBaseCapabilityImplementation.intersect_sdk_emit_event
         ):
-            msg = "Cannot override functions '_intersect_sdk_register_observer' or 'intersect_sdk_emit_event'"
+            msg = f"{cls.__name__}: Cannot override functions '_intersect_sdk_register_observer' or 'intersect_sdk_emit_event'"
             raise RuntimeError(msg)
 
     @final

@@ -37,12 +37,24 @@ class EventMetadata(NamedTuple):
     """
 
 
-def definition_equals_metadata(
+def definition_metadata_differences(
     definition: IntersectEventDefinition, metadata: EventMetadata
-) -> bool:
-    """Return true if 'definition' and 'metadata' have any overlap."""
-    return (
-        definition.event_type == metadata.type
-        and definition.content_type == metadata.content_type
-        and definition.data_handler == metadata.data_transfer_handler
-    )
+) -> list[tuple[str, str, str]]:
+    """Return a list of differences between 'definition' and 'metadata'.
+
+    First tuple value = defintion key
+    Second tuple value = second value
+    Third tuple value = already cached value
+    """
+    differences = []
+    if definition.event_type != metadata.type:
+        differences.append(('event_type', str(definition.event_type), str(metadata.type)))
+    if definition.content_type != metadata.content_type:
+        differences.append(
+            ('content_type', str(definition.content_type), str(metadata.content_type))
+        )
+    if definition.data_handler != metadata.data_transfer_handler:
+        differences.append(
+            ('data_handler', str(definition.data_handler), str(metadata.data_transfer_handler))
+        )
+    return differences

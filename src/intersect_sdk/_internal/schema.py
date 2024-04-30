@@ -26,7 +26,7 @@ from .constants import (
     RESPONSE_CONTENT,
     RESPONSE_DATA,
 )
-from .event_metadata import EventMetadata, definition_equals_metadata
+from .event_metadata import EventMetadata, definition_metadata_differences
 from .function_metadata import FunctionMetadata
 from .logger import logger
 from .messages.event import EventMessageHeaders
@@ -263,9 +263,16 @@ def _add_events(
     for event_key, event_definition in function_events.items():
         if event_key in event_metadatas:
             metadata_value = event_metadatas[event_key]
-            if not definition_equals_metadata(event_definition, metadata_value):
+            differences_from_cache = definition_metadata_differences(
+                event_definition, metadata_value
+            )
+            if differences_from_cache:
+                diff_str = '\n'.join(
+                    f'{d[0]} mismatch: current={d[1]}, previous={d[2]}'
+                    for d in differences_from_cache
+                )
                 die(
-                    f"On capability '{capability_name}', event key '{event_key}' on function '{function_name}' is using type '{event_definition.event_type}' but has also been previously defined as '{metadata_value.type}'. You must use the same type for a single event key."
+                    f"On capability '{capability_name}', event key '{event_key}' on function '{function_name}' was previously defined differently. \n{diff_str}\n"
                 )
             metadata_value.operations.add(function_name)
         else:

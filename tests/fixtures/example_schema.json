@@ -200,6 +200,67 @@
       },
       "events": []
     },
+    "primitive_event_message": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "string"
+          }
+        }
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "default": 1,
+            "min": 1,
+            "type": "integer"
+          }
+        }
+      },
+      "events": [
+        "int",
+        "str",
+        "float"
+      ]
+    },
+    "primitive_event_message_random": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "string"
+          }
+        }
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          }
+        }
+      },
+      "events": [
+        "int",
+        "str",
+        "float"
+      ]
+    },
     "test_datetime": {
       "publish": {
         "message": {
@@ -401,6 +462,46 @@
       },
       "events": []
     },
+    "union_message_with_events": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "enum": [
+              "str",
+              "int"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "events": [
+        "union"
+      ]
+    },
     "union_response": {
       "publish": {
         "message": {
@@ -552,7 +653,33 @@
       "events": []
     }
   },
-  "events": {},
+  "events": {
+    "int": {
+      "type": "integer"
+    },
+    "str": {
+      "type": "string"
+    },
+    "float": {
+      "type": "number"
+    },
+    "union": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "list_float": {
+      "items": {
+        "type": "number"
+      },
+      "type": "array"
+    }
+  },
   "components": {
     "schemas": {
       "Json": {

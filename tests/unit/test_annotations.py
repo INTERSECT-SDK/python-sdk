@@ -1,5 +1,11 @@
 import pytest
-from intersect_sdk import IntersectBaseCapabilityImplementation, intersect_message, intersect_status
+from intersect_sdk import (
+    IntersectBaseCapabilityImplementation,
+    IntersectEventDefinition,
+    intersect_event,
+    intersect_message,
+    intersect_status,
+)
 from pydantic import ValidationError
 
 
@@ -23,6 +29,97 @@ def test_invalid_annotation_params():
     assert {'type': 'enum', 'loc': ('response_data_transfer_handler',)} in errors
     assert {'type': 'enum', 'loc': ('response_content_type',)} in errors
     assert {'type': 'bool_parsing', 'loc': ('strict_request_validation',)} in errors
+
+
+def test_incorrect_intersect_event_annotations():
+    with pytest.raises(ValidationError) as ex:
+
+        class BadEventArgs(IntersectBaseCapabilityImplementation):
+            @intersect_event()
+            def some_func(self) -> bool: ...
+
+    errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
+    assert len(errors) == 1
+    assert {'type': 'missing_keyword_only_argument', 'loc': ('events',)} in errors
+
+    with pytest.raises(ValidationError) as ex:
+
+        class BadEventArgs2(IntersectBaseCapabilityImplementation):
+            @intersect_event(events={})
+            def some_func(self) -> bool: ...
+
+    errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
+    assert len(errors) == 1
+    assert {'type': 'too_short', 'loc': ('events',)} in errors
+
+    with pytest.raises(ValidationError) as ex:
+
+        class BadEventArgs3(IntersectBaseCapabilityImplementation):
+            @intersect_event(events={'one': IntersectEventDefinition()})
+            def some_func(self) -> bool: ...
+
+    errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
+    assert len(errors) == 1
+    assert {'type': 'missing', 'loc': ('event_type',)} in errors
+
+    # special case: we have a custom vaildator for event_type which fails on some common instantiations
+    with pytest.raises(ValidationError) as ex:
+
+        class BadEventArgs4(IntersectBaseCapabilityImplementation):
+            @intersect_event(
+                events={
+                    'one': IntersectEventDefinition(
+                        event_type=5, content_type=0, data_handler='test'
+                    )
+                }
+            )
+            def some_func(self) -> bool: ...
+
+    errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
+    assert len(errors) == 3
+    assert {'type': 'value_error', 'loc': ('event_type',)} in errors
+    assert {'type': 'enum', 'loc': ('content_type',)} in errors
+    assert {'type': 'enum', 'loc': ('data_handler',)} in errors
+
+    # make sure that improper use of model_construct() will not pass inner validation (users are free to use it as long as they construct a valid model)
+    with pytest.raises(ValidationError) as ex:
+
+        class BadEventArgs5(IntersectBaseCapabilityImplementation):
+            @intersect_event(
+                events={
+                    'one': IntersectEventDefinition.model_construct(
+                        data_handler='no', content_type='no'
+                    )
+                }
+            )
+            def some_func(self) -> bool: ...
+
+    errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
+    assert len(errors) == 3
+    assert {
+        'type': 'enum',
+        'loc': (
+            'events',
+            'one',
+            'content_type',
+        ),
+    } in errors
+    assert {
+        'type': 'enum',
+        'loc': (
+            'events',
+            'one',
+            'data_handler',
+        ),
+    } in errors
+    assert {
+        'type': 'missing',
+        'loc': (
+            'events',
+            'one',
+            'event_type',
+        ),
+    } in errors
 
 
 # only tests @classmethod applied first, schema_invalids tests @classmethod applied last

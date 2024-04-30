@@ -17,6 +17,7 @@ from typing import (
     FrozenSet,
     Generator,
     List,
+    Literal,
     NamedTuple,
     Optional,
     Set,
@@ -30,7 +31,9 @@ from intersect_sdk import (
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
+    IntersectEventDefinition,
     IntersectMimeType,
+    intersect_event,
     intersect_message,
     intersect_status,
 )
@@ -304,7 +307,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         Spit out a random string, integer, boolean, or object response
         """
         self.update_status('union_response')
-        ran_dumb = random.randrange(4)  # noqa: S311
+        ran_dumb = random.randrange(4)
 
         if ran_dumb == 0:
             return True
@@ -499,3 +502,59 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         """
         self.update_status('valid_default_argument')
         return param << 1
+
+    # some event types
+    # we want to verify:
+    # - the same event can show up in multiple messages
+    # - we can advertise complex types (i.e. Union)
+    # - a message can advertise multiple events
+    # - that both @intersect_message and @intersect_event work
+
+    @intersect_message(events={'union': IntersectEventDefinition(event_type=Union[int, str])})
+    def union_message_with_events(self, param: Literal['str', 'int']) -> Union[int, str]:
+        ret = str(random.random()) if param == 'str' else random.randint(1, 1_000_000)
+        self.intersect_sdk_emit_event('union', ret)
+        return ret
+
+    @intersect_event(events={'union': IntersectEventDefinition(event_type=Union[int, str])})
+    def union_event(self) -> None:
+        ran_dumb = random.randrange(2)
+        if ran_dumb == 0:
+            self.intersect_sdk_emit_event('union', str(random.random()))
+        else:
+            self.intersect_sdk_emit_event('union', random.randrange(1_000_001, 2_000_000))
+
+    @intersect_message(
+        events={
+            'int': IntersectEventDefinition(event_type=int),
+            'str': IntersectEventDefinition(event_type=str),
+            'float': IntersectEventDefinition(event_type=float),
+        }
+    )
+    def primitive_event_message(self, emit_times: Annotated[int, Field(1, min=1)]) -> str:
+        for _ in range(emit_times):
+            self.intersect_sdk_emit_event('str', str(random.random()))
+            self.intersect_sdk_emit_event('int', random.randrange(1, 1_000_000))
+            self.intersect_sdk_emit_event('float', random.random())
+        return 'your events have been emitted'
+
+    @intersect_message(
+        events={
+            'int': IntersectEventDefinition(event_type=int),
+            'str': IntersectEventDefinition(event_type=str),
+            'float': IntersectEventDefinition(event_type=float),
+        }
+    )
+    def primitive_event_message_random(self) -> str:
+        ran_dumb = random.randrange(3)
+        if ran_dumb == 0:
+            self.intersect_sdk_emit_event('str', str(random.random()))
+        elif ran_dumb == 1:
+            self.intersect_sdk_emit_event('int', random.randrange(1, 1_000_000))
+        else:
+            self.intersect_sdk_emit_event('float', random.random())
+        return 'your events have been emitted'
+
+    @intersect_event(events={'list_float': IntersectEventDefinition(event_type=List[float])})
+    def list_float_event(self) -> None:
+        self.intersect_sdk_emit_event('list_int', [random.random() for i in range(3)])

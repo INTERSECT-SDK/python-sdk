@@ -94,18 +94,12 @@ class IntersectClient:
             )
         # special validation block regarding config
         if (
-            not config.initial_message_event_config.messages_to_send
+            not config.terminate_after_initial_messages
+            and not config.initial_message_event_config.messages_to_send
             and not config.initial_message_event_config.services_to_start_listening_for_events
         ):
             die(
-                'IntersectClientConfig.initial_message_event_config: must define at least one of: initial messages to send, or initial services to listen for events'
-            )
-        if (
-            config.terminate_after_initial_messages
-            and not config.initial_message_event_config.messages_to_send
-        ):
-            die(
-                'IntersectClientConfig.initial_message_event_config.messages_to_send must have at least one message if "IntersectClientConfig.terminate_after_initial_messages" is true'
+                'IntersectClientConfig.initial_message_event_config: if "IntersectClientConfig.terminate_after_initial_messages" is not True, must define at least one of: initial messages to send, or initial services to listen for events'
             )
 
         self._initial_messages = config.initial_message_event_config.messages_to_send

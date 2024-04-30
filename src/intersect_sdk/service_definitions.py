@@ -14,10 +14,10 @@ If you are not able to create a schema, the service will refuse to start.
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set
 
-from pydantic import BaseModel, validate_call
-from typing_extensions import final
+from pydantic import BaseModel, ConfigDict, Field, field_validator, validate_call
+from typing_extensions import Annotated, final
 
 from ._internal.constants import (
     BASE_EVENT_ATTR,
@@ -37,9 +37,9 @@ from .core_definitions import IntersectDataHandler, IntersectMimeType
 class IntersectEventDefinition(BaseModel):
     """When defining your dictionary/map of events, the values will be represented by an EventDefinition."""
 
-    event_type: type
+    event_type: Any  # Python's "type" is not a complete representation of valid types - notably, we want to allow typing aliases. Full validation of this is expensive, so we'll postpone it until we try to generate the schema.
     """
-    The data type of your event. Note that any event you emit must map to this type.
+    The data TYPE of your event. Note that any event you emit must map to this type.
 
     The type you provide must be parsable by Pydantic.
     """
@@ -55,6 +55,23 @@ class IntersectEventDefinition(BaseModel):
 
     default: IntersectDataHandler.MESSAGE
     """
+
+    @field_validator('event_type', mode='after')
+    @classmethod
+    def _event_type_fail_fast(cls, v: Any) -> Any:
+        # we need to quickly fail here because Pydantic will try to parse strings as an eval type (giant security risk),
+        # and dictionaries as a Pydantic CoreSchema type (i.e. {'type': 'any'} would be valid).
+        # Regarding strings - it's impossible to effectively use __future__ annotations in Python 3.8 as parameters,
+        # and in Python 3.9+ you can use annotations without them being parsed as strings.
+        # BaseModel objects are technically okay because Pydantic will always treat them as the type.
+        # Otherwise we can just disallow a few common typings and handle the rest when trying to create a TypeAdapter.
+        if v is None or isinstance(v, (int, float, bool, str, Mapping, Sequence)):
+            msg = 'IntersectEventDefintion: event_value should be a type or a type alias'
+            raise ValueError(msg)
+        return v
+
+    # pydantic config
+    model_config = ConfigDict(revalidate_instances='always', frozen=True)
 
 
 @validate_call
@@ -205,10 +222,8 @@ def intersect_status(
 
 @validate_call
 def intersect_event(
-    __func: Callable[..., Any] | None = None,
-    /,
     *,
-    events: Optional[Dict[str, IntersectEventDefinition]] = None,  # noqa: UP006, UP007 (runtime type annotation)
+    events: Annotated[Dict[str, IntersectEventDefinition], Field(min_length=1)],  # noqa: UP006 (runtime type annotation)
 ) -> Callable[..., Any]:
     """Use this annotation to mark a function as an event emitter.
 
@@ -222,6 +237,7 @@ def intersect_event(
 
     Params:
       - events: dictionary of event names (strings) to IntersectEventDefninitions.
+        You must declare at least one definition.
         An IntersectEventDefinition contains metadata about your event, including its type.
         Note that the type defined on the IntersectEventDefinition must be parsable by Pydantic.
         Note that while multiple functions can emit the same event name, they MUST advertise the SAME type
@@ -239,10 +255,8 @@ def intersect_event(
             return func(*args, **kwargs)
 
         setattr(__intersect_sdk_wrapper, BASE_EVENT_ATTR, True)
-        setattr(__intersect_sdk_wrapper, EVENT_ATTR_KEY, events or {})
+        setattr(__intersect_sdk_wrapper, EVENT_ATTR_KEY, events)
 
         return __intersect_sdk_wrapper
 
-    if __func:
-        return inner_decorator(__func)
     return inner_decorator
