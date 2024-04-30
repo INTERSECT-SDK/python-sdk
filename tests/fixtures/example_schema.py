@@ -8,6 +8,7 @@ import mimetypes
 import random
 from dataclasses import dataclass
 from decimal import Decimal
+from enum import Enum
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import (
@@ -87,6 +88,13 @@ example of a recursive typing - this is a way to hardcode JSON.
 Note that you'll usually want to implement a custom error validator
 to avoid exhaustive checking of all union options
 """
+
+
+class SampleEnum(Enum):
+    """Basic Enum for testing."""
+
+    ONE = 'ONE'
+    TWO = 'TWO'
 
 
 def search_through_json_for_value(needle: str, obj: Json) -> bool:
@@ -488,6 +496,13 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         )
 
     @intersect_message
+    def search_for_lucky_string_in_json(self, param: Json) -> bool:
+        """
+        return true if our lucky string is in JSON, false otherwise
+        """
+        return search_through_json_for_value('777', param)
+
+    @intersect_message
     def verify_float_dict(self, param: Dict[float, str]) -> Dict[int, str]:
         """
         verifies that dictionaries can have floats and integers as key types
@@ -502,6 +517,21 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         """
         self.update_status('valid_default_argument')
         return param << 1
+
+    @intersect_message
+    def test_enum(self, param: SampleEnum) -> str:
+        """Returns either 'first' or 'later' depending on the enum value."""
+        if param == SampleEnum.ONE:
+            return 'first'
+        return 'later'
+
+    @intersect_message
+    def test_special_python_types(self, param: MyTypedDict) -> MyNamedTuple:
+        return MyNamedTuple(
+            one=param['one'] * 2,
+            two=(not param['two']),
+            three=f'Hello, {param["three"]}',
+        )
 
     # some event types
     # we want to verify:
@@ -531,7 +561,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
             'float': IntersectEventDefinition(event_type=float),
         }
     )
-    def primitive_event_message(self, emit_times: Annotated[int, Field(1, min=1)]) -> str:
+    def primitive_event_message(self, emit_times: Annotated[int, Field(1, ge=1)]) -> str:
         for _ in range(emit_times):
             self.intersect_sdk_emit_event('str', str(random.random()))
             self.intersect_sdk_emit_event('int', random.randrange(1, 1_000_000))

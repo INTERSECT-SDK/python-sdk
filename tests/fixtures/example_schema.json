@@ -222,7 +222,7 @@
           },
           "payload": {
             "default": 1,
-            "min": 1,
+            "minimum": 1,
             "type": "integer"
           }
         }
@@ -260,6 +260,35 @@
         "str",
         "float"
       ]
+    },
+    "search_for_lucky_string_in_json": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "boolean"
+          }
+        },
+        "description": "return true if our lucky string is in JSON, false otherwise"
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Json"
+          }
+        },
+        "description": "return true if our lucky string is in JSON, false otherwise"
+      },
+      "events": []
     },
     "test_datetime": {
       "publish": {
@@ -362,6 +391,35 @@
       },
       "events": []
     },
+    "test_enum": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "type": "string"
+          }
+        },
+        "description": "Returns either 'first' or 'later' depending on the enum value."
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/SampleEnum"
+          }
+        },
+        "description": "Returns either 'first' or 'later' depending on the enum value."
+      },
+      "events": []
+    },
     "test_generator": {
       "publish": {
         "message": {
@@ -429,6 +487,33 @@
           }
         },
         "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
+      },
+      "events": []
+    },
+    "test_special_python_types": {
+      "publish": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/MyNamedTuple"
+          }
+        }
+      },
+      "subscribe": {
+        "message": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/MyTypedDict"
+          }
+        }
       },
       "events": []
     },
@@ -712,6 +797,57 @@
             "type": "null"
           }
         ]
+      },
+      "SampleEnum": {
+        "description": "Basic Enum for testing.",
+        "enum": [
+          "ONE",
+          "TWO"
+        ],
+        "title": "SampleEnum",
+        "type": "string"
+      },
+      "MyTypedDict": {
+        "properties": {
+          "one": {
+            "title": "One",
+            "type": "integer"
+          },
+          "two": {
+            "title": "Two",
+            "type": "boolean"
+          },
+          "three": {
+            "title": "Three",
+            "type": "string"
+          }
+        },
+        "required": [
+          "one",
+          "two",
+          "three"
+        ],
+        "title": "MyTypedDict",
+        "type": "object"
+      },
+      "MyNamedTuple": {
+        "maxItems": 3,
+        "minItems": 3,
+        "prefixItems": [
+          {
+            "title": "One",
+            "type": "integer"
+          },
+          {
+            "title": "Two",
+            "type": "boolean"
+          },
+          {
+            "title": "Three",
+            "type": "string"
+          }
+        ],
+        "type": "array"
       },
       "Nested2": {
         "description": "sub-nested class",
