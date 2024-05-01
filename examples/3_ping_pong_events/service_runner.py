@@ -46,19 +46,20 @@ def run_service(capability: P_ngBaseCapabilityImplementation) -> None:
             },
         ],
     }
+    service_name = capability.__class__.__name__[:4].lower()
     config = IntersectServiceConfig(
         hierarchy=HierarchyConfig(
             organization='p-ng-organization',
             facility='p-ng-facility',
             system='p-ng-system',
             subsystem='p-ng-subsystem',
-            service=f'{capability.__class__.__name__[:4].lower()}-service',
+            service=f'{service_name}-service',
         ),
         status_interval=30.0,
         **from_config_file,
     )
     service = IntersectService(capability, config)
-    logger.info('Starting counting_service, use Ctrl+C to exit.')
+    logger.info('Starting %s_service, use Ctrl+C to exit.', service_name)
 
     """
     Here, we provide the after_service_startup function on the capability as a post startup callback.

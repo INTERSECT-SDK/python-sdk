@@ -1,11 +1,14 @@
 """Simple service which regularly emits an event."""
 
+import logging
 import threading
 import time
 
 from intersect_sdk import IntersectEventDefinition, intersect_event
 
 from .service_runner import P_ngBaseCapabilityImplementation, run_service
+
+logging.basicConfig(level=logging.INFO)
 
 
 class PingCapabiilityImplementation(P_ngBaseCapabilityImplementation):
