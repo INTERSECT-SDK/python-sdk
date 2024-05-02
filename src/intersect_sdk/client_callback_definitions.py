@@ -115,11 +115,11 @@ Params
        a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
 
 Returns
-  If you want to send one or many messages in reaction to a message, the function should return an IntersectClientMessageParams object or a list/tuple of IntersectClientMessageParams objects.
+  If you want to send one or many messages in reaction to a message, or change which services you're listening to for events, the function should return an IntersectClientCallback object.
 
   If you are DONE listening to messages, raise a generic Exception from your function.
 
-  If you DON'T want to send another message, but want to continue listening for messages, you can just return None.
+  If you DON'T want to send another message or modify your events, but want to continue listening for messages, you can just return None.
 Raises
   Any uncaught or raised exceptions the callback function throws will terminate the INTERSECT lifecycle.
 """
@@ -143,11 +143,11 @@ Params
        a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
 
 Returns
-  If you want to send one or many messages in reaction to a message, the function should return an IntersectClientMessageParams object or a list/tuple of IntersectClientMessageParams objects.
+  If you want to send one or many messages in reaction to a message, or change which services you're listening to for events, the function should return an IntersectClientCallback object.
 
   If you are DONE listening to messages, raise a generic Exception from your function.
 
-  If you DON'T want to send another message, but want to continue listening for messages, you can just return None.
+  If you DON'T want to send another message or modify your events, but want to continue listening for messages, you can just return None.
 Raises
   Any uncaught or raised exceptions the callback function throws will terminate the INTERSECT lifecycle.
 """
