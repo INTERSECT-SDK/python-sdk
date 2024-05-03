@@ -65,9 +65,9 @@ class IntersectEventDefinition(BaseModel):
         # and in Python 3.9+ you can use annotations without them being parsed as strings.
         # BaseModel objects are technically okay because Pydantic will always treat them as the type.
         # Otherwise we can just disallow a few common typings and handle the rest when trying to create a TypeAdapter.
-        if v is None or isinstance(v, (int, float, bool, str, Mapping, Sequence)):
+        if isinstance(v, (int, float, bool, str, Mapping, Sequence)):
             msg = 'IntersectEventDefintion: event_value should be a type or a type alias'
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004 (Pydantic convention is to raise a ValueError)
         return v
 
     # pydantic config
