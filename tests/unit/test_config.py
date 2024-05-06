@@ -8,14 +8,14 @@ from intersect_sdk import (
     IntersectClientConfig,
     IntersectServiceConfig,
 )
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 # TESTS #####################
 
 
 def test_empty_hierarchy():
     with pytest.raises(ValidationError) as ex:
-        _config = HierarchyConfig()
+        HierarchyConfig()
     errors = ex.value.errors()
     assert len(errors) == 4
     assert all(e['type'] == 'missing' for e in errors)
@@ -28,7 +28,7 @@ def test_empty_hierarchy():
 
 def test_invalid_hierarchy():
     with pytest.raises(ValidationError) as ex:
-        _config = HierarchyConfig(
+        HierarchyConfig(
             organization='no.periods',
             facility='no_underscores',
             system='',
@@ -46,9 +46,12 @@ def test_invalid_hierarchy():
     assert ('service',) in locations
 
 
+# NOTE: with dataclasses, need to validate dictionaries instead of the dataclass directly
+
+
 def test_missing_control_plane_config():
     with pytest.raises(ValidationError) as ex:
-        _config = ControlPlaneConfig()
+        TypeAdapter(ControlPlaneConfig).validate_python({})
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 3
     assert {'type': 'missing', 'loc': ('username',)} in errors
@@ -58,12 +61,14 @@ def test_missing_control_plane_config():
 
 def test_invalid_control_plane_config():
     with pytest.raises(ValidationError) as ex:
-        _config = ControlPlaneConfig(
-            host='',
-            username='',
-            password='',
-            port=0,
-            protocol='mqtt',
+        TypeAdapter(ControlPlaneConfig).validate_python(
+            ControlPlaneConfig(
+                host='',
+                username='',
+                password='',
+                port=0,
+                protocol='mqtt',
+            ).__dict__
         )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 5
@@ -76,7 +81,7 @@ def test_invalid_control_plane_config():
 
 def test_missing_data_plane_config():
     with pytest.raises(ValidationError) as ex:
-        _config = DataStoreConfig()
+        TypeAdapter(DataStoreConfig).validate_python({})
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 2
     assert {'type': 'missing', 'loc': ('username',)} in errors
@@ -85,11 +90,13 @@ def test_missing_data_plane_config():
 
 def test_invalid_data_plane_config():
     with pytest.raises(ValidationError) as ex:
-        _config = DataStoreConfig(
-            host='',
-            username='',
-            password='',
-            port=0,
+        TypeAdapter(DataStoreConfig).validate_python(
+            DataStoreConfig(
+                host='',
+                username='',
+                password='',
+                port=0,
+            ).__dict__
         )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 4
@@ -101,7 +108,7 @@ def test_invalid_data_plane_config():
 
 def test_missing_client_config():
     with pytest.raises(ValidationError) as ex:
-        _config = IntersectClientConfig()
+        IntersectClientConfig()
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 2
     assert {'type': 'missing', 'loc': ('brokers',)} in errors
@@ -110,9 +117,7 @@ def test_missing_client_config():
 
 def test_empty_client_config():
     with pytest.raises(ValidationError) as ex:
-        _config = IntersectClientConfig(
-            brokers=[], initial_message_event_config=IntersectClientCallback()
-        )
+        IntersectClientConfig(brokers=[], initial_message_event_config=IntersectClientCallback())
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 2
     assert {'loc': ('brokers', 'list[ControlPlaneConfig]'), 'type': 'too_short'}
@@ -121,7 +126,7 @@ def test_empty_client_config():
 
 def test_missing_service_config():
     with pytest.raises(ValidationError) as ex:
-        _config = IntersectServiceConfig()
+        IntersectServiceConfig()
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 2
     assert {'type': 'missing', 'loc': ('brokers',)} in errors
@@ -130,7 +135,7 @@ def test_missing_service_config():
 
 def test_invalid_service_config():
     with pytest.raises(ValidationError) as ex:
-        _config = IntersectServiceConfig(
+        IntersectServiceConfig(
             hierarchy=100,
             brokers=[],
             data_stores={},

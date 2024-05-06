@@ -473,13 +473,17 @@ class IntersectService(IntersectEventObserver):
                 raise
             try:
                 response = getattr(self.capability, fn_name)(request_obj)
-            except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
+            except (
+                Exception
+            ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
                 logger.warning(f'Capability raised exception:\n{e}\n')
                 raise IntersectApplicationError from e
         else:
             try:
                 response = getattr(self.capability, fn_name)()
-            except Exception as e:  # noqa: BLE001 (need to catch all possible exceptions to gracefully handle the thread)
+            except (
+                Exception
+            ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
                 logger.warning(f'Capability raised exception:\n{e}\n')
                 raise IntersectApplicationError from e
 

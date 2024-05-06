@@ -1,8 +1,10 @@
 """Configuration types shared across both Clients and Services."""
 
+from dataclasses import dataclass, field
 from typing import List, Literal, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from typing_extensions import Annotated
 
 from ..core_definitions import IntersectDataHandler
 
@@ -27,29 +29,29 @@ ControlProvider = Literal['mqtt3.1.1', 'amqp0.9.1']
 class HierarchyConfig(BaseModel):
     """Configuration for registring this service in a system-of-system architecture."""
 
-    service: str = Field(pattern=HIERARCHY_REGEX)
+    service: Annotated[str, Field(pattern=HIERARCHY_REGEX)]
     """
-    The name of this application - should be unique within an INTERSECT cluster
+    The name of this application - should be unique within an INTERSECT system
     """
 
     subsystem: Optional[str] = Field(default=None, pattern=HIERARCHY_REGEX)  # noqa: FA100 (Pydantic uses runtime annotations)
     """
-    An associated subsystem / service-grouping of the service
+    An associated subsystem / service-grouping of the system (should be unique within an INTERSECT system)
     """
 
-    system: str = Field(pattern=HIERARCHY_REGEX)
+    system: Annotated[str, Field(pattern=HIERARCHY_REGEX)]
     """
-    Name of the "system", could also be thought of as a "device"
-    """
-
-    facility: str = Field(pattern=HIERARCHY_REGEX)
-    """
-    Name of the facility (an ORNL institutional designation, i.e. Neutrons) (NOT abbreviated)
+    Name of the "system", could also be thought of as a "device" (should be unique within a facility)
     """
 
-    organization: str = Field(pattern=HIERARCHY_REGEX)
+    facility: Annotated[str, Field(pattern=HIERARCHY_REGEX)]
     """
-    Name of the organization (i.e. ORNL) (NOT abbreviated)
+    Name of the facility (an ORNL institutional designation, i.e. 'neutrons') (NOT abbreviated, should be unique within an organization)
+    """
+
+    organization: Annotated[str, Field(pattern=HIERARCHY_REGEX)]
+    """
+    Name of the organization (i.e. 'ornl') (NOT abbreviated) (should be unique in an INTERSECT cluster)
     """
 
     def hierarchy_string(self, join_str: str = '') -> str:
@@ -77,25 +79,32 @@ class HierarchyConfig(BaseModel):
     model_config = ConfigDict(regex_engine='python-re')
 
 
-class ControlPlaneConfig(BaseModel):
+@dataclass
+class ControlPlaneConfig:
     """Configuration for interacting with a broker."""
 
-    username: str = Field(min_length=1)
+    protocol: ControlProvider
+    """
+    The protocol of the broker you'd like to use (i.e. AMQP, MQTT...)
+    """
+    # TODO - support more protocols and protocol versions as needed - see https://www.asyncapi.com/docs/reference/specification/v2.6.0#serverObject
+
+    username: Annotated[str, Field(min_length=1)]
     """
     Username credentials for broker connection.
     """
 
-    password: str = Field(min_length=1)
+    password: Annotated[str, Field(min_length=1)]
     """
     Password credentials for broker connection.
     """
 
-    host: str = Field(default='127.0.0.1', min_length=1)
+    host: Annotated[str, Field(min_length=1)] = '127.0.0.1'
     """
     Broker hostname (default: 127.0.0.1)
     """
 
-    port: Optional[PositiveInt] = Field(None)  # noqa: FA100 (Pydantic uses runtime annotations)
+    port: Optional[PositiveInt] = None  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     Broker port. List of common ports:
 
@@ -113,41 +122,37 @@ class ControlPlaneConfig(BaseModel):
     NOTE: INTERSECT currently only supports AMQP and MQTT.
     """
 
-    protocol: ControlProvider
-    """
-    The protocol of the broker you'd like to use (i.e. AMQP, MQTT...)
-    """
-    # TODO - support more protocols and protocol versions as needed - see https://www.asyncapi.com/docs/reference/specification/v2.6.0#serverObject
 
-
-class DataStoreConfig(BaseModel):
+@dataclass
+class DataStoreConfig:
     """Configuration for interacting with a data store."""
 
-    username: str = Field(min_length=1)
+    username: Annotated[str, Field(min_length=1)]
     """
     Username credentials for data store connection.
     """
 
-    password: str = Field(min_length=1)
+    password: Annotated[str, Field(min_length=1)]
     """
     Password credentials for data store connection.
     """
 
-    host: str = Field(default='127.0.0.1', min_length=1)
+    host: Annotated[str, Field(min_length=1)] = '127.0.0.1'
     """
     Data store hostname (default: 127.0.0.1)
     """
 
-    port: Optional[PositiveInt] = Field(None)  # noqa: FA100 (Pydantic uses runtime annotations)
+    port: Optional[PositiveInt] = None  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     Data store port
     """
 
 
-class DataStoreConfigMap(BaseModel):
+@dataclass
+class DataStoreConfigMap:
     """Configurations for any data stores the application should talk to."""
 
-    minio: List[DataStoreConfig] = Field(default_factory=list)  # noqa: FA100 (Pydantic uses runtime annotations)
+    minio: List[DataStoreConfig] = field(default_factory=list)  # noqa: FA100 (Pydantic uses runtime annotations)
     """
     minio configurations
     """

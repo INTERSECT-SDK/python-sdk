@@ -392,12 +392,12 @@ class IntersectClient:
         """Send a userspace message, be it an initial message from the user or from the user's callback function."""
         # ONE: SERIALIZE FUNCTION RESULTS
         # (function input should already be validated at this point)
-        response = GENERIC_MESSAGE_SERIALIZER.dump_json(params['payload'], warnings=False)
+        response = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
         try:
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
-                response, params['response_content_type'], params['response_data_handler']
+                response, params.response_content_type, params.response_data_handler
             )
         except IntersectError:
             # NOTE
@@ -409,14 +409,14 @@ class IntersectClient:
         # THREE: SEND MESSAGE
         msg = create_userspace_message(
             source=self._hierarchy.hierarchy_string('.'),
-            destination=params['destination'],
-            content_type=params['response_content_type'],
-            data_handler=params['response_data_handler'],
-            operation_id=params['operation'],
+            destination=params.destination,
+            content_type=params.response_content_type,
+            data_handler=params.response_data_handler,
+            operation_id=params.operation,
             payload=response_payload,
         )
         logger.debug(f'Send userspace message:\n{msg}')
-        response_channel = f"{params['destination'].replace('.', '/')}/userspace"
+        response_channel = f"{params.destination.replace('.', '/')}/userspace"
         self._control_plane_manager.publish_message(response_channel, msg)
 
     # TODO - consider removing this entire concept

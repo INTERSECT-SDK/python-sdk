@@ -66,7 +66,7 @@ class IntersectEventDefinition(BaseModel):
         # BaseModel objects are technically okay because Pydantic will always treat them as the type.
         # Otherwise we can just disallow a few common typings and handle the rest when trying to create a TypeAdapter.
         if isinstance(v, (int, float, bool, str, Mapping, Sequence)):
-            msg = 'IntersectEventDefintion: event_value should be a type or a type alias'
+            msg = 'IntersectEventDefintion: event_type should be a type or a type alias'
             raise ValueError(msg)  # noqa: TRY004 (Pydantic convention is to raise a ValueError)
         return v
 

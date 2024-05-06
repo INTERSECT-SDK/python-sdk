@@ -1,16 +1,17 @@
 """Data types used in regard to client callbacks. Only relevant for Client authors."""
 
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Annotated, TypeAlias, TypedDict, final
+from typing_extensions import Annotated, TypeAlias, final
 
 from .constants import SYSTEM_OF_SYSTEM_REGEX
 from .core_definitions import IntersectDataHandler, IntersectMimeType
 
 
-@final
-class IntersectClientMessageParams(TypedDict):
+@dataclass
+class IntersectClientMessageParams:
     """The user implementing the IntersectClient class will need to return this object in order to send a message to another Service."""
 
     destination: Annotated[str, Field(pattern=SYSTEM_OF_SYSTEM_REGEX)]
@@ -32,14 +33,14 @@ class IntersectClientMessageParams(TypedDict):
     If you want to just use the service's default value for a request (assuming it has a default value for a request), you may set this as None.
     """
 
-    response_content_type: Annotated[IntersectMimeType, Field(IntersectMimeType.JSON)]
+    response_content_type: IntersectMimeType = IntersectMimeType.JSON
     """
     The IntersectMimeType of your response. You'll want this to match with the ContentType of the function from the schema.
 
     default: IntersectMimeType.JSON
     """
 
-    response_data_handler: Annotated[IntersectDataHandler, Field(IntersectDataHandler.MESSAGE)]
+    response_data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE
     """
     The IntersectDataHandler you want to use (most people can just use IntersectDataHandler.MESSAGE here, unless your data is very large)
 
