@@ -28,7 +28,6 @@ def test_minio_not_allowed_without_config(caplog: pytest.LogCaptureFixture):
     # note that despite the broker configuration, you do not actually need a broker running for this test
     conf = IntersectServiceConfig(
         hierarchy=FAKE_HIERARCHY_CONFIG,
-        schema_version='0.0.1',
         brokers=[
             ControlPlaneConfig(
                 username='intersect_username',
