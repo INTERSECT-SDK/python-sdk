@@ -42,7 +42,6 @@ def make_intersect_service() -> IntersectService:
         DummyCapabilityImplementation(),
         IntersectServiceConfig(
             hierarchy=FAKE_HIERARCHY_CONFIG,
-            schema_version='0.0.1',
             data_stores=DataStoreConfigMap(
                 minio=[
                     DataStoreConfig(
