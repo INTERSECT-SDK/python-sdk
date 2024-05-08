@@ -140,7 +140,6 @@ def test_invalid_service_config():
             brokers=[],
             data_stores={},
             status_interval=1,
-            schema_version='0.0.0+20200101000000',
         )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 4
@@ -186,7 +185,6 @@ def test_valid_service_config():
             ]
         ),
         status_interval=500.5,
-        schema_version='2.5.6',
     )
     assert config.hierarchy.subsystem is None
     assert config.hierarchy.hierarchy_string('/') == 'org/this-works/ello-14/-/serv'
