@@ -2,11 +2,14 @@
 name = "intersect-sdk"
 description = "Python SDK to interact with INTERSECT"
 authors = [
-    {name = "Lance Drane", email = "dranelt@ornl.gov"},
-    {name = "Marshall McDonnell", email = "mcdonnellmt@ornl.gov"},
-    {name = "Seth Hitefield", email = "hitefieldsd@ornl.gov"},
+    {name = "Rick Archibald", email = "archibaldrk@ornl.gov"},
     {name = "Andrew Ayres", email = "ayresaf@ornl.gov"},
+    {name = "Michael Brim", email = "brimmj@ornl.gov"},
+    {name = "Matthew Baker", email = "bakermb@ornl.gov"},
     {name = "Gregory Cage", email = "cagege@ornl.gov"},
+    {name = "Lance Drane", email = "dranelt@ornl.gov"},
+    {name = "Seth Hitefield", email = "hitefieldsd@ornl.gov"},
+    {name = "Marshall McDonnell", email = "mcdonnellmt@ornl.gov"},
     {name = "Jesse McGaha", email = "mcgahajr@ornl.gov"},
     {name = "Robert Smith", email = "smithrw@ornl.gov"},
     {name = "Gavin Wiggins", email = "wigginsg@ornl.gov"},
