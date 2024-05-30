@@ -10,9 +10,12 @@ authors = [
     {name = "Jesse McGaha", email = "mcgahajr@ornl.gov"},
     {name = "Robert Smith", email = "smithrw@ornl.gov"},
     {name = "Gavin Wiggins", email = "wigginsg@ornl.gov"},
+    {name = "Michael Brim", email = "brimmj@ornl.gov"},
+    {name = "Rick Archibald", email = "archibaldrk@ornl.gov"},
+    {name = "Addi Malviya Thakur", email = "malviyaa@ornl.gov"},
 ]
 readme = "README.md"
-#license = {text = "BSD-3-Clause"}
+license = {text = "BSD-3-Clause"}
 requires-python = ">=3.8.10,<4.0"
 keywords = ["intersect"]
 dynamic = ["version"]

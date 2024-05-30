@@ -1,0 +1,100 @@
+cff-version: 1.2.0
+type: software
+message: "If you are referencing INTERSECT-SDK in a publication, please cite it as below."
+title: "INTERSECT-SDK: Interconnected Science Ecosystem - Software Development Kit"
+authors:
+  - family-names: Drane
+    given-names: Lance
+  - family-names: McDonnell
+    given-names: Marshall
+  - family-names: Hitefield
+    given-names: Seth
+  - family-names: Ayres
+    given-names: Andrew
+  - family-names: Cage
+    given-names: Gregory
+  - family-names: McGaha
+    given-names: Jesse
+  - family-names: Smith
+    given-names: Robert
+  - family-names: Wiggins
+    given-names: Gavin
+  - family-names: Brim
+    given-names: Michael
+  - family-names: Archibald
+    given-names: Richard
+  - family-names: Malviya Thakur
+    given-names: Addi
+preferred-citation:
+  title: "Towards a Software Development Framework for Interconnected Science Ecosystems"
+  type: conference-paper
+  url: "https://link.springer.com/chapter/10.1007/978-3-031-23606-8_13"
+  conference:
+    name: "Smoky Mountains Computational Sciences and Engineering Conference 2022"
+    city: "Kingsport"
+    region: "Tennessee"
+    country: "US"
+    date-start: 2022-08-23
+    date-end: 2022-08-25
+  month: 08
+  year: 2022
+  identifiers:
+    - description: "The concept DOI of the work."
+      type: doi
+      value: 10.1007/978-3-031-23606-8_13
+  authors:
+    - family-names: Malviya Thakur
+      given-names: Addi
+      orcid: https://orcid.org/0000-0002-2681-9992
+    - family-names: Hitefield
+      given-names: Seth
+      orcid: https://orcid.org/0000-0003-0331-3128
+    - family-names: McDonnell
+      given-names: Marshall
+      orcid: https://orcid.org/0000-0002-3713-2117
+    - family-names: Wolf
+      given-names: Matthew
+      orcid: https://orcid.org/0000-0002-8393-4436
+    - family-names: Archibald
+      given-names: Richard
+      orcid: https://orcid.org/0000-0002-4538-9780
+    - family-names: Drane
+      given-names: Lance
+      orcid: https://orcid.org/0000-0001-8808-1228
+    - family-names: Roccapriore
+      given-names: Kevin
+      orcid: https://orcid.org/0000-0001-9907-6790
+    - family-names: Ziatdinov
+      given-names: Maxim
+      orcid: https://orcid.org/0000-0003-2570-4592
+    - family-names: McGaha
+      given-names: Jesse
+      orcid: https://orcid.org/0000-0001-9469-8451
+    - family-names: Smith
+      given-names: Robert
+      orcid: https://orcid.org/0000-0002-6058-1025
+    - family-names: Hetrick
+      given-names: John
+      orcid: https://orcid.org/0000-0003-0118-4211
+    - family-names: Abraham
+      given-names: Mark
+    - family-names: Yakubov
+      given-names: Sergey
+      orcid: https://orcid.org/0000-0002-5829-1280
+    - family-names: Watson
+      given-names: Gregory
+      orcid: https://orcid.org/0000-0002-8591-2441
+    - family-names: Chance
+      given-names: Ben
+    - family-names: Nguyen
+      given-names: Clara
+    - family-names: Baker
+      given-names: Matthew
+    - family-names: Michael
+      given-names: Robert
+    - family-names: Arenholz
+      given-names: Elke
+      orcid: https://orcid.org/0000-0001-8152-6773
+    - family-names: Mintz
+      given-names: Ben
+      orcid: https://orcid.org/0000-0002-4054-1229
