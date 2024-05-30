@@ -5,26 +5,24 @@ title: "INTERSECT-SDK: Interconnected Science Ecosystem - Software Development K
 authors:
   - family-names: Drane
     given-names: Lance
+  - family-names: McDonnell
+    given-names: Marshall
   - family-names: Hitefield
     given-names: Seth
-  - family-names: Smith
-    given-names: Robert
-  - family-names: McGaha
-    given-names: Jesse
-  - family-names: Wiggins
-    given-names: Gavin
   - family-names: Ayres
     given-names: Andrew
   - family-names: Cage
     given-names: Gregory
-  - family-names: Brim
-    given-names: Michael
+  - family-names: McGaha
+    given-names: Jesse
+  - family-names: Smith
+    given-names: Robert
+  - family-names: Wiggins
+    given-names: Gavin
   - family-names: Archibald
     given-names: Richard
-  - family-names: Hetrick
-    given-names: John
-  - family-names: McDonnell
-    given-names: Marshall
+  - family-names: Brim
+    given-names: Michael
   - family-names: Malviya Thakur
     given-names: Addi
 preferred-citation:
