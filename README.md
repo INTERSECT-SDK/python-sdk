@@ -1,11 +1,11 @@
 # INTERSECT-SDK
 
-The INTERSECT-SDK is a framework for microservices to integrate themselves into the wider INTERSECT ecosystem.
+The INTERSECT-SDK is a framework for microservices to integrate themselves into the wider Interconnected Science Ecosystem (INTERSECT).
 
 Please note that this README is currently a work in progress.
 
 ## What is INTERSECT?
-INTERSECT was designed as a specific usecase - as an open federated hardware/software architecture for the laboratory of the future, which connects scientific instruments, robot-controlled laboratories and edge/center computing/data resources to enable autonomous experiments, self-driving laboratories, smart manufacturing, and AI-driven design, discovery and evaluation.
+[INTERSECT](https://www.ornl.gov/intersect) was designed as a specific usecase - as an open federated hardware/software architecture for the laboratory of the future, which connects scientific instruments, robot-controlled laboratories and edge/center computing/data resources to enable autonomous experiments, self-driving laboratories, smart manufacturing, and AI-driven design, discovery and evaluation.
 
 ## What are the core design philosophies of the SDK?
 
@@ -22,7 +22,7 @@ INTERSECT SDK was created by its [contributors](https://github.com/intersect-sdk
 
 If you are referencing INTERSECT-SDK in a publication, please cite the following paper:
 
-    Addi Malviya Thakur, Seth Hitefield, Marshall McDonnell, Matthew Wolf, Richard Archibald, Lance Drane, Kevin Roccapriore, Maxim Ziatdinov, Jesse McGaha, Robert Smith, John Hetrick, Mark Abraham, Sergey Yakubov, Greg Watson, Ben Chance, Clara Nguyen, Matthew Baker, Robert Michael, Elke Arenholz & Ben Mintz. Towards a Software Development Framework for Interconnected Science Ecosystems. In: Doug, K., Al, G., Pophale, S., Liu, H., Parete-Koon, S. (eds) Accelerating Science and Engineering Discoveries Through Integrated Research Infrastructure for Experiment, Big Data, Modeling and Simulation. SMC 2022. Communications in Computer and Information Science, vol 1690. Springer, Cham. https://doi.org/10.1007/978-3-031-23606-8_13
+ * Addi Malviya Thakur, Seth Hitefield, Marshall McDonnell, Matthew Wolf, Richard Archibald, Lance Drane, Kevin Roccapriore, Maxim Ziatdinov, Jesse McGaha, Robert Smith, John Hetrick, Mark Abraham, Sergey Yakubov, Greg Watson, Ben Chance, Clara Nguyen, Matthew Baker, Robert Michael, Elke Arenholz & Ben Mintz. Towards a Software Development Framework for Interconnected Science Ecosystems. In: Doug, K., Al, G., Pophale, S., Liu, H., Parete-Koon, S. (eds) Accelerating Science and Engineering Discoveries Through Integrated Research Infrastructure for Experiment, Big Data, Modeling and Simulation. SMC 2022. Communications in Computer and Information Science, vol 1690. Springer, Cham. https://doi.org/10.1007/978-3-031-23606-8_13
 
 On GitHub, you can copy this citation in APA or BibTeX format via the "Cite this repository" button. Or, see the comments in `CITATION.cff` for the raw BibTeX.
 
