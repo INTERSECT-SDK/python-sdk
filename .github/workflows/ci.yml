@@ -29,8 +29,8 @@ jobs:
           pdm venv create --with-pip --force $PYTHON
           pdm sync --dev -G:all
       - run: |
-          ruff format --check
-          ruff check
+          pdm run ruff format --check
+          pdm run ruff check
           pdm run lint-mypy
 
   test:
