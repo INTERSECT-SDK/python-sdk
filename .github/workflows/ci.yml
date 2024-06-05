@@ -56,14 +56,14 @@ jobs:
           - "1883:1883" # MQTT port
           - "5672:5672" # AMQP port
       minio:
-        image: "quay.io/minio/minio:latest"
+        image: "bitnami/minio:2024.6.4"
         env:
           MINIO_ROOT_USER: AKIAIOSFODNN7EXAMPLE
           MINIO_ROOT_PASSWORD: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+          MINIO_SKIP_CLIENT: "yes"
         ports:
           - "9000:9000" # main MINIO API port
           - "9001:9001" # web UI
-        options: 'server /mydata --console-address ":9001"'
     steps:
       - uses: actions/checkout@v4
       - name: Setup PDM

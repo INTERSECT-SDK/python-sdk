@@ -22,13 +22,13 @@ services:
       timeout: 10s
 
   minio:
-    image: quay.io/minio/minio
+    image: "bitnami/minio:2024.6.4"
     environment:
+      # references: https://github.com/bitnami/containers/blob/main/bitnami/minio/README.md
       MINIO_ROOT_USER: AKIAIOSFODNN7EXAMPLE
       MINIO_ROOT_PASSWORD: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
     ports:
       - "9000:9000" # main MINIO API port
       - "9001:9001" # web UI
     #volumes:
-      #- "./tmp/minio:/mydata"
-    command: 'server /mydata --console-address ":9001"'
+      #- "./tmp/minio:/bitnami/minio/data"
