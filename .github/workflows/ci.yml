@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Ruff linting, formating, MyPy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.8"
+          cache: true
+      - name: Install dependencies
+        run: pdm sync --dev -G:all
+      - name: Lint
+        run: |
+          pdm run ruff format --check
+          pdm ruff check
+          pdm run lint-mypy
+
+  test:
+    name: Test with coverage
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        os:
+          - ubuntu-latest
+          # TODO - can't use service containers outside of Ubuntu
+          #- macos-latest
+          #- windows-latest
+    runs-on: ${{ matrix.os }}
+    services:
+      rabbitmq:
+        image: "bitnami/rabbitmq:3.13.3"
+        env:
+          # space-delimited list of plugins
+          RABBITMQ_PLUGINS: "rabbitmq_mqtt"
+          RABBITMQ_USERNAME: "intersect_username"
+          RABBITMQ_PASSWORD: "intersect_password"
+        ports:
+          - "1883:1883" # MQTT port
+          - "5672:5672" # AMQP port
+      minio:
+        image: "quay.io/minio/minio:latest"
+        env:
+          MINIO_ROOT_USER: AKIAIOSFODNN7EXAMPLE
+          MINIO_ROOT_PASSWORD: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+        ports:
+          - "9000:9000" # main MINIO API port
+          - "9001:9001" # web UI
+        options: 'server /mydata --console-address ":9001"'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: true
+      - name: Install dependencies
+        run: pdm sync --dev -G:all
+      - name: Test
+        run: pdm run test-all

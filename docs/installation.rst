@@ -56,9 +56,9 @@ Docker
 Backing Services (Brokers, Data planes)
 ---------------------------------------
 
-A Docker Compose configuration for SDK development is included below. Note that the broker configuration requires access to the INTERSECT Gitlab, and is available at https://code.ornl.gov/intersect/sdk/broker.
+A Docker Compose configuration for SDK development is included below.
 
-Note that this broker image, and any data plane images, are meant for testing and should not be included in production.
+Note that this configuration is meant for testing, and should not be included in production.
 
 .. literalinclude:: ../docker-compose.yml
 
@@ -70,7 +70,7 @@ From the repository root, run the backing services using the Docker commands sho
    # if you are copypasting from this website instead of running from the repository root, you should make sure you copy the contents into docker-compose.yml.
    docker compose up -d
 
-To see the broker's management UI, you can navigate to ``localhost:15672`` in your browser. The login credentials will be those found in the broker's `definitions file <https://code.ornl.gov/intersect/sdk/broker/-/blob/0.2.0/definitions.json>`_.
+To see the broker's management UI, you can navigate to ``localhost:15672`` in your browser. The login credentials mirror `RABBITMQ_USERNAME` and `RABBITMQ_PASSWORD` from the docker-compose file.
 
 To cleanup:
 
