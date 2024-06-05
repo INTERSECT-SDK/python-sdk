@@ -40,9 +40,9 @@ If you would like to run the examples, such as the :doc:`examples/hello-world` e
 Authenticating
 --------------
 
-Some INTERSECT dependencies are stored on private package registries on code.ornl.gov; therefore, a personal access token is required for installation. Create a personal access token on the `Access Tokens page <https://code.ornl.gov/-/profile/personal_access_tokens>`_ in GitLab Preferences with ``read_api`` or ``api`` permissions then save the auto-generated key. This key is only displayed immediately after generating it, so be sure to save it (otherwise a new token will need to be generated).
+NOTE: This currently only applies for utilizing prebuilt images, and is only temporary.
 
-For the Docker containers, you need to login to the GitLab Container registry using the command shown below. Then sign in with your UCAMS or XCAMS credentials.
+If you want to utilize the prebuilt INTERSECT-SDK Docker container, you need to login to the GitLab Container registry using the command shown below. Then sign in with your UCAMS or XCAMS credentials.
 
 .. code-block:: bash
 
@@ -62,11 +62,10 @@ Note that this configuration is meant for testing, and should not be included in
 
 .. literalinclude:: ../docker-compose.yml
 
-From the repository root, run the backing services using the Docker commands shown below. See the previous section regarding authentication for the login command.
+From the repository root, run the backing services using the Docker commands shown below.
 
 .. code-block:: bash
 
-   docker login code.ornl.gov:4567
    # if you are copypasting from this website instead of running from the repository root, you should make sure you copy the contents into docker-compose.yml.
    docker compose up -d
 
