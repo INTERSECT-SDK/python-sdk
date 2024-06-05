@@ -25,11 +25,12 @@ jobs:
           python-version: "3.8"
           cache: true
       - name: Install dependencies
-        run: pdm sync --dev -G:all
-      - name: Lint
         run: |
-          pdm run ruff format --check
-          pdm ruff check
+          pdm venv create --with-pip --force $PYTHON
+          pdm sync --dev -G:all
+      - run: |
+          ruff format --check
+          ruff check
           pdm run lint-mypy
 
   test:
@@ -71,6 +72,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: true
       - name: Install dependencies
-        run: pdm sync --dev -G:all
-      - name: Test
-        run: pdm run test-all
+        run: |
+          pdm venv create --with-pip --force $PYTHON
+          pdm sync --dev -G:all
+      - run: pdm run test-all
