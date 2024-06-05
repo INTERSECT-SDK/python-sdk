@@ -51,10 +51,18 @@ def definition_metadata_differences(
         differences.append(('event_type', str(definition.event_type), str(metadata.type)))
     if definition.content_type != metadata.content_type:
         differences.append(
-            ('content_type', str(definition.content_type), str(metadata.content_type))
+            (
+                'content_type',
+                f'{definition.content_type.__class__.__name__}.{definition.content_type.name}',
+                f'{metadata.content_type.__class__.__name__}.{metadata.content_type.name}',
+            )
         )
     if definition.data_handler != metadata.data_transfer_handler:
         differences.append(
-            ('data_handler', str(definition.data_handler), str(metadata.data_transfer_handler))
+            (
+                'data_handler',
+                f'{definition.data_handler.__class__.__name__}.{definition.data_handler.name}',
+                f'{metadata.data_transfer_handler.__class__.__name__}.{metadata.data_transfer_handler.name}',
+            )
         )
     return differences

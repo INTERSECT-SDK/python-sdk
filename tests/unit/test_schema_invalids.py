@@ -14,6 +14,7 @@ General rules of "invalids":
 """
 
 import datetime
+import sys
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Any, Dict, FrozenSet, Generator, List, NamedTuple, Set, Tuple, TypeVar
@@ -726,6 +727,10 @@ def test_default_not_serializable(caplog: pytest.LogCaptureFixture):
     assert 'is not JSON serializable' in caplog.text
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 11),
+    reason='Python 3.11 does not allow dataclasses to be constructed in this improper format',
+)
 def test_invalid_nested_defaults(caplog: pytest.LogCaptureFixture):
     # should fail because we cannot serialize the defaults
     class InvalidNestedDefaults(IntersectBaseCapabilityImplementation):
