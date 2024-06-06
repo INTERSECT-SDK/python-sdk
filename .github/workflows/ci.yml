@@ -52,6 +52,8 @@ jobs:
           RABBITMQ_PLUGINS: "rabbitmq_mqtt"
           RABBITMQ_USERNAME: "intersect_username"
           RABBITMQ_PASSWORD: "intersect_password"
+          # misleading env name, this is needed to set "loopback_users.$USERNAME = false"
+          RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS: "yes"
         ports:
           - "1883:1883" # MQTT port
           - "5672:5672" # AMQP port
