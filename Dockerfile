@@ -1,6 +1,6 @@
 # container for CI/CD or development - NOT meant to be an extensible Docker image with the installed package
 
-ARG REPO=code.ornl.gov:4567/rse/images/
+ARG REPO=
 
 # use this stage for development
 FROM ${REPO}python:3.8-slim as minimal

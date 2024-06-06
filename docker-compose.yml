@@ -1,42 +1,34 @@
 # Simple docker-compose file which sets up all needed backing services
 # Note that for the broker, the default credentials are ` intersect_username / intersect_password `
 
-version: "3"
-
-x-broker-variables: &broker-variables
-  BROKER_HOST: broker
-  BROKER_PORT: 1883
-  BROKER_USERNAME: intersect_username
-  BROKER_PASSWORD: intersect_password
-
-x-minio-variables: &minio-variables
-  MINIO_HOST: minio
-  MINIO_PORT: 9000
-  MINIO_ACCESS_KEY: AKIAIOSFODNN7EXAMPLE
-  MINIO_SECRET_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-
 services:
   broker:
-    image: code.ornl.gov:4567/intersect/sdk/broker/main:latest
+    image: "bitnami/rabbitmq:3.13.3"
     ports:
       - "1883:1883" # MQTT port
       - "5672:5672" # AMQP port
       - "15672:15672" # Web UI
+    environment:
+      # full list of env variables available at https://github.com/bitnami/containers/blob/main/bitnami/rabbitmq/README.md
+      RABBITMQ_PLUGINS: "rabbitmq_mqtt"
+      RABBITMQ_USERNAME: "intersect_username"
+      RABBITMQ_PASSWORD: "intersect_password"
+      RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS: "yes"
     healthcheck:
-      test: rabbitmq-diagnostics -q ping
+      test: rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms
       interval: 10s
       retries: 5
       start_period: 10s
       timeout: 10s
 
   minio:
-    image: quay.io/minio/minio
+    image: "bitnami/minio:2024.6.4"
     environment:
+      # references: https://github.com/bitnami/containers/blob/main/bitnami/minio/README.md
       MINIO_ROOT_USER: AKIAIOSFODNN7EXAMPLE
       MINIO_ROOT_PASSWORD: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
     ports:
       - "9000:9000" # main MINIO API port
       - "9001:9001" # web UI
     #volumes:
-      #- "./tmp/minio:/mydata"
-    command: 'server /mydata --console-address ":9001"'
+      #- "./tmp/minio:/bitnami/minio/data"
