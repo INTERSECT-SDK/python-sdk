@@ -33,16 +33,37 @@ jobs:
           pdm run ruff check
           pdm run lint-mypy
 
-  test:
+  # Run unit tests only on Windows/MacOS, we can run the full test suite on Linux
+  test-unit:
+    name: Test with coverage
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        os:
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: true
+      - name: Install dependencies
+        run: |
+          pdm venv create --with-pip --force $PYTHON
+          pdm sync --dev -G:all
+      - run: pdm run test-unit
+
+  # we can only run our full test suite on Ubuntu due to the Github Actions services requirement
+  test-complete:
     name: Test with coverage
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os:
           - ubuntu-latest
-          # TODO - can't use service containers outside of Ubuntu
-          #- macos-latest
-          #- windows-latest
     runs-on: ${{ matrix.os }}
     services:
       rabbitmq:
