@@ -16,7 +16,7 @@ from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
-from ...version import __version__
+from ...version import version_string
 
 
 class LifecycleType(IntEnum):
@@ -155,7 +155,7 @@ def create_lifecycle_message(
             source=source,
             destination=destination,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
-            sdk_version=__version__,
+            sdk_version=version_string,
             lifecycle_type=lifecycle_type,
         ),
         payload=payload,

@@ -6,7 +6,7 @@ import datetime
 import uuid
 
 import pytest
-from intersect_sdk import IntersectDataHandler, IntersectMimeType, __version__
+from intersect_sdk import IntersectDataHandler, IntersectMimeType, version_string
 from intersect_sdk._internal.messages.userspace import (
     create_userspace_message,
     deserialize_and_validate_userspace_message,
@@ -100,6 +100,6 @@ def test_create_userspace_message():
     # enforce UTC
     assert msg['headers']['created_at'].tzinfo == datetime.timezone.utc
     assert msg['headers']['data_handler'] == IntersectDataHandler.MESSAGE
-    assert msg['headers']['sdk_version'] == __version__
+    assert msg['headers']['sdk_version'] == version_string
     assert msg['headers']['source'] == 'source'
     assert msg['headers']['destination'] == 'destination'

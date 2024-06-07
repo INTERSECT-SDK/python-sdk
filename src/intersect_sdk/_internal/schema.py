@@ -16,7 +16,7 @@ from typing import (
 from pydantic import PydanticUserError, TypeAdapter
 from typing_extensions import TypeAliasType
 
-from ..version import __version__
+from ..version import version_string
 from .constants import (
     BASE_EVENT_ATTR,
     BASE_RESPONSE_ATTR,
@@ -513,7 +513,7 @@ def get_schema_and_functions_from_capability_implementation(
 
     asyncapi_spec = {
         'asyncapi': ASYNCAPI_VERSION,
-        'x-intersect-version': __version__,
+        'x-intersect-version': version_string,
         'info': {
             'title': capability_name.hierarchy_string('.'),
             'version': '0.0.0',  # NOTE: this will be modified by INTERSECT CORE, users do not manage their schema versions

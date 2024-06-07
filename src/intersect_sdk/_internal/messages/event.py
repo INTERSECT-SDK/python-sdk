@@ -16,7 +16,7 @@ from typing_extensions import Annotated, TypedDict
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...core_definitions import IntersectDataHandler, IntersectMimeType
-from ...version import __version__
+from ...version import version_string
 from ..data_plane.minio_utils import MinioPayload
 
 # TODO - another property we should consider is an optional max_wait_time for events which are fired from functions.
@@ -139,7 +139,7 @@ def create_event_message(
         headers=EventMessageHeaders(
             source=source,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
-            sdk_version=__version__,
+            sdk_version=version_string,
             event_name=event_name,
             data_handler=data_handler,
         ),
