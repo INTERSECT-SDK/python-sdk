@@ -18,7 +18,7 @@ from typing_extensions import Annotated, TypedDict
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...core_definitions import IntersectDataHandler, IntersectMimeType
-from ...version import __version__
+from ...version import version_string
 from ..data_plane.minio_utils import MinioPayload
 
 
@@ -152,7 +152,7 @@ def create_userspace_message(
         headers=UserspaceMessageHeader(
             source=source,
             destination=destination,
-            sdk_version=__version__,
+            sdk_version=version_string,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             data_handler=data_handler,
             has_error=has_error,

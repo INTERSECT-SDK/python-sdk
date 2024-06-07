@@ -6,7 +6,7 @@ import datetime
 import uuid
 
 import pytest
-from intersect_sdk import __version__
+from intersect_sdk import version_string
 from intersect_sdk._internal.messages.lifecycle import (
     LifecycleType,
     create_lifecycle_message,
@@ -95,6 +95,6 @@ def test_create_lifecycle_message():
     # enforce UTC
     assert msg['headers']['created_at'].tzinfo == datetime.timezone.utc
     assert msg['headers']['lifecycle_type'] == LifecycleType.SHUTDOWN
-    assert msg['headers']['sdk_version'] == __version__
+    assert msg['headers']['sdk_version'] == version_string
     assert msg['headers']['source'] == 'source'
     assert msg['headers']['destination'] == 'destination'

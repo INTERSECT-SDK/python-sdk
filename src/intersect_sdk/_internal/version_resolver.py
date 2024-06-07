@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ..core_definitions import IntersectDataHandler
-from ..version import __version__, version_info
+from ..version import version_info, version_string
 from .logger import logger
 
 if TYPE_CHECKING:
@@ -53,6 +53,6 @@ def resolve_user_version(msg: UserspaceMessage | EventMessage) -> bool:
     """
     return _resolve_user_version(
         msg=msg,
-        our_version=__version__,
+        our_version=version_string,
         our_version_info=version_info,
     )

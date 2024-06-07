@@ -17,8 +17,8 @@ import pytest
 from intersect_sdk import (
     IntersectDataHandler,
     IntersectMimeType,
-    __version__,
     version_info,
+    version_string,
 )
 from intersect_sdk._internal.messages.userspace import UserspaceMessage, UserspaceMessageHeader
 from intersect_sdk._internal.version_resolver import _resolve_user_version, resolve_user_version
@@ -59,7 +59,7 @@ def test_version_info():
 
 
 def test_equal_version_ok():
-    assert resolve_user_version(message_generator(__version__)) is True
+    assert resolve_user_version(message_generator(version_string)) is True
 
 
 def test_bugfix_up_ok():

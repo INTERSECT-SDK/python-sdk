@@ -34,7 +34,7 @@ from .service_definitions import (
     intersect_message,
     intersect_status,
 )
-from .version import __version__, version_info
+from .version import __version__, version_info, version_string
 
 __all__ = [
     'IntersectDataHandler',
@@ -61,4 +61,5 @@ __all__ = [
     'DataStoreConfigMap',
     '__version__',
     'version_info',
+    'version_string',
 ]
