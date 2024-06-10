@@ -30,4 +30,4 @@ jobs:
           files: |
             dist/*
           # assume any version with "a" (gets "ALPHA") or "b" (gets BETA) will be a prerelease
-          prerelease: ${{ contains(github.ref, 'a') || contains(github.ref, 'b') }}
+          prerelease: ${{ contains(github.ref_name, 'a') || contains(github.ref_name, 'b') }}
