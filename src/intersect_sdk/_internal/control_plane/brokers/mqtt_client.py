@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import uuid
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -9,7 +10,7 @@ from retrying import retry
 from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
-    from collections import defaultdict
+    from ..topic_handler import TopicHandler
 
 
 class MQTTClient(BrokerClient):
@@ -33,7 +34,7 @@ class MQTTClient(BrokerClient):
         port: int,
         username: str,
         password: str,
-        topics_to_handlers: Callable[[], defaultdict[str, set[Callable[[bytes], None]]]],
+        topics_to_handlers: Callable[[], dict[str, TopicHandler]],
         uid: str | None = None,
     ) -> None:
         """The default constructor.
@@ -58,10 +59,11 @@ class MQTTClient(BrokerClient):
 
         # Whether the connection is currently active
         self._connected = False
+        self._should_disconnect = False
         self._topics_to_handlers = topics_to_handlers
 
         # MQTT callback functions
-        self._connection.on_connect = self._set_connection_status
+        self._connection.on_connect = self._handle_connect
         self._connection.on_disconnect = self._handle_disconnect
         self._connection.on_message = self._on_message
 
@@ -72,9 +74,12 @@ class MQTTClient(BrokerClient):
         # TODO MQTT v5 implementations should set clean_start to NEVER here
         self._connection.connect(self.host, self.port, 60)
         self._connection.loop_start()
+        while not self.is_connected():
+            time.sleep(0.1)
 
     def disconnect(self) -> None:
         """Disconnect from the broker."""
+        self._should_disconnect = True
         self._connection.disconnect()
         self._connection.loop_stop()
 
@@ -86,7 +91,7 @@ class MQTTClient(BrokerClient):
         """
         return self._connected
 
-    def publish(self, topic: str, payload: bytes) -> None:
+    def publish(self, topic: str, payload: bytes, persist: bool) -> None:
         """Publish the given message.
 
         Publish payload with the pre-existing connection (via connect()) on topic.
@@ -94,16 +99,21 @@ class MQTTClient(BrokerClient):
         Args:
             topic: The topic on which to publish the message as a string.
             payload: The message to publish, as raw bytes.
+            persist: Determine if the message should live until queue consumers or available (True), or
+              if it should be removed immediatedly (False)
         """
-        self._connection.publish(topic, payload, qos=2)
+        # NOTE: RabbitMQ only works with QOS of 1 and 0, and seems to convert QOS2 to QOS1
+        self._connection.publish(topic, payload, qos=2 if persist else 0)
 
-    def subscribe(self, topic: str) -> None:
+    def subscribe(self, topic: str, persist: bool) -> None:
         """Subscribe to a topic over the pre-existing connection (via connect()).
 
         Args:
             topic: Topic to subscribe to.
+            persist: Determine if the associated message queue of the topic is long-lived (True) or not (False)
         """
-        self._connection.subscribe(topic, qos=2)
+        # NOTE: RabbitMQ only works with QOS of 1 and 0, and seems to convert QOS2 to QOS1
+        self._connection.subscribe(topic, qos=2 if persist else 0)
 
     def unsubscribe(self, topic: str) -> None:
         """Unsubscribe from a topic over the pre-existing connection.
@@ -123,20 +133,24 @@ class MQTTClient(BrokerClient):
           _userdata: MQTT user data
           message: MQTT message
         """
-        for handler in self._topics_to_handlers().get(message.topic, []):
-            handler(message.payload)
+        topic_handler = self._topics_to_handlers().get(message.topic)
+        if topic_handler:
+            for cb in topic_handler.callbacks:
+                cb(message.payload)
 
-    def _handle_disconnect(self, _client: paho_client.Client, _userdata: Any, _rc: int) -> None:
+    def _handle_disconnect(self, client: paho_client.Client, _userdata: Any, _rc: int) -> None:
         """Handle a disconnection from the MQTT server.
 
         Args:
-            _client: The Paho client.
+            client: The Paho client.
             _userdata: MQTT user data.
             rc: MQTT return code as an integer.
         """
         self._connected = False
+        if not self._should_disconnect:
+            client.reconnect()
 
-    def _set_connection_status(
+    def _handle_connect(
         self, _client: paho_client.Client, _userdata: Any, _flags: dict[str, Any], rc: int
     ) -> None:
         """Set the connection status in response to the result of a Paho connection attempt.
@@ -150,5 +164,8 @@ class MQTTClient(BrokerClient):
         # Return code 0 means connection was successful
         if rc == 0:
             self._connected = True
+            self._should_disconnect = False
+            for topic, topic_handler in self._topics_to_handlers().items():
+                self.subscribe(topic, topic_handler.topic_persist)
         else:
             self._connected = False

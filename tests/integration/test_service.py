@@ -73,7 +73,7 @@ def make_message_interceptor() -> ControlPlaneManager:
                 port=1883,
                 protocol='mqtt3.1.1',
             )
-        ]
+        ],
     )
 
 
@@ -112,7 +112,7 @@ def test_call_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -127,6 +127,7 @@ def test_call_user_function():
             operation_id='calculate_fibonacci',
             payload=b'[4,6]',
         ),
+        True,
     )
     time.sleep(3.0)
     intersect_service.shutdown()
@@ -146,7 +147,7 @@ def test_call_static_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -161,6 +162,7 @@ def test_call_static_user_function():
             operation_id='test_generator',
             payload=b'"res"',
         ),
+        True,
     )
     time.sleep(3.0)
     intersect_service.shutdown()
@@ -179,7 +181,7 @@ def test_call_user_function_with_default_and_empty_payload():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -194,6 +196,7 @@ def test_call_user_function_with_default_and_empty_payload():
             operation_id='valid_default_argument',
             payload=b'null',  # if sending null as the payload, the SDK will call the function's default value
         ),
+        True,
     )
     time.sleep(3.0)
     intersect_service.shutdown()
@@ -213,7 +216,7 @@ def test_call_user_function_with_invalid_payload():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -229,6 +232,7 @@ def test_call_user_function_with_invalid_payload():
             # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
             payload=b'[2]',
         ),
+        True,
     )
     time.sleep(3.0)
     intersect_service.shutdown()
@@ -251,7 +255,7 @@ def test_call_nonexistent_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -267,6 +271,7 @@ def test_call_nonexistent_user_function():
             # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
             payload=b'null',
         ),
+        True,
     )
     time.sleep(3.0)
     intersect_service.shutdown()
@@ -287,7 +292,7 @@ def test_call_minio_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -302,6 +307,7 @@ def test_call_minio_user_function():
             operation_id='test_datetime',
             payload=b'"1970-01-01T00:00:00Z"',
         ),
+        True,
     )
     time.sleep(5.0)
     intersect_service.shutdown()
@@ -330,10 +336,10 @@ def test_lifecycle_messages():
         messages.append(deserialize_and_validate_lifecycle_message(payload))
 
     message_interceptor.add_subscription_channel(
-        'test/test/test/test/test/lifecycle', {lifecycle_msg_callback}
+        'test/test/test/test/test/lifecycle', {lifecycle_msg_callback}, False
     )
     # we do not really care about the userspace message response, but we'll listen to it to consume it
-    message_interceptor.add_subscription_channel('msg/msg/msg/msg/msg/userspace', set())
+    message_interceptor.add_subscription_channel('msg/msg/msg/msg/msg/userspace', set(), False)
     message_interceptor.connect()
     # sleep a moment to make sure message_interceptor catches the startup message
     time.sleep(1.0)
@@ -353,6 +359,7 @@ def test_lifecycle_messages():
             # note that the dict key MUST be a string, even though the input wants a float key
             payload=b'{"1.2":"one point two"}',
         ),
+        True,
     )
     time.sleep(3.0)
     intersect_service.shutdown('I want to shutdown')

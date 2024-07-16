@@ -48,5 +48,20 @@ class IntersectClientConfig(BaseModel):
     (default: False)
     """
 
+    system: Annotated[str, Field('tmp-')]
+    """
+    Name of the "system", could also be thought of as a "device" (should be unique within a facility)
+    """
+
+    facility: Annotated[str, Field('tmp-')]
+    """
+    Name of the facility (an ORNL institutional designation, i.e. 'neutrons') (NOT abbreviated, should be unique within an organization)
+    """
+
+    organization: Annotated[str, Field('tmp-')]
+    """
+    Name of the organization (i.e. 'ornl') (NOT abbreviated) (should be unique in an INTERSECT cluster)
+    """
+
     # pydantic config
     model_config = ConfigDict(revalidate_instances='always')

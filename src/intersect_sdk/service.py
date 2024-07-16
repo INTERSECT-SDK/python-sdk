@@ -178,8 +178,11 @@ class IntersectService(IntersectEventObserver):
         self._control_plane_manager = ControlPlaneManager(
             control_configs=config.brokers,
         )
+        # our userspace queue should be able to survive shutdown
         self._control_plane_manager.add_subscription_channel(
-            self._userspace_channel_name, {self._handle_userspace_message_raw}
+            self._userspace_channel_name,
+            {self._handle_userspace_message_raw},
+            persist=True,
         )
 
         # we generally start observing and don't stop, doesn't really matter if we startup or shutdown
@@ -341,7 +344,11 @@ class IntersectService(IntersectEventObserver):
                     response_msg,
                 )
                 response_channel = f"{message['headers']['source'].replace('.', '/')}/userspace"
-                self._control_plane_manager.publish_message(response_channel, response_msg)
+                # Persistent userspace messages may be useful for orchestration.
+                # Persistence will not hurt anything.
+                self._control_plane_manager.publish_message(
+                    response_channel, response_msg, persist=True
+                )
         except ValidationError as e:
             logger.warning(
                 f'Invalid message received on userspace message channel, ignoring. Full message:\n{e}'
@@ -537,8 +544,8 @@ class IntersectService(IntersectEventObserver):
             event_name=event_name,
             payload=response_payload,
         )
-
-        self._control_plane_manager.publish_message(self._events_channel_name, msg)
+        # Event messages are meant to be short-lived and should not persist.
+        self._control_plane_manager.publish_message(self._events_channel_name, msg, persist=False)
 
     def _make_error_message(
         self, error_string: str, original_message: UserspaceMessage
@@ -570,7 +577,11 @@ class IntersectService(IntersectEventObserver):
             payload=payload,
         )
         logger.debug(f'Send lifecycle message:\n{msg}')
-        self._control_plane_manager.publish_message(self._lifecycle_channel_name, msg)
+        # Lifecycle messages are meant to be short-lived, only the latest message has any usage for systems uninterested in logging,
+        # and queues will be regularly polled about these. Do not persist them.
+        self._control_plane_manager.publish_message(
+            self._lifecycle_channel_name, msg, persist=False
+        )
 
     def _check_for_status_update(self) -> bool:
         """Call the user's status retrieval function to see if it equals the cached value. If it does not, send out a status update function.
