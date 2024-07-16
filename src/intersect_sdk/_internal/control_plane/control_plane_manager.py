@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from pydantic import TypeAdapter
@@ -8,6 +7,7 @@ from pydantic import TypeAdapter
 from ..exceptions import IntersectInvalidBrokerError
 from ..logger import logger
 from .brokers.mqtt_client import MQTTClient
+from .topic_handler import TopicHandler
 
 if TYPE_CHECKING:
     from ...config.shared import ControlPlaneConfig
@@ -26,7 +26,7 @@ def serialize_message(message: Any) -> bytes:
 
 def create_control_provider(
     config: ControlPlaneConfig,
-    topic_handler_callback: Callable[[], defaultdict[str, set[Callable[[bytes], None]]]],
+    topic_handler_callback: Callable[[], dict[str, TopicHandler]],
 ) -> BrokerClient:
     if config.protocol == 'amqp0.9.1':
         # only try to import the AMQP client if the user is using an AMQP broker
@@ -60,6 +60,10 @@ class ControlPlaneManager:
         self,
         control_configs: list[ControlPlaneConfig] | Literal['discovery'],
     ) -> None:
+        """Basic constructor.
+
+        Some interaction with message brokers can change based on whether or not a Service or a Client is calling it.
+        """
         if control_configs == 'discovery':
             msg = 'Discovery service not implemented yet'
             raise ValueError(msg)
@@ -68,24 +72,38 @@ class ControlPlaneManager:
             for config in control_configs
         ]
 
+        # flag which indicates if we SHOULD be connected.
         self._ready = False
         # topics_to_handlers are managed here and transcend connections/disconnections to the broker
-        self._topics_to_handlers: defaultdict[str, set[Callable[[bytes], None]]] = defaultdict(set)
+        self._topics_to_handlers: dict[str, TopicHandler] = {}
 
     def add_subscription_channel(
-        self, channel: str, callbacks: set[Callable[[bytes], None]]
+        self, channel: str, callbacks: set[Callable[[bytes], None]], persist: bool
     ) -> None:
-        """Start listening for userspace messages on a channel on all configured brokers.
+        """Start listening for messages on a channel on all configured brokers.
 
-        Note that ALL channels listened to will always handle userspace messages.
+        Use the format ${TOPIC}/${TOPIC}/${TOPIC} ... for the channel name, protocol implementations
+        are responsible for converting the string to a valid channel.
+
+        This function should usually only be called before you've connected,
+        but it's okay to call it after connecting. (Mostly used for Clients.)
 
         Params:
           channel: string of the channel which we should start listening to
+          callbacks: functions to call on subscribing to a message
+          persist: if True, expect the associated message queue to live long; if False, it will only live the duration of the application.
+            Any queue associated with a Service should always set this to True. Clients will need to subscribe to their own, temporary queues, and should set this to False.
         """
-        self._topics_to_handlers[channel] |= callbacks
-        if self._ready:
+        topic_handler = self._topics_to_handlers.get(channel)
+        if topic_handler is None:
+            topic_handler = TopicHandler(persist)
+            topic_handler.callbacks |= callbacks
+            self._topics_to_handlers[channel] = topic_handler
+        else:
+            topic_handler.callbacks |= callbacks
+        if self.is_connected():
             for provider in self._control_providers:
-                provider.subscribe(channel)
+                provider.subscribe(channel, persist)
 
     def remove_subscription_channel(self, channel: str) -> bool:
         """Stop subscribing to a channel on all configured brokers.
@@ -99,28 +117,30 @@ class ControlPlaneManager:
         except KeyError:
             return False
         else:
-            if self._ready:
+            if self.is_connected():
                 for provider in self._control_providers:
                     provider.unsubscribe(channel)
             return True
 
-    def get_subscription_channels(self) -> defaultdict[str, set[Callable[[bytes], None]]]:
+    def get_subscription_channels(self) -> dict[str, TopicHandler]:
         """Get the subscription channels.
 
         Note that this function gets accessed as a callback from the direct broker implementations.
 
         Returns:
-          the dictionary of topics to callback functions
+          the dictionary of topics to topic information
         """
         return self._topics_to_handlers
 
     def connect(self) -> None:
-        """Connect to all configured brokers and subscribe to any channels configured."""
+        """Connect to all configured brokers.
+
+        Each broker client should utilize their respective on_connect callback to
+        subscribe to all channels tracked in the ControlPlaneManager.
+        """
         # TODO - when implementing discovery service, discovery and connection logic should be applied here
         for provider in self._control_providers:
             provider.connect()
-            for channel in self._topics_to_handlers:
-                provider.subscribe(channel)
         self._ready = True
 
     def disconnect(self) -> None:
@@ -129,12 +149,12 @@ class ControlPlaneManager:
         for provider in self._control_providers:
             provider.disconnect()
 
-    def publish_message(self, channel: str, msg: Any) -> None:
+    def publish_message(self, channel: str, msg: Any, persist: bool) -> None:
         """Publish message on channel for all brokers."""
-        if self._ready:
+        if self.is_connected():
             serialized_message = serialize_message(msg)
             for provider in self._control_providers:
-                provider.publish(channel, serialized_message)
+                provider.publish(channel, serialized_message, persist)
         else:
             logger.error('Cannot send message, providers are not connected')
 
@@ -144,4 +164,6 @@ class ControlPlaneManager:
         Returns:
           - True if we are currently connected to all brokers we've configured, False if not
         """
-        return all(control_provider.is_connected() for control_provider in self._control_providers)
+        return self._ready and all(
+            control_provider.is_connected() for control_provider in self._control_providers
+        )

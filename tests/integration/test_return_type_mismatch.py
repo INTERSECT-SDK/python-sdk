@@ -79,7 +79,7 @@ def make_message_interceptor() -> ControlPlaneManager:
                 port=1883,
                 protocol='mqtt3.1.1',
             )
-        ]
+        ],
     )
 
 
@@ -96,7 +96,7 @@ def test_call_user_function_with_invalid_payload():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}
+        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -112,6 +112,7 @@ def test_call_user_function_with_invalid_payload():
             # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
             payload=b'2',
         ),
+        True,
     )
     time.sleep(3.0)
     intersect_service.shutdown()

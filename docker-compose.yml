@@ -10,7 +10,7 @@ services:
       - "15672:15672" # Web UI
     environment:
       # full list of env variables available at https://github.com/bitnami/containers/blob/main/bitnami/rabbitmq/README.md
-      RABBITMQ_PLUGINS: "rabbitmq_mqtt"
+      RABBITMQ_PLUGINS: "rabbitmq_management rabbitmq_mqtt"
       RABBITMQ_USERNAME: "intersect_username"
       RABBITMQ_PASSWORD: "intersect_password"
       RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS: "yes"

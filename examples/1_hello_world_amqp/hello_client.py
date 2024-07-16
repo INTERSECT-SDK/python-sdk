@@ -10,6 +10,7 @@ from intersect_sdk import (
 )
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger('pika').setLevel(logging.WARNING)
 
 
 def simple_client_callback(

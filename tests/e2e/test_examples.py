@@ -128,3 +128,7 @@ def test_example_2_count_examples():
 
 def test_example_3_ping_pong_events():
     assert run_example_test('3_ping_pong_events') == 'ping\npong\nping\npong\n'
+
+
+def test_example_3_ping_pong_events_amqp():
+    assert run_example_test('3_ping_pong_events_amqp') == 'ping\npong\nping\npong\n'

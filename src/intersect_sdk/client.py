@@ -26,7 +26,10 @@ from ._internal.control_plane.control_plane_manager import (
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectError
 from ._internal.logger import logger
-from ._internal.messages.event import EventMessage, deserialize_and_validate_event_message
+from ._internal.messages.event import (
+    EventMessage,
+    deserialize_and_validate_event_message,
+)
 from ._internal.messages.userspace import (
     UserspaceMessage,
     create_userspace_message,
@@ -35,7 +38,10 @@ from ._internal.messages.userspace import (
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
-from .client_callback_definitions import IntersectClientCallback, IntersectClientMessageParams
+from .client_callback_definitions import (
+    IntersectClientCallback,
+    IntersectClientMessageParams,
+)
 from .config.client import IntersectClientConfig
 from .config.shared import HierarchyConfig
 
@@ -109,7 +115,10 @@ class IntersectClient:
 
         # use a fake hierarchy so that backing service logic utilizes the same API
         self._hierarchy = HierarchyConfig(
-            service='tmp-', system='tmp-', facility='tmp-', organization=f'tmp-{uuid4()!s}'
+            service=f'tmp-{uuid4()!s}',
+            system=config.system,
+            facility=config.facility,
+            organization=config.organization,
         )
 
         self._heartbeat_thread: StoppableThread | None = None
@@ -122,16 +131,22 @@ class IntersectClient:
         if not config.terminate_after_initial_messages:
             # we only SUBSCRIBE to this channel, and we only need to register it if we have a user callback in the first place
             if user_callback:
+                # Do not persist, as we use the temporary client information to build this.
                 self._control_plane_manager.add_subscription_channel(
                     f"{self._hierarchy.hierarchy_string('/')}/userspace",
                     {self._handle_userspace_message_raw},
+                    persist=False,
                 )
             if event_callback:
+                # Do not persist, as event messages are meant to be short-lived.
+                # Creating a dedicated queue for a Client is not feasible here.
                 for (
                     service
                 ) in config.initial_message_event_config.services_to_start_listening_for_events:
                     self._control_plane_manager.add_subscription_channel(
-                        f"{service.replace('.', '/')}/events", {self._handle_event_message_raw}
+                        f"{service.replace('.', '/')}/events",
+                        {self._handle_event_message_raw},
+                        persist=False,
                     )
         self._user_callback = user_callback
         self._event_callback = event_callback
@@ -155,7 +170,8 @@ class IntersectClient:
         if self._heartbeat_thread is None:
             self._heartbeat = time.time()
             self._heartbeat_thread = StoppableThread(
-                target=self._heartbeat_ticker, name=f'IntersectClient_{uuid4()!s}_heartbeat_thread'
+                target=self._heartbeat_ticker,
+                name=f'IntersectClient_{uuid4()!s}_heartbeat_thread',
             )
             self._heartbeat_thread.start()
 
@@ -377,7 +393,9 @@ class IntersectClient:
         if self._event_callback:
             for add_event in validated_result.services_to_start_listening_for_events:
                 self._control_plane_manager.add_subscription_channel(
-                    f"{add_event.replace('.', '/')}/events", {self._handle_event_message_raw}
+                    f"{add_event.replace('.', '/')}/events",
+                    {self._handle_event_message_raw},
+                    persist=False,
                 )
             for remove_event in validated_result.services_to_stop_listening_for_events:
                 self._control_plane_manager.remove_subscription_channel(
@@ -417,7 +435,10 @@ class IntersectClient:
         )
         logger.debug(f'Send userspace message:\n{msg}')
         response_channel = f"{params.destination.replace('.', '/')}/userspace"
-        self._control_plane_manager.publish_message(response_channel, msg)
+        # WARNING: If both the Service and the Client drop, the Service will execute the command
+        # but cannot communicate the response to the Client.
+        # in experiment controllers or production, you'll want to set persist to True
+        self._control_plane_manager.publish_message(response_channel, msg, persist=False)
 
     # TODO - consider removing this entire concept
     def _heartbeat_ticker(self) -> None:
