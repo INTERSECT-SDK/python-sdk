@@ -166,6 +166,16 @@ class IntersectClient:
 
         self._control_plane_manager.connect()
 
+        if self.considered_unrecoverable():
+            logger.error('Cannot start service due to unrecoverable error')
+            return self
+
+        # TODO this is necessary to avoid certain data races
+        # specifically, trying to publish messages before AMQP channels are open
+        # this problem is quite noticeable with the AMQP hello-world example,
+        # and has nothing to do with the Service at all.
+        time.sleep(1.0)
+
         # start the heartbeat thread
         if self._heartbeat_thread is None:
             self._heartbeat = time.time()
@@ -223,6 +233,15 @@ class IntersectClient:
           True if we are currently connected to INTERSECT, False if not
         """
         return self._control_plane_manager.is_connected()
+
+    @final
+    def considered_unrecoverable(self) -> bool:
+        """Check if any broker is considered to be in an unrecoverable state.
+
+        Returns:
+          - True if we can't recover, false otherwise
+        """
+        return self._control_plane_manager.considered_unrecoverable()
 
     def _handle_userspace_message_raw(self, raw: bytes) -> None:
         """Broker callback, deserialize and validate a userspace message from a broker."""

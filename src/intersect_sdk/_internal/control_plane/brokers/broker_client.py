@@ -1,24 +1,21 @@
-from abc import ABC, abstractmethod
+from typing import Protocol
 
 
-class BrokerClient(ABC):
+class BrokerClient(Protocol):
     """Abstract definition of a Broker Client.
 
     Will abstractly manage interaction between implementation specific message broker
     calls and higher level pub/sub features.
     """
 
-    @abstractmethod
     def connect(self) -> None:
         """Connect to the defined broker. Credentials should be cached in the constructor."""
         ...
 
-    @abstractmethod
     def disconnect(self) -> None:
         """Disconnect from the defined broker."""
         ...
 
-    @abstractmethod
     def is_connected(self) -> bool:
         """Checks if there is an active connection to the broker.
 
@@ -27,7 +24,14 @@ class BrokerClient(ABC):
         """
         ...
 
-    @abstractmethod
+    def considered_unrecoverable(self) -> bool:
+        """Checks if the broker is considered to be in a state where it would be impossible to reconnect.
+
+        Returns:
+            A boolean. True if can't recover, False otherwise.
+        """
+        ...
+
     def publish(self, topic: str, payload: bytes, persist: bool) -> None:
         """Publishes the given message.
 
@@ -42,7 +46,6 @@ class BrokerClient(ABC):
         """
         ...
 
-    @abstractmethod
     def subscribe(self, topic: str, persist: bool) -> None:
         """Subscribe to a topic over the pre-existing connection (via connect()).
 
@@ -55,7 +58,6 @@ class BrokerClient(ABC):
         """
         ...
 
-    @abstractmethod
     def unsubscribe(self, topic: str) -> None:
         """Unsubscribe from a topic over the pre-existing connection (via connect()).
 

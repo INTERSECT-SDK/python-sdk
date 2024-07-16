@@ -188,6 +188,7 @@ class IntersectService(IntersectEventObserver):
         # we generally start observing and don't stop, doesn't really matter if we startup or shutdown
         self.capability._intersect_sdk_register_observer(self)  # noqa: SLF001 (we don't want users calling or overriding it, but this is fine.)
 
+    @final
     def startup(self) -> Self:
         """This function connects the service to all INTERSECT systems.
 
@@ -206,6 +207,10 @@ class IntersectService(IntersectEventObserver):
 
         self._control_plane_manager.connect()
 
+        if self.considered_unrecoverable():
+            logger.error('Cannot start service due to unrecoverable error')
+            return self
+
         self._send_lifecycle_message(
             lifecycle_type=LifecycleType.STARTUP,
             payload={'schema': self._schema, 'status': self._status_memo},
@@ -221,6 +226,7 @@ class IntersectService(IntersectEventObserver):
         logger.info('Service startup complete')
         return self
 
+    @final
     def shutdown(self, reason: str | None = None) -> Self:
         """This function disconnects the service from all INTERSECT systems. It does NOT otherwise drop anything else from memory.
 
@@ -250,6 +256,7 @@ class IntersectService(IntersectEventObserver):
         logger.info('Service shutdown complete')
         return self
 
+    @final
     def is_connected(self) -> bool:
         """Check if we're currently connected to the INTERSECT brokers.
 
@@ -257,6 +264,15 @@ class IntersectService(IntersectEventObserver):
           True if we are currently connected to INTERSECT, False if not
         """
         return self._control_plane_manager.is_connected()
+
+    @final
+    def considered_unrecoverable(self) -> bool:
+        """Check if any broker is considered to be in an unrecoverable state.
+
+        Returns:
+          - True if we can't recover, false otherwise
+        """
+        return self._control_plane_manager.considered_unrecoverable()
 
     def forbid_keys(self, keys: set[str]) -> Self:
         """Block all functions annotated with any key in "keys", and send out an appropriate message.

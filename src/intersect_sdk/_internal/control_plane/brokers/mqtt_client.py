@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-import time
+import threading
 import uuid
 from typing import TYPE_CHECKING, Any, Callable
 
 import paho.mqtt.client as paho_client
 from retrying import retry
 
+from ...logger import logger
 from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
     from ..topic_handler import TopicHandler
+
+
+_MQTT_MAX_RETRIES = 10
 
 
 class MQTTClient(BrokerClient):
@@ -60,6 +64,11 @@ class MQTTClient(BrokerClient):
         # Whether the connection is currently active
         self._connected = False
         self._should_disconnect = False
+        self._unrecoverable = False
+        self._connection_retries = 0
+        self._connected_flag = threading.Event()
+
+        # ConnectionManager callable state
         self._topics_to_handlers = topics_to_handlers
 
         # MQTT callback functions
@@ -72,10 +81,11 @@ class MQTTClient(BrokerClient):
         """Connect to the defined broker."""
         # Create a client to connect to RabbitMQ
         # TODO MQTT v5 implementations should set clean_start to NEVER here
+        self._connected_flag.clear()
         self._connection.connect(self.host, self.port, 60)
         self._connection.loop_start()
-        while not self.is_connected():
-            time.sleep(0.1)
+        while not self.is_connected() and not self._connected_flag.is_set():
+            self._connected_flag.wait(1.0)
 
     def disconnect(self) -> None:
         """Disconnect from the broker."""
@@ -90,6 +100,9 @@ class MQTTClient(BrokerClient):
             A boolean. True if there is a connection, False if not.
         """
         return self._connected
+
+    def considered_unrecoverable(self) -> bool:
+        return self._unrecoverable
 
     def publish(self, topic: str, payload: bytes, persist: bool) -> None:
         """Publish the given message.
@@ -141,6 +154,8 @@ class MQTTClient(BrokerClient):
     def _handle_disconnect(self, client: paho_client.Client, _userdata: Any, _rc: int) -> None:
         """Handle a disconnection from the MQTT server.
 
+        This callback usually implies a temporary connection fault, so we'll try to handle it.
+
         Args:
             client: The Paho client.
             _userdata: MQTT user data.
@@ -151,9 +166,12 @@ class MQTTClient(BrokerClient):
             client.reconnect()
 
     def _handle_connect(
-        self, _client: paho_client.Client, _userdata: Any, _flags: dict[str, Any], rc: int
+        self, _client: paho_client.Client, userdata: Any, flags: dict[str, Any], rc: int
     ) -> None:
         """Set the connection status in response to the result of a Paho connection attempt.
+
+        If rc is 0, connection was successful - if not,
+        this usually implies a misconfiguration in the application config.
 
         Args:
             client: The Paho MQTT client.
@@ -164,8 +182,21 @@ class MQTTClient(BrokerClient):
         # Return code 0 means connection was successful
         if rc == 0:
             self._connected = True
+            self._connection_retries = 0
             self._should_disconnect = False
+            self._connected_flag.set()
             for topic, topic_handler in self._topics_to_handlers().items():
                 self.subscribe(topic, topic_handler.topic_persist)
         else:
+            # This will generally suggest a misconfiguration
             self._connected = False
+            self._connection_retries += 1
+            logger.error(
+                f'On connect error received (probable broker config error), have tried {self._connection_retries} times'
+            )
+            logger.error(f'Connection error userdata: {userdata}')
+            logger.error(f'Connection error flags: {flags}')
+            if self._connection_retries >= _MQTT_MAX_RETRIES:
+                logger.error('Giving up MQTT reconnection attempt')
+                self._connected_flag.set()
+                self._unrecoverable = True
