@@ -167,3 +167,14 @@ class ControlPlaneManager:
         return self._ready and all(
             control_provider.is_connected() for control_provider in self._control_providers
         )
+
+    def considered_unrecoverable(self) -> bool:
+        """Check if any broker is considered to be in an unrecoverable state.
+
+        Returns:
+          - True if we can't recover, false otherwise
+        """
+        return any(
+            control_provider.considered_unrecoverable()
+            for control_provider in self._control_providers
+        )

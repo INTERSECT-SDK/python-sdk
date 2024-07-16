@@ -20,6 +20,7 @@ from threading import Event
 from typing import TYPE_CHECKING, Any, Callable
 
 from ._internal.logger import logger
+from ._internal.utils import die
 
 if TYPE_CHECKING:
     from .client import IntersectClient
@@ -94,6 +95,10 @@ class SignalHandler:
         """
         return self._exit.is_set()
 
+    def stop(self) -> None:
+        """Manually stop this SignalHandler, without actually sending the OS signal."""
+        self._exit.set()
+
     def wait(self, amount: float) -> None:
         """While a signal has not been called, block for "amount" seconds.
 
@@ -141,6 +146,8 @@ def default_intersect_lifecycle_loop(
         post_startup_callback()
     logger.debug('INTERSECT: starting default loop')
     while not sighandler.should_stop():
+        if intersect_gateway.considered_unrecoverable():
+            die('Application in unrecoverable state.')
         sighandler.wait(delay)
         if waiting_callback:
             waiting_callback(intersect_gateway)

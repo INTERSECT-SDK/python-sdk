@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import functools
 import threading
-import time
 from hashlib import sha384
 from typing import TYPE_CHECKING, Callable
 
@@ -21,6 +20,7 @@ import pika.exceptions
 import pika.frame
 
 from ...logger import logger
+from ...multi_flag_thread_event import MultiFlagThreadEvent
 from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 
     from ..topic_handler import TopicHandler
 
+
+_AMQP_MAX_RETRIES = 10
 
 # Note that we deliberately do NOT want this configurable at runtime. Any two INTERSECT services/clients could potentially exchange messages between one another.
 _INTERSECT_MESSAGE_EXCHANGE = 'intersect-messages'
@@ -114,6 +116,10 @@ class AMQPClient(BrokerClient):
         self._topics_to_consumer_tags: dict[str, str] = {}
 
         self._should_disconnect = False
+        self._connection_retries = 0
+        self._unrecoverable = False
+        # tracking both channels is the best way to handle continuations
+        self._channel_flags = MultiFlagThreadEvent(2)
 
     def connect(self) -> None:
         """Connect to the defined broker.
@@ -121,14 +127,14 @@ class AMQPClient(BrokerClient):
         Try to connect to the broker, performing exponential backoff if connection fails.
         """
         self._should_disconnect = False
+        self._channel_flags.unset_all()
 
         if not self._thread:
             self._thread = threading.Thread(target=self._init_connection, daemon=True)
             self._thread.start()
 
-        # maybe consider using threading events here
-        while self._channel_in is None and self._channel_out is None:
-            time.sleep(0.1)
+        while not self._channel_flags.is_set():
+            self._channel_flags.wait(1.0)
 
     def disconnect(self) -> None:
         """Close all connections."""
@@ -154,7 +160,10 @@ class AMQPClient(BrokerClient):
             not self._connection.is_closed or not self._connection.is_closing
         )
 
-    def publish(self, topic: str, payload: bytes, persist: bool) -> None:
+    def considered_unrecoverable(self) -> bool:
+        return self._unrecoverable
+
+    def publish(self, topic: str, payload: bytes, persist: bool) -> None:  # noqa: ARG002 (TODO handle persistence)
         """Publish the given message.
 
         Publish payload with the pre-existing connection (via connect()) on topic.
@@ -171,10 +180,10 @@ class AMQPClient(BrokerClient):
             body=payload,
             properties=pika.BasicProperties(
                 content_type='text/plain',
-                delivery_mode=pika.delivery_mode.DeliveryMode.Persistent
-                if persist
-                else pika.delivery_mode.DeliveryMode.Transient,
-                # expiration=None if persist else 0,
+                # delivery_mode=pika.delivery_mode.DeliveryMode.Persistent
+                # if persist
+                # else pika.delivery_mode.DeliveryMode.Transient,
+                # expiration=None if persist else '8640000',
             ),
         )
 
@@ -246,26 +255,49 @@ class AMQPClient(BrokerClient):
         else:
             logger.warn('Connection closed, reopening in 5 seconds: %s', reason)
             connection.ioloop.call_later(5, connection.ioloop.stop)
+        self._channel_flags.unset_all()
         self._channel_out = None
         self._channel_in = None
 
-    def _on_connection_open_error(self, connection: pika.SelectConnection, err: Exception) -> None:
+    def _on_connection_open_error(
+        self, connection: pika.SelectConnection, err: pika.exceptions.AMQPConnectionError
+    ) -> None:
         """This gets called if the connection to RabbitMQ can't be established.
 
-        We may want to fail on retry here.
+        This function usually implies a misconfiguration in the application config.
         """
-        logger.error('Connection open failed, reopening in 5 seconds: %s', err)
-        connection.ioloop.call_later(5, connection.ioloop.stop)
+        self._connection_retries += 1
+        logger.error(
+            f'On connect error received (probable broker config error), have tried {self._connection_retries} times'
+        )
+        logger.error(err)
+        if self._connection_retries >= _AMQP_MAX_RETRIES:
+            # This will allow us to break out of the while loop
+            # where we establish the connection, as ioloop.stop
+            # will now stop the thread for good
+            logger.error('Giving up AMQP reconnection attempt')
+            self._should_disconnect = True
+            self._unrecoverable = True
+            self._channel_flags.set_all()
+            connection.ioloop.stop()
+        else:
+            logger.error('Reopening in 5 seconds')
+            connection.ioloop.call_later(5, connection.ioloop.stop)
 
     def _on_connection_open(self, connection: pika.SelectConnection) -> None:
         logger.info('AMQP connection open')
+        self._connection_retries = 0
         self._topics_to_consumer_tags.clear()
         connection.channel(on_open_callback=self._on_input_channel_open)
         connection.channel(on_open_callback=self._on_output_channel_open)
 
     def _on_channel_closed(
-        self, channel: Channel, exception: pika.exceptions.ChannelClosed
+        self,
+        channel: Channel,
+        exception: pika.exceptions.ChannelClosed,
+        channel_num: int,
     ) -> None:
+        self._channel_flags.unset_nth_flag(channel_num)
         if self._connection.is_open:
             # This should rarely happen in practice, should only happen if you attempt to do something which violates the protocol.
             logger.error(
@@ -277,17 +309,23 @@ class AMQPClient(BrokerClient):
 
     # PRODUCER #
     def _on_output_channel_open(self, channel: Channel) -> None:
+        channel_num = 0
         self._channel_out = channel
-        self._channel_out.add_on_close_callback(self._on_channel_closed)
+        self._channel_flags.set_nth_flag(channel_num)
+        cb = functools.partial(self._on_channel_closed, channel_num=channel_num)
+        self._channel_out.add_on_close_callback(cb)
         logger.info('AMQP: output channel ready')
 
     # CONSUMER #
     def _on_input_channel_open(self, channel: Channel) -> None:
+        channel_num = 1
         self._channel_in = channel
-        self._channel_in.add_on_close_callback(self._on_channel_closed)
-        cb = functools.partial(self._on_exchange_declareok, channel=channel)
+        self._channel_flags.set_nth_flag(channel_num)
+        cb_1 = functools.partial(self._on_channel_closed, channel_num=channel_num)
+        self._channel_in.add_on_close_callback(cb_1)
+        cb_2 = functools.partial(self._on_exchange_declareok, channel=channel)
         channel.exchange_declare(
-            exchange=_INTERSECT_MESSAGE_EXCHANGE, exchange_type='topic', durable=True, callback=cb
+            exchange=_INTERSECT_MESSAGE_EXCHANGE, exchange_type='topic', durable=True, callback=cb_2
         )
 
     def _on_exchange_declareok(self, _unused_frame: Frame, channel: Channel) -> None:
