@@ -96,7 +96,7 @@ def test_control_plane_connections():
     assert len(channels) == 1
     # ... and one callback function for this channel
     channel_key = next(iter(channels))
-    assert len(channels[channel_key]) == 1
+    assert len(channels[channel_key].callbacks) == 1
 
     intersect_service._control_plane_manager.remove_subscription_channel(channel_key)
     assert len(intersect_service._control_plane_manager.get_subscription_channels()) == 0
