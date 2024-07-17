@@ -311,15 +311,22 @@ class AMQPClient(BrokerClient):
     def _on_output_channel_open(self, channel: Channel) -> None:
         channel_num = 0
         self._channel_out = channel
-        self._channel_flags.set_nth_flag(channel_num)
         cb = functools.partial(self._on_channel_closed, channel_num=channel_num)
         self._channel_out.add_on_close_callback(cb)
+        # producer flag should first make sure the exchange exists before publishing
+        channel.exchange_declare(
+            exchange=_INTERSECT_MESSAGE_EXCHANGE,
+            exchange_type='topic',
+            durable=True,
+            callback=lambda _frame: self._channel_flags.set_nth_flag(channel_num),
+        )
         logger.info('AMQP: output channel ready')
 
     # CONSUMER #
     def _on_input_channel_open(self, channel: Channel) -> None:
         channel_num = 1
         self._channel_in = channel
+        # consumer channel flag can be set immediately
         self._channel_flags.set_nth_flag(channel_num)
         cb_1 = functools.partial(self._on_channel_closed, channel_num=channel_num)
         self._channel_in.add_on_close_callback(cb_1)
