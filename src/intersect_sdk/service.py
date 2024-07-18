@@ -249,7 +249,13 @@ class IntersectService(IntersectEventObserver):
             self._status_thread.join()
             self._status_thread = None
 
-        self._send_lifecycle_message(lifecycle_type=LifecycleType.SHUTDOWN, payload=reason)
+        try:
+            self._send_lifecycle_message(lifecycle_type=LifecycleType.SHUTDOWN, payload=reason)
+        except Exception as e:  # noqa: BLE001  (this could fail on numerous protocols)
+            logger.error(
+                'Could not send shutdown message, INTERSECT Core will eventually assume this Service has shutdown.'
+            )
+            logger.debug(e)
 
         self._control_plane_manager.disconnect()
 

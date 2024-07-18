@@ -146,7 +146,8 @@ class AMQPClient(BrokerClient):
         self._connection.close()
 
         if self._thread:
-            self._thread.join()
+            # If gracefully shutting down, we should finish up the current job.
+            self._thread.join(5 if self.considered_unrecoverable() else None)
             self._thread = None
 
     def is_connected(self) -> bool:
@@ -163,7 +164,7 @@ class AMQPClient(BrokerClient):
     def considered_unrecoverable(self) -> bool:
         return self._unrecoverable
 
-    def publish(self, topic: str, payload: bytes, persist: bool) -> None:  # noqa: ARG002 (TODO handle persistence)
+    def publish(self, topic: str, payload: bytes, persist: bool) -> None:
         """Publish the given message.
 
         Publish payload with the pre-existing connection (via connect()) on topic.
@@ -180,9 +181,9 @@ class AMQPClient(BrokerClient):
             body=payload,
             properties=pika.BasicProperties(
                 content_type='text/plain',
-                # delivery_mode=pika.delivery_mode.DeliveryMode.Persistent
-                # if persist
-                # else pika.delivery_mode.DeliveryMode.Transient,
+                delivery_mode=pika.delivery_mode.DeliveryMode.Persistent
+                if persist
+                else pika.delivery_mode.DeliveryMode.Transient,
                 # expiration=None if persist else '8640000',
             ),
         )
@@ -367,7 +368,9 @@ class AMQPClient(BrokerClient):
               If True, this queue will persist forever, even on application or broker shutdown, and we need a persistent name.
               If False, we will generate a temporary queue using the broker's naming scheme.
         """
-        cb = functools.partial(self._on_queue_declareok, channel=channel, topic=topic)
+        cb = functools.partial(
+            self._on_queue_declareok, channel=channel, topic=topic, persist=persist
+        )
         channel.queue_declare(
             queue=_get_queue_name(topic)
             if persist
@@ -377,7 +380,9 @@ class AMQPClient(BrokerClient):
             callback=cb,
         )
 
-    def _on_queue_declareok(self, frame: Frame, channel: Channel, topic: str) -> None:
+    def _on_queue_declareok(
+        self, frame: Frame, channel: Channel, topic: str, persist: bool
+    ) -> None:
         """Begins listening on the given queue.
 
         Used as a listener on queue declaration.
@@ -386,10 +391,15 @@ class AMQPClient(BrokerClient):
             frame: Response from the queue declare we sent to the AMQP broker. We get the queue name from this.
             channel: The Channel being instantiated.
             topic: The string name for the Channel on the broker.
+            persist: Whether or not our queue should persist on either broker or application shutdown.
         """
         queue_name = frame.method.queue
         cb = functools.partial(
-            self._on_queue_bindok, channel=channel, topic=topic, queue_name=queue_name
+            self._on_queue_bindok,
+            channel=channel,
+            topic=topic,
+            queue_name=queue_name,
+            persist=persist,
         )
         channel.queue_bind(
             queue=queue_name,
@@ -399,7 +409,12 @@ class AMQPClient(BrokerClient):
         )
 
     def _on_queue_bindok(
-        self, _unused_frame: Frame, channel: Channel, topic: str, queue_name: str
+        self,
+        _unused_frame: Frame,
+        channel: Channel,
+        topic: str,
+        queue_name: str,
+        persist: bool,
     ) -> None:
         """Consumes a message from the given channel.
 
@@ -410,12 +425,14 @@ class AMQPClient(BrokerClient):
             channel: The Channel being instantiated.
             topic: Name of the topic on the broker.
             queue_name: The name of the queue on the AMQP broker.
+            persist: Whether or not our queue should persist on either broker or application shutdown.
         """
         cb = functools.partial(self._on_consume_ok, topic=topic)
+        message_cb = functools.partial(self._consume_message, persist=persist)
         consumer_tag = channel.basic_consume(
             queue=queue_name,
-            auto_ack=True,
-            on_message_callback=self._consume_message,
+            auto_ack=not persist,  # persistent messages should be manually acked and we have no reason to NACK a message for now
+            on_message_callback=message_cb,
             callback=cb,
         )
         self._topics_to_consumer_tags[topic] = consumer_tag
@@ -433,23 +450,32 @@ class AMQPClient(BrokerClient):
 
     def _consume_message(
         self,
-        _unused_channel: Channel,
+        channel: Channel,
         basic_deliver: Basic.Deliver,
         _properties: BasicProperties,
         body: bytes,
+        persist: bool,
     ) -> None:
-        """Handles incoming messages.
+        """Handles incoming messages and acknowledges them ONLY after code executes on the domain side.
 
         Looks up all handlers for the topic and delegates message handling to them.
+        The handlers comprise the Service/Client logic, which includes all domain science logic.
 
         Args:
-            _unused_channel: The AMQP channel the message was received on. Ignored
+            channel: The AMQP channel the message was received on. Used to manually acknowledge messages.
             basic_deliver: Contains internal AMQP delivery information - i.e. the routing key.
             _properties: Object from the AMQP call. Ignored.
             body: the AMQP message to be handled.
+            persist: Whether or not our queue should persist on either broker or application shutdown.
         """
         tth_key = _amqp_2_hierarchy(basic_deliver.routing_key)
         topic_handler = self._topics_to_handlers().get(tth_key)
         if topic_handler:
             for cb in topic_handler.callbacks:
                 cb(body)
+        # With persistent messages, we only acknowledge the message AFTER we are done processing
+        # (this removes the message from the broker queue)
+        # this allows us to retry a message if the broker OR this application goes down
+        # We currently never NACK or reject a message because in INTERSECT, applications currently never "share" a queue.
+        if persist:
+            channel.basic_ack(basic_deliver.delivery_tag)
