@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.6.2",
+  "x-intersect-version": "0.6.3",
   "info": {
     "title": "counting-organization.counting-facility.counting-system.counting-subsystem.counting-service",
     "version": "0.0.0",
