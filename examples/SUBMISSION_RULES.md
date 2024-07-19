@@ -77,7 +77,7 @@ import json
 
 if __name__ == '__main__':
     # everything before service creation omitted
-    service = IntersectService(capability, config)
+    service = IntersectService([capability], config)
     print(json.dumps(service._schema, indent=2))
 ```
 

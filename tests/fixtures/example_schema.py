@@ -235,6 +235,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         which handles talking to the various INTERSECT-related backing services.
         """
         super().__init__()
+        self.capability_name = "DummyCapability"
         self._status_example = DummyStatus(
             functions_called=0,
             last_function_called='',

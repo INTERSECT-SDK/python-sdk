@@ -8,7 +8,7 @@ from intersect_sdk._internal.constants import (
     RESPONSE_DATA,
     STRICT_VALIDATION,
 )
-from intersect_sdk._internal.schema import get_schema_and_functions_from_capability_implementation
+from intersect_sdk._internal.schema import get_schema_and_functions_from_capability_implementations
 from intersect_sdk.schema import get_schema_from_capability_implementation
 
 from tests.fixtures.example_schema import (
@@ -37,43 +37,46 @@ def test_schema_comparison():
 
 
 def test_verify_status_fn():
+    dummy_cap = DummyCapabilityImplementation()
     (
         schema,
         function_map,
         _,
+        status_fn_capability,
         status_fn_name,
-        status_type_adapter,
-    ) = get_schema_and_functions_from_capability_implementation(
-        DummyCapabilityImplementation, FAKE_HIERARCHY_CONFIG, set()
+        status_type_adapter
+    ) = get_schema_and_functions_from_capability_implementations(
+        [dummy_cap], FAKE_HIERARCHY_CONFIG, set()
     )
+    assert status_fn_capability is dummy_cap
     assert status_fn_name == 'get_status'
-
-    assert status_fn_name in function_map
     assert status_fn_name not in schema['channels']
-    assert status_type_adapter == function_map[status_fn_name].response_adapter
-    assert function_map[status_fn_name].request_adapter is None
+
+    scoped_name = f'{status_fn_capability.capability_name}.{status_fn_name}'
+    assert scoped_name in function_map
+    assert status_type_adapter == function_map[scoped_name].response_adapter
+    assert function_map[scoped_name].request_adapter is None
     assert status_type_adapter.json_schema() == schema['components']['schemas']['DummyStatus']
 
 
 def test_verify_attributes():
-    _, function_map, _, _, _ = get_schema_and_functions_from_capability_implementation(
-        DummyCapabilityImplementation,
-        FAKE_HIERARCHY_CONFIG,
-        set(),
+    dummy_cap = DummyCapabilityImplementation()
+    _, function_map, _, _, _, _ = get_schema_and_functions_from_capability_implementations(
+        [dummy_cap], FAKE_HIERARCHY_CONFIG, set()
     )
     # test defaults
     assert (
-        getattr(function_map['verify_float_dict'].method, RESPONSE_DATA)
+        getattr(function_map['DummyCapability.verify_float_dict'].method, RESPONSE_DATA)
         == IntersectDataHandler.MESSAGE
     )
-    assert getattr(function_map['verify_nested'].method, REQUEST_CONTENT) == IntersectMimeType.JSON
-    assert getattr(function_map['verify_nested'].method, RESPONSE_CONTENT) == IntersectMimeType.JSON
-    assert getattr(function_map['verify_nested'].method, STRICT_VALIDATION) is False
+    assert getattr(function_map['DummyCapability.verify_nested'].method, REQUEST_CONTENT) == IntersectMimeType.JSON
+    assert getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_CONTENT) == IntersectMimeType.JSON
+    assert getattr(function_map['DummyCapability.verify_nested'].method, STRICT_VALIDATION) is False
 
     # test non-defaults
     assert (
-        getattr(function_map['verify_nested'].method, RESPONSE_DATA) == IntersectDataHandler.MINIO
+        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_DATA) == IntersectDataHandler.MINIO
     )
-    assert getattr(function_map['ip4_to_ip6'].method, RESPONSE_CONTENT) == IntersectMimeType.STRING
-    assert getattr(function_map['test_path'].method, REQUEST_CONTENT) == IntersectMimeType.STRING
-    assert getattr(function_map['calculate_weird_algorithm'].method, STRICT_VALIDATION) is True
+    assert getattr(function_map['DummyCapability.ip4_to_ip6'].method, RESPONSE_CONTENT) == IntersectMimeType.STRING
+    assert getattr(function_map['DummyCapability.test_path'].method, REQUEST_CONTENT) == IntersectMimeType.STRING
+    assert getattr(function_map['DummyCapability.calculate_weird_algorithm'].method, STRICT_VALIDATION) is True

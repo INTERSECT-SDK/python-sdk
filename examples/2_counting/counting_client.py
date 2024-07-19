@@ -40,7 +40,7 @@ class SampleOrchestrator:
             (
                 IntersectClientMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='stop_count',
+                    operation='CountingExample.stop_count',
                     payload=None,
                 ),
                 5.0,
@@ -49,7 +49,7 @@ class SampleOrchestrator:
             (
                 IntersectClientMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='start_count',
+                    operation='CountingExample.start_count',
                     payload=None,
                 ),
                 1.0,
@@ -58,7 +58,7 @@ class SampleOrchestrator:
             (
                 IntersectClientMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='reset_count',
+                    operation='CountingExample.reset_count',
                     payload=True,
                 ),
                 3.0,
@@ -67,7 +67,7 @@ class SampleOrchestrator:
             (
                 IntersectClientMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='reset_count',
+                    operation='CountingExample.reset_count',
                     payload=False,
                 ),
                 5.0,
@@ -76,7 +76,7 @@ class SampleOrchestrator:
             (
                 IntersectClientMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='start_count',
+                    operation='CountingExample.start_count',
                     payload=None,
                 ),
                 3.0,
@@ -85,7 +85,7 @@ class SampleOrchestrator:
             (
                 IntersectClientMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='stop_count',
+                    operation='CountingExample.stop_count',
                     payload=None,
                 ),
                 3.0,
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     initial_messages = [
         IntersectClientMessageParams(
             destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-            operation='start_count',
+            operation='CountingExample.start_count',
             payload=None,
         )
     ]

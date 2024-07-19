@@ -33,14 +33,14 @@ class IntersectClientMessageParams:
     If you want to just use the service's default value for a request (assuming it has a default value for a request), you may set this as None.
     """
 
-    response_content_type: IntersectMimeType = IntersectMimeType.JSON
+    content_type: IntersectMimeType = IntersectMimeType.JSON
     """
-    The IntersectMimeType of your response. You'll want this to match with the ContentType of the function from the schema.
+    The IntersectMimeType of your message. You'll want this to match with the ContentType of the function from the schema.
 
     default: IntersectMimeType.JSON
     """
 
-    response_data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE
+    data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE
     """
     The IntersectDataHandler you want to use (most people can just use IntersectDataHandler.MESSAGE here, unless your data is very large)
 

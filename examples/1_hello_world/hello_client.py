@@ -76,7 +76,7 @@ if __name__ == '__main__':
     initial_messages = [
         IntersectClientMessageParams(
             destination='hello-organization.hello-facility.hello-system.hello-subsystem.hello-service',
-            operation='say_hello_to_name',
+            operation='HelloExample.say_hello_to_name',
             payload='hello_client',
         )
     ]
