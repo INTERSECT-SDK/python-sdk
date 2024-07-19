@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    List,
     Mapping,
     NamedTuple,
     get_origin,
@@ -59,7 +60,7 @@ For a complete reference, https://docs.pydantic.dev/latest/concepts/conversion_t
 class _FunctionAnalysisResult(NamedTuple):
     """private class generated from static analysis of function."""
 
-    capability_name: str
+    class_name: str
     method_name: str
     method: Callable[[Any], Any]
     """raw method is for inspecting attributes"""
@@ -218,18 +219,18 @@ def _status_fn_schema(
     - The status function's schema
     - The TypeAdapter to use for serializing outgoing responses
     """
-    capability_name, status_fn_name, status_fn, min_params = status_info
+    class_name, status_fn_name, status_fn, min_params = status_info
     status_signature = inspect.signature(status_fn)
     method_params = tuple(status_signature.parameters.values())
     if len(method_params) != min_params or any(
         p.kind not in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY) for p in method_params
     ):
         die(
-            f"On capability '{capability_name}', capability status function '{status_fn_name}' should have no parameters other than 'self' (unless a staticmethod), and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
+            f"On capability '{class_name}', capability status function '{status_fn_name}' should have no parameters other than 'self' (unless a staticmethod), and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
         )
     if status_signature.return_annotation is inspect.Signature.empty:
         die(
-            f"On capability '{capability_name}', capability status function '{status_fn_name}' should have a valid return annotation."
+            f"On capability '{class_name}', capability status function '{status_fn_name}' should have a valid return annotation."
         )
     try:
         status_adapter = TypeAdapter(status_signature.return_annotation)
@@ -246,12 +247,12 @@ def _status_fn_schema(
         )
     except PydanticUserError as e:
         die(
-            f"On capability '{capability_name}', return annotation '{status_signature.return_annotation}' on function '{status_fn_name}' is invalid.\n{e}"
+            f"On capability '{class_name}', return annotation '{status_signature.return_annotation}' on function '{status_fn_name}' is invalid.\n{e}"
         )
 
 
 def _add_events(
-    capability_name: str,
+    class_name: str,
     function_name: str,
     schemas: dict[str, Any],
     event_schemas: dict[str, Any],
@@ -272,13 +273,13 @@ def _add_events(
                     for d in differences_from_cache
                 )
                 die(
-                    f"On capability '{capability_name}', event key '{event_key}' on function '{function_name}' was previously defined differently. \n{diff_str}\n"
+                    f"On capability '{class_name}', event key '{event_key}' on function '{function_name}' was previously defined differently. \n{diff_str}\n"
                 )
             metadata_value.operations.add(function_name)
         else:
             if event_definition.data_handler in excluded_data_handlers:
                 die(
-                    f"On capability '{capability_name}', function '{function_name}' should not set data_handler as {event_definition.data_handler} unless an instance is configured in IntersectConfig.data_stores ."
+                    f"On capability '{class_name}', function '{function_name}' should not set data_handler as {event_definition.data_handler} unless an instance is configured in IntersectConfig.data_stores ."
                 )
             try:
                 event_adapter: TypeAdapter[Any] = TypeAdapter(event_definition.event_type)
@@ -297,12 +298,12 @@ def _add_events(
                 )
             except PydanticUserError as e:
                 die(
-                    f"On capability '{capability_name}', event key '{event_key}' on function '{function_name}' has an invalid value in the events mapping.\n{e}"
+                    f"On capability '{class_name}', event key '{event_key}' on function '{function_name}' has an invalid value in the events mapping.\n{e}"
                 )
 
 
 def _introspection_baseline(
-    capability: type[IntersectBaseCapabilityImplementation],
+    capability: IntersectBaseCapabilityImplementation,
     excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[
     dict[Any, Any],  # $defs for schemas (common)
@@ -332,10 +333,13 @@ def _introspection_baseline(
     function_map = {}
     event_metadatas: dict[str, EventMetadata] = {}
 
-    status_func, response_funcs, event_funcs = _get_functions(capability)
+    cap_name = capability.capability_name
+    status_func, response_funcs, event_funcs = _get_functions(type(capability))
 
     # parse functions
-    for capability_name, name, method, min_params in response_funcs:
+    for class_name, name, method, min_params in response_funcs:
+        public_name = f'{cap_name}.{name}'
+        
         # TODO - I'm placing this here for now because we'll eventually want to capture data plane and broker configs in the schema.
         # (It's possible we may want to separate the backing service schema from the application logic, but it's unlikely.)
         # At the moment, we're just validating that users can support their response_data_handler property.
@@ -343,7 +347,7 @@ def _introspection_baseline(
         data_handler = getattr(method, RESPONSE_DATA)
         if data_handler in excluded_data_handlers:
             die(
-                f"On capability '{capability_name}', function '{name}' should not set response_data_type as {data_handler} unless an instance is configured in IntersectConfig.data_stores ."
+                f"On capability '{class_name}', function '{name}' should not set response_data_type as {data_handler} unless an instance is configured in IntersectConfig.data_stores ."
             )
 
         docstring = inspect.cleandoc(method.__doc__) if method.__doc__ else None
@@ -358,7 +362,7 @@ def _introspection_baseline(
             )
         ):
             die(
-                f"On capability '{capability_name}', function '{name}' should have 'self' (unless a staticmethod) and zero or one additional parameters, and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
+                f"On capability '{class_name}', function '{name}' should have 'self' (unless a staticmethod) and zero or one additional parameters, and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
             )
 
         # The schema format should be hard-coded and determined based on how Pydantic parses the schema.
@@ -390,7 +394,7 @@ def _introspection_baseline(
             # Pydantic BaseModels require annotations even if using a default value, so we'll remain consistent.
             if annotation is inspect.Parameter.empty:
                 die(
-                    f"On capability '{capability_name}', parameter '{parameter.name}' type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
+                    f"On capability '{class_name}', parameter '{parameter.name}' type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
                 )
             # rationale for disallowing function default values:
             # https://docs.pydantic.dev/latest/concepts/validation_decorator/#using-field-to-describe-function-arguments
@@ -398,7 +402,7 @@ def _introspection_baseline(
             # also makes TypeAdapters considerably easier to construct
             if parameter.default is not inspect.Parameter.empty:
                 die(
-                    f"On capability '{capability_name}', parameter '{parameter.name}' should not use a default value in the function parameter (use 'typing_extensions.Annotated[TYPE, pydantic.Field(default=<DEFAULT>)]' instead - 'default_factory' is an acceptable, mutually exclusive argument to 'Field')."
+                    f"On capability '{class_name}', parameter '{parameter.name}' should not use a default value in the function parameter (use 'typing_extensions.Annotated[TYPE, pydantic.Field(default=<DEFAULT>)]' instead - 'default_factory' is an acceptable, mutually exclusive argument to 'Field')."
                 )
             try:
                 function_cache_request_adapter = TypeAdapter(annotation)
@@ -410,7 +414,7 @@ def _introspection_baseline(
                 )
             except PydanticUserError as e:
                 die(
-                    f"On capability '{capability_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
+                    f"On capability '{class_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
                 )
 
         else:
@@ -419,7 +423,7 @@ def _introspection_baseline(
         # this block handles response parameters
         if return_annotation is inspect.Signature.empty:
             die(
-                f"On capability '{capability_name}', return type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
+                f"On capability '{class_name}', return type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
             )
         try:
             function_cache_response_adapter = TypeAdapter(return_annotation)
@@ -431,11 +435,12 @@ def _introspection_baseline(
             )
         except PydanticUserError as e:
             die(
-                f"On capability '{capability_name}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
+                f"On capability '{class_name}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
             )
 
         # final function mapping
-        function_map[name] = FunctionMetadata(
+        function_map[public_name] = FunctionMetadata(
+            type(capability),
             method,
             function_cache_request_adapter,
             function_cache_response_adapter,
@@ -444,7 +449,7 @@ def _introspection_baseline(
         # this block handles events associated with intersect_messages (implies command pattern)
         function_events: dict[str, IntersectEventDefinition] = getattr(method, EVENT_ATTR_KEY)
         _add_events(
-            capability_name,
+            class_name,
             name,
             schemas,
             event_schemas,
@@ -455,9 +460,9 @@ def _introspection_baseline(
         channels[name]['events'] = list(function_events.keys())
 
     # parse global schemas
-    for capability_name, name, method, _ in event_funcs:
+    for class_name, name, method, _ in event_funcs:
         _add_events(
-            capability_name,
+            class_name,
             name,
             schemas,
             event_schemas,
@@ -471,7 +476,9 @@ def _introspection_baseline(
     )
     # this conditional allows for the status function to also be called like a message
     if status_fn_type_adapter and status_fn and status_fn_name:
-        function_map[status_fn_name] = FunctionMetadata(
+        public_status_name = f'{cap_name}.{status_fn_name}'
+        function_map[public_status_name] = FunctionMetadata(
+            type(capability),
             status_fn,
             None,
             status_fn_type_adapter,
@@ -487,14 +494,15 @@ def _introspection_baseline(
     )
 
 
-def get_schema_and_functions_from_capability_implementation(
-    capability_type: type[IntersectBaseCapabilityImplementation],
-    capability_name: HierarchyConfig,
+def get_schema_and_functions_from_capability_implementations(
+    capabilities: List[IntersectBaseCapabilityImplementation],
+    service_name: HierarchyConfig,
     excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[
     dict[str, Any],
     dict[str, FunctionMetadata],
     dict[str, EventMetadata],
+    IntersectBaseCapabilityImplementation | None,
     str | None,
     TypeAdapter[Any] | None,
 ]:
@@ -502,20 +510,47 @@ def get_schema_and_functions_from_capability_implementation(
 
     In-depth introspection is handled later on.
     """
-    (
-        schemas,
-        (status_fn_name, status_schema, status_type_adapter),
-        channels,
-        function_map,
-        events,
-        event_map,
-    ) = _introspection_baseline(capability_type, excluded_data_handlers)
+    capability_type_docs : str = ""
+    status_function_cap : IntersectBaseCapabilityImplementation = None
+    status_function_name : str = None
+    status_function_schema : dict[str, Any] = None
+    status_function_adapter : TypeAdapter[Any] = None
+    schemas : dict[Any, Any] = dict()
+    channels : dict[str, dict[str, dict[str, Any]]] = dict() # endpoint schemas
+    function_map : dict[str, FunctionMetadata] = dict()      # endpoint functionality
+    events : dict[str, Any] = dict()                         # event schemas
+    event_map : dict[str, EventMetadata] = dict()            # event functionality
+    for capability in capabilities:
+        capability_type: type[IntersectBaseCapabilityImplementation] = type(capability)
+        if capability_type.__doc__:
+            capability_type_docs += inspect.cleandoc(capability_type.__doc__) + '\n'
+        (
+            cap_schemas,
+            (cap_status_fn_name, cap_status_schema, cap_status_type_adapter),
+            cap_channels,
+            cap_function_map,
+            cap_events,
+            cap_event_map,
+        ) = _introspection_baseline(capability, excluded_data_handlers)
+        
+        if cap_status_fn_name and cap_status_schema and cap_status_type_adapter:
+            status_function_cap = capability
+            status_function_name = cap_status_fn_name
+            status_function_schema = cap_status_schema
+            status_function_adapter = cap_status_type_adapter
+
+        schemas.update(cap_schemas)
+        channels.update(cap_channels)
+        function_map.update(cap_function_map)
+        events.update(cap_events)
+        event_map.update(cap_event_map)
+        
 
     asyncapi_spec = {
         'asyncapi': ASYNCAPI_VERSION,
         'x-intersect-version': version_string,
         'info': {
-            'title': capability_name.hierarchy_string('.'),
+            'title': service_name.hierarchy_string('.'),
             'version': '0.0.0',  # NOTE: this will be modified by INTERSECT CORE, users do not manage their schema versions
         },
         # applies to how an incoming message payload will be parsed.
@@ -540,11 +575,12 @@ def get_schema_and_functions_from_capability_implementation(
             },
         },
     }
-    if capability_type.__doc__:
-        asyncapi_spec['info']['description'] = inspect.cleandoc(capability_type.__doc__)  # type: ignore[index]
 
-    if status_schema:
-        asyncapi_spec['status'] = status_schema
+    if capability_type_docs != "":
+        asyncapi_spec['info']['description'] = capability_type_docs  # type: ignore[index]
+
+    if status_function_schema:
+        asyncapi_spec['status'] = status_function_schema
 
     """
     TODO - might want to include these fields
@@ -555,4 +591,4 @@ def get_schema_and_functions_from_capability_implementation(
     },
     """
 
-    return asyncapi_spec, function_map, event_map, status_fn_name, status_type_adapter
+    return asyncapi_spec, function_map, event_map, status_function_cap, status_function_name, status_function_adapter

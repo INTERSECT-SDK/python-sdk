@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger('pika').setLevel(logging.WARNING)
 
 
-class PongCapabiilityImplementation(P_ngBaseCapabilityImplementation):
+class PongCapabilityImplementation(P_ngBaseCapabilityImplementation):
     """Basic capability definition, very similar to the other capability except for the type of event it emits."""
 
     def after_service_startup(self) -> None:
@@ -33,4 +33,4 @@ class PongCapabiilityImplementation(P_ngBaseCapabilityImplementation):
 
 
 if __name__ == '__main__':
-    run_service(PongCapabiilityImplementation())
+    run_service(PongCapabilityImplementation())

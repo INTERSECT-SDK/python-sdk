@@ -141,11 +141,13 @@ def create_userspace_message(
     content_type: IntersectMimeType,
     data_handler: IntersectDataHandler,
     payload: Any,
+    message_id: uuid.UUID = None,
     has_error: bool = False,
 ) -> UserspaceMessage:
     """Payloads depend on the data_handler and has_error."""
+    msg_id = message_id if message_id else uuid.uuid4()
     return UserspaceMessage(
-        messageId=uuid.uuid4(),
+        messageId=msg_id,
         operationId=operation_id,
         contentType=content_type,
         payload=payload,
