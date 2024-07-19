@@ -77,7 +77,7 @@ class IntersectClient:
 
         Parameters:
           config: The IntersectClientConfig class
-          user_callback: The callback function you can use to handle response messages from the other Service.
+          user_callback: The callback function you can use to handle response messages from Services.
             If this is left empty, you can only send a single message
           event_callback: The callback function you can use to handle events from any Service.
         """
@@ -133,7 +133,7 @@ class IntersectClient:
             if user_callback:
                 # Do not persist, as we use the temporary client information to build this.
                 self._control_plane_manager.add_subscription_channel(
-                    f"{self._hierarchy.hierarchy_string('/')}/userspace",
+                    f"{self._hierarchy.hierarchy_string('/')}/response",
                     {self._handle_userspace_message_raw},
                     persist=False,
                 )
@@ -429,12 +429,12 @@ class IntersectClient:
         """Send a userspace message, be it an initial message from the user or from the user's callback function."""
         # ONE: SERIALIZE FUNCTION RESULTS
         # (function input should already be validated at this point)
-        response = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
+        msg_payload = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
         try:
-            response_payload = self._data_plane_manager.outgoing_message_data_handler(
-                response, params.response_content_type, params.response_data_handler
+            out_payload = self._data_plane_manager.outgoing_message_data_handler(
+                msg_payload, params.content_type, params.data_handler
             )
         except IntersectError:
             # NOTE
@@ -447,17 +447,17 @@ class IntersectClient:
         msg = create_userspace_message(
             source=self._hierarchy.hierarchy_string('.'),
             destination=params.destination,
-            content_type=params.response_content_type,
-            data_handler=params.response_data_handler,
+            content_type=params.content_type,
+            data_handler=params.data_handler,
             operation_id=params.operation,
-            payload=response_payload,
+            payload=out_payload,
         )
         logger.debug(f'Send userspace message:\n{msg}')
-        response_channel = f"{params.destination.replace('.', '/')}/userspace"
+        channel = f"{params.destination.replace('.', '/')}/request"
         # WARNING: If both the Service and the Client drop, the Service will execute the command
         # but cannot communicate the response to the Client.
         # in experiment controllers or production, you'll want to set persist to True
-        self._control_plane_manager.publish_message(response_channel, msg, persist=False)
+        self._control_plane_manager.publish_message(channel, msg, persist=False)
 
     # TODO - consider removing this entire concept
     def _heartbeat_ticker(self) -> None:

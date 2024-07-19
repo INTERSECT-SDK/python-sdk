@@ -79,11 +79,12 @@ if __name__ == '__main__':
     @intersect_message and @intersect_status, and that these functions are appropriately type-annotated.
     """
     capability = HelloServiceCapabilityImplementation()
+    capability.capability_name = "HelloExample"
 
     """
     step three - create service from both the configuration and your own capability
     """
-    service = IntersectService(capability, config)
+    service = IntersectService([capability], config)
 
     """
     step four - start lifecycle loop. The only necessary parameter is your service.

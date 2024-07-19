@@ -39,7 +39,7 @@ from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG, DummyCapability
 
 def make_intersect_service() -> IntersectService:
     return IntersectService(
-        DummyCapabilityImplementation(),
+        [DummyCapabilityImplementation()],
         IntersectServiceConfig(
             hierarchy=FAKE_HIERARCHY_CONFIG,
             data_stores=DataStoreConfigMap(
@@ -92,13 +92,16 @@ def test_control_plane_connections():
     assert intersect_service.is_connected() is False
 
     channels = intersect_service._control_plane_manager.get_subscription_channels()
-    # we have one channel (even if we're disconnected) ...
-    assert len(channels) == 1
-    # ... and one callback function for this channel
-    channel_key = next(iter(channels))
-    assert len(channels[channel_key].callbacks) == 1
+    # we have two channels (even if we're disconnected) ...
+    assert len(channels) == 2
+    # ... and one callback function for each channel
+    channel_keys = []
+    for channel_key in iter(channels):
+        channel_keys.append(channel_key)
+        assert len(channels[channel_key].callbacks) == 1
 
-    intersect_service._control_plane_manager.remove_subscription_channel(channel_key)
+    for channel_key in channel_keys:
+        intersect_service._control_plane_manager.remove_subscription_channel(channel_key)
     assert len(intersect_service._control_plane_manager.get_subscription_channels()) == 0
 
 
@@ -112,19 +115,19 @@ def test_call_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
     time.sleep(1.0)
     message_interceptor.publish_message(
-        intersect_service._userspace_channel_name,
+        intersect_service._service_channel_name,
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id='calculate_fibonacci',
+            operation_id='DummyCapability.calculate_fibonacci',
             payload=b'[4,6]',
         ),
         True,
@@ -147,19 +150,19 @@ def test_call_static_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
     time.sleep(1.0)
     message_interceptor.publish_message(
-        intersect_service._userspace_channel_name,
+        intersect_service._service_channel_name,
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id='test_generator',
+            operation_id='DummyCapability.test_generator',
             payload=b'"res"',
         ),
         True,
@@ -181,19 +184,19 @@ def test_call_user_function_with_default_and_empty_payload():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
     time.sleep(1.0)
     message_interceptor.publish_message(
-        intersect_service._userspace_channel_name,
+        intersect_service._service_channel_name,
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id='valid_default_argument',
+            operation_id='DummyCapability.valid_default_argument',
             payload=b'null',  # if sending null as the payload, the SDK will call the function's default value
         ),
         True,
@@ -216,19 +219,19 @@ def test_call_user_function_with_invalid_payload():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
     time.sleep(1.0)
     message_interceptor.publish_message(
-        intersect_service._userspace_channel_name,
+        intersect_service._service_channel_name,
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id='calculate_fibonacci',
+            operation_id='DummyCapability.calculate_fibonacci',
             # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
             payload=b'[2]',
         ),
@@ -255,20 +258,19 @@ def test_call_nonexistent_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
     time.sleep(1.0)
     message_interceptor.publish_message(
-        intersect_service._userspace_channel_name,
+        intersect_service._service_channel_name,
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id='THIS_FUNCTION_DOES_NOT_EXIST',
-            # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
+            operation_id='DummyCapability.THIS_FUNCTION_DOES_NOT_EXIST',
             payload=b'null',
         ),
         True,
@@ -292,19 +294,19 @@ def test_call_minio_user_function():
         msg[0] = deserialize_and_validate_userspace_message(payload)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/userspace', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
     )
     message_interceptor.connect()
     intersect_service.startup()
     time.sleep(1.0)
     message_interceptor.publish_message(
-        intersect_service._userspace_channel_name,
+        intersect_service._service_channel_name,
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id='test_datetime',
+            operation_id='DummyCapability.test_datetime',
             payload=b'"1970-01-01T00:00:00Z"',
         ),
         True,
@@ -339,7 +341,7 @@ def test_lifecycle_messages():
         'test/test/test/test/test/lifecycle', {lifecycle_msg_callback}, False
     )
     # we do not really care about the userspace message response, but we'll listen to it to consume it
-    message_interceptor.add_subscription_channel('msg/msg/msg/msg/msg/userspace', set(), False)
+    message_interceptor.add_subscription_channel('msg/msg/msg/msg/msg/response', set(), False)
     message_interceptor.connect()
     # sleep a moment to make sure message_interceptor catches the startup message
     time.sleep(1.0)
@@ -349,13 +351,13 @@ def test_lifecycle_messages():
 
     # send a message to trigger a status update (just the way the example service's domain works, not intrinsic)
     message_interceptor.publish_message(
-        intersect_service._userspace_channel_name,
+        intersect_service._service_channel_name,
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
             content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id='verify_float_dict',
+            operation_id='DummyCapability.verify_float_dict',
             # note that the dict key MUST be a string, even though the input wants a float key
             payload=b'{"1.2":"one point two"}',
         ),
