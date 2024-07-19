@@ -12,7 +12,7 @@ from .._internal.logger import logger
 
 if TYPE_CHECKING:
     from .._internal.interfaces import IntersectEventObserver
-
+    from ..service import IntersectService
 
 class IntersectBaseCapabilityImplementation:
     """Base class for all capabilities.
@@ -58,6 +58,14 @@ class IntersectBaseCapabilityImplementation:
     @capability_name.setter
     def capability_name(self, cname : str) -> str:
         self._capability_name = cname
+
+    def startup(self, parent : IntersectService = None) -> None:
+        """Performs capability startup actions."""
+        pass
+
+    def shutdown(self, parent : IntersectService = None) -> None:
+        """Performs capability shutdown actions."""
+        pass
 
     @final
     def _intersect_sdk_register_observer(self, observer: IntersectEventObserver) -> None:

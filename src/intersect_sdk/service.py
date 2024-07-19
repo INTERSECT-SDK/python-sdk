@@ -276,6 +276,9 @@ class IntersectService(IntersectEventObserver):
             payload={'schema': self._schema, 'status': self._status_memo},
         )
 
+        for cap in self.capabilities:
+            cap.startup(self)
+
         # Start the status thread if it doesn't already exist
         if self._status_thread is None:
             self._status_thread = StoppableThread(
@@ -319,6 +322,9 @@ class IntersectService(IntersectEventObserver):
           - reason: an optional description you may provide as to why the adapter is shutting down.
         """
         logger.info(f'Service is shutting down (reason: {reason})')
+
+        for cap in self.capabilities:
+            cap.shutdown(self)
 
         if self._external_request_thread is not None:
             self._external_request_thread.stop()
@@ -668,12 +674,7 @@ class IntersectService(IntersectEventObserver):
 
     def _send_client_message(self, request_id : UUID, params: IntersectClientMessageParams) -> bool:
         """Send a userspace message."""
-        # ONE: VALIDATE AND SERIALIZE FUNCTION RESULTS
-        try:
-            params = IntersectClientMessageParams.model_validate(params)
-        except ValidationError as e:
-            logger.error(f'Invalid message parameters:\n{e}')
-            return False
+        # ONE: SERIALIZE MESSAGE PAYLOAD
         request = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
@@ -688,14 +689,13 @@ class IntersectService(IntersectEventObserver):
         msg = create_userspace_message(
             source=self._hierarchy.hierarchy_string('.'),
             destination=params.destination,
-            service_version=self._version,
             content_type=params.content_type,
             data_handler=params.data_handler,
             operation_id=params.operation,
             payload=request_payload,
             message_id=request_id
         )
-        logger.debug(f'Sending client message:\n{msg}')
+        logger.debug(f'Sending request message:\n{msg}')
         request_channel = f"{params.destination.replace('.', '/')}/request"
         self._control_plane_manager.publish_message(request_channel, msg)
         return True
