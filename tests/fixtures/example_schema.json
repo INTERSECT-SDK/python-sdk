@@ -187,7 +187,7 @@
       "subscribe": {
         "message": {
           "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-          "contentType": "text/plain",
+          "contentType": "application/json",
           "traits": {
             "$ref": "#/components/messageTraits/commonHeaders"
           },
@@ -456,7 +456,7 @@
       "publish": {
         "message": {
           "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-          "contentType": "text/plain",
+          "contentType": "application/json",
           "traits": {
             "$ref": "#/components/messageTraits/commonHeaders"
           },

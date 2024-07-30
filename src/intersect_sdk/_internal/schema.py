@@ -25,6 +25,8 @@ from .constants import (
     REQUEST_CONTENT,
     RESPONSE_CONTENT,
     RESPONSE_DATA,
+    SHUTDOWN_KEYS,
+    STRICT_VALIDATION,
 )
 from .event_metadata import EventMetadata, definition_metadata_differences
 from .function_metadata import FunctionMetadata
@@ -280,25 +282,33 @@ def _add_events(
                 die(
                     f"On capability '{capability_name}', function '{function_name}' should not set data_handler as {event_definition.data_handler} unless an instance is configured in IntersectConfig.data_stores ."
                 )
-            try:
-                event_adapter: TypeAdapter[Any] = TypeAdapter(event_definition.event_type)
-                event_schemas[event_key] = _merge_schema_definitions(
-                    event_adapter,
-                    schemas,
-                    event_definition.event_type,
-                    'serialization',
-                )
-                event_metadatas[event_key] = EventMetadata(
-                    type=event_definition.event_type,
-                    type_adapter=event_adapter,
-                    operations={function_name},
-                    content_type=event_definition.content_type,
-                    data_transfer_handler=event_definition.data_handler,
-                )
-            except PydanticUserError as e:
-                die(
-                    f"On capability '{capability_name}', event key '{event_key}' on function '{function_name}' has an invalid value in the events mapping.\n{e}"
-                )
+            if event_definition.content_type == 'application/json':
+                try:
+                    event_adapter: TypeAdapter[Any] = TypeAdapter(event_definition.event_type)
+                    event_schemas[event_key] = _merge_schema_definitions(
+                        event_adapter,
+                        schemas,
+                        event_definition.event_type,
+                        'serialization',
+                    )
+                except PydanticUserError as e:
+                    die(
+                        f"On capability '{capability_name}', event key '{event_key}' on function '{function_name}' has an invalid value in the events mapping.\n{e}"
+                    )
+            else:
+                if event_definition.event_type is not bytes:
+                    die(
+                        f"On capability '{capability_name}', event key '{event_key}' on function '{function_name}' must be 'bytes' if content_type is not 'application/json'"
+                    )
+                event_adapter = 0  # type: ignore[assignment]
+                event_schemas[event_key] = {}
+            event_metadatas[event_key] = EventMetadata(
+                type=event_definition.event_type,
+                type_adapter=event_adapter,
+                operations={function_name},
+                content_type=event_definition.content_type,
+                data_transfer_handler=event_definition.data_handler,
+            )
 
 
 def _introspection_baseline(
@@ -346,6 +356,9 @@ def _introspection_baseline(
                 f"On capability '{capability_name}', function '{name}' should not set response_data_type as {data_handler} unless an instance is configured in IntersectConfig.data_stores ."
             )
 
+        request_content = getattr(method, REQUEST_CONTENT)
+        response_content = getattr(method, RESPONSE_CONTENT)
+
         docstring = inspect.cleandoc(method.__doc__) if method.__doc__ else None
         signature = inspect.signature(method)
         method_params = tuple(signature.parameters.values())
@@ -367,14 +380,14 @@ def _introspection_baseline(
             'publish': {
                 'message': {
                     'schemaFormat': f'application/vnd.aai.asyncapi+json;version={ASYNCAPI_VERSION}',
-                    'contentType': getattr(method, REQUEST_CONTENT).value,
+                    'contentType': request_content,
                     'traits': {'$ref': '#/components/messageTraits/commonHeaders'},
                 }
             },
             'subscribe': {
                 'message': {
                     'schemaFormat': f'application/vnd.aai.asyncapi+json;version={ASYNCAPI_VERSION}',
-                    'contentType': getattr(method, RESPONSE_CONTENT).value,
+                    'contentType': response_content,
                     'traits': {'$ref': '#/components/messageTraits/commonHeaders'},
                 }
             },
@@ -400,18 +413,26 @@ def _introspection_baseline(
                 die(
                     f"On capability '{capability_name}', parameter '{parameter.name}' should not use a default value in the function parameter (use 'typing_extensions.Annotated[TYPE, pydantic.Field(default=<DEFAULT>)]' instead - 'default_factory' is an acceptable, mutually exclusive argument to 'Field')."
                 )
-            try:
-                function_cache_request_adapter = TypeAdapter(annotation)
-                channels[name]['subscribe']['message']['payload'] = _merge_schema_definitions(
-                    function_cache_request_adapter,
-                    schemas,
-                    annotation,
-                    'validation',
-                )
-            except PydanticUserError as e:
-                die(
-                    f"On capability '{capability_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
-                )
+            if request_content == 'application/json':
+                try:
+                    function_cache_request_adapter = TypeAdapter(annotation)
+                    channels[name]['subscribe']['message']['payload'] = _merge_schema_definitions(
+                        function_cache_request_adapter,
+                        schemas,
+                        annotation,
+                        'validation',
+                    )
+                except PydanticUserError as e:
+                    die(
+                        f"On capability '{capability_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
+                    )
+            else:
+                if annotation is not bytes:
+                    die(
+                        f"On capability '{capability_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' must be 'bytes' if request_content_type is not 'application/json'"
+                    )
+                function_cache_request_adapter = 0  # type: ignore[assignment]
+                channels[name]['subscribe']['message']['payload'] = {}
 
         else:
             function_cache_request_adapter = None
@@ -421,24 +442,36 @@ def _introspection_baseline(
             die(
                 f"On capability '{capability_name}', return type annotation on function '{name}' missing. {SCHEMA_HELP_MSG}"
             )
-        try:
-            function_cache_response_adapter = TypeAdapter(return_annotation)
-            channels[name]['publish']['message']['payload'] = _merge_schema_definitions(
-                function_cache_response_adapter,
-                schemas,
-                return_annotation,
-                'serialization',
-            )
-        except PydanticUserError as e:
-            die(
-                f"On capability '{capability_name}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
-            )
+        if response_content == 'application/json':
+            try:
+                function_cache_response_adapter = TypeAdapter(return_annotation)
+                channels[name]['publish']['message']['payload'] = _merge_schema_definitions(
+                    function_cache_response_adapter,
+                    schemas,
+                    return_annotation,
+                    'serialization',
+                )
+            except PydanticUserError as e:
+                die(
+                    f"On capability '{capability_name}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
+                )
+        else:
+            if not isinstance(return_annotation, bytes):
+                die(
+                    f"On capability '{capability_name}', return annotation '{return_annotation}' on function '{name}' must be 'bytes' if response_content_type is not 'application/json'"
+                )
+            function_cache_response_adapter = 0  # type: ignore[assignment]
+            channels[name]['publish']['message']['payload'] = {}
 
         # final function mapping
         function_map[name] = FunctionMetadata(
-            method,
             function_cache_request_adapter,
             function_cache_response_adapter,
+            request_content,
+            response_content,
+            data_handler,
+            getattr(method, STRICT_VALIDATION),
+            getattr(method, SHUTDOWN_KEYS),
         )
 
         # this block handles events associated with intersect_messages (implies command pattern)
@@ -472,9 +505,13 @@ def _introspection_baseline(
     # this conditional allows for the status function to also be called like a message
     if status_fn_type_adapter and status_fn and status_fn_name:
         function_map[status_fn_name] = FunctionMetadata(
-            status_fn,
             None,
             status_fn_type_adapter,
+            getattr(status_fn, REQUEST_CONTENT),
+            getattr(status_fn, RESPONSE_CONTENT),
+            getattr(status_fn, RESPONSE_DATA),
+            getattr(status_fn, STRICT_VALIDATION),
+            getattr(status_fn, SHUTDOWN_KEYS),
         )
 
     return (

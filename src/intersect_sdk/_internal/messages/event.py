@@ -111,7 +111,7 @@ class EventMessage(TypedDict):
     NOTE: The payload's contents will differ based on the data_handler property in the message header.
     """
 
-    contentType: Annotated[IntersectMimeType, Field(IntersectMimeType.JSON)]
+    contentType: Annotated[IntersectMimeType, Field('application/json')]
     """
     The content type to use when encoding/decoding a message's payload.
     The value MUST be a specific media type (e.g. application/json).

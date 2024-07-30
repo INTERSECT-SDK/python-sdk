@@ -53,8 +53,8 @@ def definition_metadata_differences(
         differences.append(
             (
                 'content_type',
-                f'{definition.content_type.__class__.__name__}.{definition.content_type.name}',
-                f'{metadata.content_type.__class__.__name__}.{metadata.content_type.name}',
+                f'{definition.content_type}',
+                f'{metadata.content_type}',
             )
         )
     if definition.data_handler != metadata.data_transfer_handler:

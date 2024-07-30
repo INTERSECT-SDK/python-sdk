@@ -26,7 +26,6 @@ from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectEventDefinition,
-    IntersectMimeType,
     get_schema_from_capability_implementation,
     intersect_event,
     intersect_message,
@@ -526,22 +525,18 @@ def test_disallow_same_event_different_types(caplog: pytest.LogCaptureFixture):
 def test_disallow_same_event_different_content_types(caplog: pytest.LogCaptureFixture):
     # NOTE: @intersect_message functions are always evaluated before @intersect_event functions, regardless of their order in the class.
     class CapImp(IntersectBaseCapabilityImplementation):
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=int)})
+        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=bytes)})
         def function_2(self) -> None: ...
 
         @intersect_message(
-            events={
-                'mykey': IntersectEventDefinition(
-                    event_type=int, content_type=IntersectMimeType.STRING
-                )
-            }
+            events={'mykey': IntersectEventDefinition(event_type=bytes, content_type='image/png')}
         )
         def function_1(self, param: int) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper(CapImp)
     assert (
-        "On capability 'CapImp', event key 'mykey' on function 'function_2' was previously defined differently. \ncontent_type mismatch: current=IntersectMimeType.JSON, previous=IntersectMimeType.STRING"
+        "On capability 'CapImp', event key 'mykey' on function 'function_2' was previously defined differently. \ncontent_type mismatch: current=application/json, previous=image/png"
         in caplog.text
     )
 

@@ -1,7 +1,7 @@
 import logging
 
 from intersect_sdk import (
-    INTERSECT_JSON_VALUE,
+    INTERSECT_RESPONSE_VALUE,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
@@ -26,7 +26,7 @@ class SampleOrchestrator:
         self.events_encountered = 0
 
     def event_callback(
-        self, _source: str, _operation: str, _event_name: str, payload: INTERSECT_JSON_VALUE
+        self, _source: str, _operation: str, _event_name: str, payload: INTERSECT_RESPONSE_VALUE
     ) -> None:
         """Handles events from the Counting Service.
 

@@ -33,11 +33,13 @@ class IntersectClientMessageParams:
     If you want to just use the service's default value for a request (assuming it has a default value for a request), you may set this as None.
     """
 
-    response_content_type: IntersectMimeType = IntersectMimeType.JSON
+    response_content_type: IntersectMimeType = 'application/json'
     """
-    The IntersectMimeType of your response. You'll want this to match with the ContentType of the function from the schema.
+    The IntersectMimeType of your response. You'll want this to match with the ContentType value of the function from the schema.
 
-    default: IntersectMimeType.JSON
+    Note that if sending in JSON with binary data, it's expected that your binary data be base64-encoded.
+
+    default: 'application/json'
     """
 
     response_data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE
@@ -90,14 +92,22 @@ INTERSECT_JSON_VALUE: TypeAlias = Union[
     None,
 ]
 """
-This is a simple type representation of JSON as a Python object. INTERSECT will automatically deserialize service payloads into one of these types.
+This is a simple type representation of JSON as a Python object. INTERSECT will automatically deserialize text (non-binary) service payloads into one of these types.
+
+If expecting a complex object with binary fields, expect the binary data to be base64-encoded strings (still valid JSON).
 
 (Pydantic has a similar type, "JsonValue", which should be used if you desire functionality beyond type hinting. This is strictly a type hint.)
 """
 
+INTERSECT_RESPONSE_VALUE: TypeAlias = Union[INTERSECT_JSON_VALUE, bytes]
+"""
+This is the actual response value you will get back from a Service. The type will already be serialized into Python for you,
+but will not be serialized into a precise value.
+"""
+
 
 INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE = Callable[
-    [str, str, bool, INTERSECT_JSON_VALUE],
+    [str, str, bool, INTERSECT_RESPONSE_VALUE],
     Optional[IntersectClientCallback],
 ]
 """
@@ -111,7 +121,7 @@ Params
     2) The name of the operation that triggered the response from your ORIGINAL message - needed for your own control flow loops if sending multiple messages.
     3) A boolean - if True, there was an error; if False, there was not.
     4) The response, as a Python object - the type should be based on the corresponding Service's schema response.
-       The Python object will already be deserialized for you. If parameter 3 was "True", then this will be the error message, as a string.
+       The Python object will already be deserialized for you (unless you are expecting binary data, then it will be a base64). If parameter 3 was "True", then this will be the error message, as a string.
        If parameter 3 was "False", then this will be either an integer, boolean, float, string, None,
        a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
 

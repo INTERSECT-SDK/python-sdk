@@ -15,7 +15,6 @@ from intersect_sdk import (
     DataStoreConfig,
     DataStoreConfigMap,
     IntersectDataHandler,
-    IntersectMimeType,
     IntersectService,
     IntersectServiceConfig,
 )
@@ -122,7 +121,7 @@ def test_call_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='calculate_fibonacci',
             payload=b'[4,6]',
@@ -157,7 +156,7 @@ def test_call_static_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='test_generator',
             payload=b'"res"',
@@ -191,7 +190,7 @@ def test_call_user_function_with_default_and_empty_payload():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='valid_default_argument',
             payload=b'null',  # if sending null as the payload, the SDK will call the function's default value
@@ -226,7 +225,7 @@ def test_call_user_function_with_invalid_payload():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='calculate_fibonacci',
             # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
@@ -265,7 +264,7 @@ def test_call_nonexistent_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='THIS_FUNCTION_DOES_NOT_EXIST',
             # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
@@ -302,7 +301,7 @@ def test_call_minio_user_function():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='test_datetime',
             payload=b'"1970-01-01T00:00:00Z"',
@@ -353,7 +352,7 @@ def test_lifecycle_messages():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='verify_float_dict',
             # note that the dict key MUST be a string, even though the input wants a float key

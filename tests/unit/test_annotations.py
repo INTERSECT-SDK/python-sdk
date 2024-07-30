@@ -25,9 +25,9 @@ def test_invalid_annotation_params():
 
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 4
-    assert {'type': 'enum', 'loc': ('request_content_type',)} in errors
+    assert {'type': 'string_type', 'loc': ('request_content_type',)} in errors
     assert {'type': 'enum', 'loc': ('response_data_transfer_handler',)} in errors
-    assert {'type': 'enum', 'loc': ('response_content_type',)} in errors
+    assert {'type': 'string_type', 'loc': ('response_content_type',)} in errors
     assert {'type': 'bool_parsing', 'loc': ('strict_request_validation',)} in errors
 
 
@@ -78,7 +78,7 @@ def test_incorrect_intersect_event_annotations():
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 3
     assert {'type': 'value_error', 'loc': ('event_type',)} in errors
-    assert {'type': 'enum', 'loc': ('content_type',)} in errors
+    assert {'type': 'string_type', 'loc': ('content_type',)} in errors
     assert {'type': 'enum', 'loc': ('data_handler',)} in errors
 
     # make sure that improper use of model_construct() will not pass inner validation (users are free to use it as long as they construct a valid model)
@@ -97,7 +97,7 @@ def test_incorrect_intersect_event_annotations():
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 3
     assert {
-        'type': 'enum',
+        'type': 'string_pattern_mismatch',
         'loc': (
             'events',
             'one',

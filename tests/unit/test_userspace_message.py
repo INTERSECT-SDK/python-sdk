@@ -6,7 +6,7 @@ import datetime
 import uuid
 
 import pytest
-from intersect_sdk import IntersectDataHandler, IntersectMimeType, version_string
+from intersect_sdk import IntersectDataHandler, version_string
 from intersect_sdk._internal.messages.userspace import (
     create_userspace_message,
     deserialize_and_validate_userspace_message,
@@ -18,7 +18,7 @@ def test_valid_userspace_message_deserializes():
     serialized = b'{"messageId":"cc88a2c9-7e47-409f-82c5-ef49914ae140","operationId":"operation","contentType":"application/json","payload":"payload","headers":{"source":"source","destination":"destination","sdk_version":"0.5.0","created_at":"2024-01-19T20:21:14.045591Z","data_handler":0}}'
     deserialized = deserialize_and_validate_userspace_message(serialized)
     assert deserialized['headers']['data_handler'] == IntersectDataHandler.MESSAGE
-    assert deserialized['contentType'] == IntersectMimeType.JSON
+    assert deserialized['contentType'] == 'application/json'
     assert deserialized['headers']['has_error'] is False
 
 
@@ -26,7 +26,7 @@ def test_unusual_userspace_message_deserializes():
     serialized = b'{"messageId":"cc88a2c9-7e47-409f-82c5-ef49914ae140","operationId":"operation","contentType":"application/json","payload":"payload","headers":{"source":"source.one","destination":"destination.two","sdk_version":"0.5.0","created_at":"2024","data_handler":0}}'
     deserialized = deserialize_and_validate_userspace_message(serialized)
     assert deserialized['headers']['data_handler'] == IntersectDataHandler.MESSAGE
-    assert deserialized['contentType'] == IntersectMimeType.JSON
+    assert deserialized['contentType'] == 'application/json'
     assert deserialized['headers']['has_error'] is False
     # even on strict mode, Pydantic can validate an integer as a string type, i.e. '"2024"' - it parses this as number of seconds since the Unix epoch
     assert deserialized['headers']['created_at'].year == 1970
@@ -78,7 +78,7 @@ def test_invalid_does_not_deserialize():
     assert {'type': 'string_pattern_mismatch', 'loc': ('headers', 'sdk_version')} in errors
     # can't transpose these values into the enumerations
     assert {'type': 'enum', 'loc': ('headers', 'data_handler')} in errors
-    assert {'type': 'enum', 'loc': ('contentType',)} in errors
+    assert {'type': 'string_pattern_mismatch', 'loc': ('contentType',)} in errors
 
 
 def test_create_userspace_message():
@@ -86,7 +86,7 @@ def test_create_userspace_message():
         source='source',
         destination='destination',
         operation_id='operation',
-        content_type=IntersectMimeType.JSON,
+        content_type='application/json',
         data_handler=IntersectDataHandler.MESSAGE,
         payload=[1, 2, 3],
     )
@@ -94,7 +94,7 @@ def test_create_userspace_message():
     # rule of UUID-4 generation
     assert str(msg['messageId'])[14] == '4'
     assert msg['operationId'] == 'operation'
-    assert msg['contentType'] == IntersectMimeType.JSON
+    assert msg['contentType'] == 'application/json'
     assert msg['payload'] == [1, 2, 3]
     assert isinstance(msg['headers']['created_at'], datetime.datetime)
     # enforce UTC
