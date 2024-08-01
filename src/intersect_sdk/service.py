@@ -19,10 +19,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from threading import Condition, Lock
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable, List, Tuple
-from uuid import uuid1, uuid3, UUID
+from typing import TYPE_CHECKING, Any, Callable
+from uuid import UUID, uuid1, uuid3
 
-from pydantic import ValidationError
+from pydantic import ConfigDict, ValidationError, validate_call
 from pydantic_core import PydanticSerializationError
 from typing_extensions import Self, final
 
@@ -33,8 +33,8 @@ from ._internal.constants import (
     STRICT_VALIDATION,
 )
 from ._internal.control_plane.control_plane_manager import (
+    GENERIC_MESSAGE_SERIALIZER,
     ControlPlaneManager,
-    GENERIC_MESSAGE_SERIALIZER
 )
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectApplicationError, IntersectError
@@ -52,13 +52,16 @@ from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die
 from ._internal.version_resolver import resolve_user_version
 from .capability.base import IntersectBaseCapabilityImplementation
-from .client_callback_definitions import IntersectClientMessageParams
+from .client_callback_definitions import INTERSECT_JSON_VALUE, IntersectClientMessageParams
 from .config.service import IntersectServiceConfig
 from .core_definitions import IntersectDataHandler, IntersectMimeType
 from .version import version_string
 
 if TYPE_CHECKING:
     from ._internal.function_metadata import FunctionMetadata
+
+
+RESPONSE_CALLBACK_TYPE = Callable[[INTERSECT_JSON_VALUE], None]
 
 
 @final
@@ -97,26 +100,30 @@ class IntersectService(IntersectEventObserver):
     No other functions or parameters are guaranteed to remain stable.
     """
 
-    class ExternalRequest:
-        request_id   : UUID
-        request_name : str
-        cv           : Condition
-        processed    : bool = False
-        error        : str = None
-        request      : Any = None
-        response     : Any = None
-        response_fn  : Callable = None
-        waiting      : bool = False
+    class _ExternalRequest:
+        """Class representative of an ongoing request to another service."""
 
-        def __init__(self, req_id : UUID, req_name : str) -> None:
+        def __init__(
+            self,
+            req_id: UUID,
+            req_name: str,
+            request: IntersectClientMessageParams,
+            response_handler: RESPONSE_CALLBACK_TYPE | None = None,
+        ) -> None:
+            """Create an external request."""
             self.cv = Condition()
             self.request_id = req_id
             self.request_name = req_name
-            
+            self.processed: bool = False
+            self.error: str | None = None
+            self.request = request
+            self.response: INTERSECT_JSON_VALUE = None
+            self.response_fn = response_handler
+            self.waiting: bool = False
 
     def __init__(
         self,
-        capabilities: List[IntersectBaseCapabilityImplementation],
+        capabilities: list[IntersectBaseCapabilityImplementation],
         config: IntersectServiceConfig,
     ) -> None:
         """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
@@ -125,7 +132,6 @@ class IntersectService(IntersectEventObserver):
           capabilities: Your list of capability implementation classes
           config: The IntersectConfig class
         """
-
         for cap in capabilities:
             if not isinstance(cap, IntersectBaseCapabilityImplementation):
                 die(
@@ -135,22 +141,22 @@ class IntersectService(IntersectEventObserver):
                 die(
                     f'{cap.__class__.__name__} needs to call "super().__init__()" in the constructor.'
                 )
-            
+
             # we generally start observing and don't stop, doesn't really matter if we startup or shutdown
             cap._intersect_sdk_register_observer(self)  # noqa: SLF001 (we don't want users calling or overriding it, but this is fine.)
-        
+
         self.capabilities = capabilities
-        
+
         # this is called here in case a user created the object using "IntersectServiceConfig.model_construct()" to skip validation
         config = IntersectServiceConfig.model_validate(config)
-        
+
         (
             schema,
             function_map,
             event_map,
             status_fn_capability,
             status_fn_name,
-            status_type_adapter
+            status_type_adapter,
         ) = get_schema_and_functions_from_capability_implementations(
             self.capabilities,
             service_name=config.hierarchy,
@@ -160,7 +166,7 @@ class IntersectService(IntersectEventObserver):
         """
         Stringified schema of the user's application. Gets sent in several status message requests.
         """
-        
+
         self._function_map = MappingProxyType(function_map)
         """
         INTERNAL USE ONLY
@@ -170,7 +176,7 @@ class IntersectService(IntersectEventObserver):
         You can get user-defined properties from the method via getattr(_function_map.method, KEY), the keys get set
         in the intersect_message decorator function (annotations.py).
         """
-        
+
         self._event_map = MappingProxyType(event_map)
         """
         INTERNAL USE ONLY
@@ -206,16 +212,20 @@ class IntersectService(IntersectEventObserver):
 
         self._status_memo = self._status_retrieval_fn()
 
-        self._external_request_thread = None
+        self._external_request_thread: StoppableThread | None = None
         self._external_requests_lock = Lock()
-        self._external_requests = dict()
+        self._external_requests: dict[str, IntersectService._ExternalRequest] = {}
         self._external_request_ctr = 0
 
-        self._startup_messages : List[ Tuple[IntersectClientMessageParams, Callable] ] = list()
+        self._startup_messages: list[
+            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]
+        ] = []
         self._resend_startup_messages = True
         self._sent_startup_messages = False
 
-        self._shutdown_messages : List[ Tuple[IntersectClientMessageParams, Callable] ] = list()
+        self._shutdown_messages: list[
+            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]
+        ] = []
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
         # we PUBLISH messages on this channel
@@ -226,23 +236,19 @@ class IntersectService(IntersectEventObserver):
         self._service_channel_name = f"{config.hierarchy.hierarchy_string('/')}/request"
         # we SUBSCRIBE to messages on this channel to receive responses
         self._client_channel_name = f"{config.hierarchy.hierarchy_string('/')}/response"
-        
+
         self._control_plane_manager = ControlPlaneManager(
             control_configs=config.brokers,
         )
         # our userspace queue should be able to survive shutdown
         self._control_plane_manager.add_subscription_channel(
-            self._service_channel_name,
-            {self._handle_service_message_raw},
-            persist=True
+            self._service_channel_name, {self._handle_service_message_raw}, persist=True
         )
         self._control_plane_manager.add_subscription_channel(
-            self._client_channel_name,
-            {self._handle_client_message_raw},
-            persist=False
+            self._client_channel_name, {self._handle_client_message_raw}, persist=True
         )
 
-    def _get_capability(self, target : str) -> Any | None:
+    def _get_capability(self, target: str) -> Any | None:
         for cap in self.capabilities:
             if cap.capability_name == target:
                 return cap
@@ -288,15 +294,15 @@ class IntersectService(IntersectEventObserver):
             logger.info('Sending startup messages')
             for tup in self._startup_messages:
                 message, fn = tup
-                self.create_external_request(request=message,
-                                             response_handler=fn)
-            self.process_external_requests()
+                self.create_external_request(request=message, response_handler=fn)
+            self._process_external_requests()
             self._sent_startup_messages = True
 
         # Start the external request thread if it doesn't already exist
         if self._external_request_thread is None:
             self._external_request_thread = StoppableThread(
-                target=self._send_external_requests, name=f'IntersectService_{self._uuid}_ext_req_thread'
+                target=self._send_external_requests,
+                name=f'IntersectService_{self._uuid}_ext_req_thread',
             )
             self._external_request_thread.start()
 
@@ -328,9 +334,8 @@ class IntersectService(IntersectEventObserver):
         logger.info('Sending shutdown messages')
         for tup in self._shutdown_messages:
             message, fn = tup
-            self.create_external_request(request=message,
-                                         response_handler=fn)
-        self.process_external_requests()
+            self.create_external_request(request=message, response_handler=fn)
+        self._process_external_requests()
 
         # Stop polling
         if self._status_thread is not None:
@@ -437,53 +442,85 @@ class IntersectService(IntersectEventObserver):
         """
         return self._function_keys.copy()
 
-    def add_startup_messages(self, messages : List[Tuple[IntersectClientMessageParams, Callable]]) -> None:
+    def add_startup_messages(
+        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]]
+    ) -> None:
+        """Add request messages to send out to various microservices when this service starts.
+
+        Params:
+          - messages: list of tuples - first value in tuple contains the messages you want to send out on startup,
+              second value in tuple contains the callback function for handling the response from the other Service.
+        """
         self._startup_messages.extend(messages)
 
-    def add_shutdown_messages(self, messages : List[Tuple[IntersectClientMessageParams, Callable]]) -> None:
+    def add_shutdown_messages(
+        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]]
+    ) -> None:
+        """Add request messages to send out to various microservices on shutdown.
+
+        Params:
+          - messages: list of tuples - first value in tuple contains the messages you want to send out on startup,
+              second value in tuple contains the callback function for handling the response from the other Service.
+        """
         self._shutdown_messages.extend(messages)
 
-    def _new_external_request(self) -> IntersectService.ExternalRequest:
+    @validate_call(config=ConfigDict(revalidate_instances='always'))
+    def create_external_request(
+        self,
+        request: IntersectClientMessageParams,
+        response_handler: RESPONSE_CALLBACK_TYPE | None = None,
+    ) -> UUID:
+        """Create an external request structure with a Condition we can wait on.
+
+        Params:
+          - request: the request we want to send out, encapsulated as an IntersectClientMessageParams object
+          - response_handler: optional callback for how we want to handle the response from this request.
+
+        Returns:
+          - generated RequestID associated with your request
+
+        Raises:
+          - pydantic.ValidationError - if the request parameter isn't valid
+        """
         self._external_request_ctr += 1
         request_name = f'ext-req-{self._external_request_ctr}'
         request_uuid = uuid3(self._uuid, request_name)
-        req = IntersectService.ExternalRequest(req_id=request_uuid,
-                                               req_name=request_name)
+        extreq = IntersectService._ExternalRequest(
+            req_id=request_uuid,
+            req_name=request_name,
+            request=request,
+            response_handler=response_handler,
+        )
         self._external_requests_lock.acquire_lock(blocking=True)
-        self._external_requests[str(request_uuid)] = req
+        self._external_requests[str(request_uuid)] = extreq
         self._external_requests_lock.release_lock()
-        return req
-    
-    def _delete_external_request(self, req_id : UUID) -> None:
-        req_id_str = str(req_id)
-        if req_id_str in self._external_requests:
-            req : IntersectService.ExternalRequest = self._external_requests.pop(req_id_str)
-            del req
+        return request_uuid
 
-    def _get_external_request(self, req_id : UUID) -> IntersectService.ExternalRequest:
+    def _delete_external_request(self, req_id: UUID) -> None:
         req_id_str = str(req_id)
         if req_id_str in self._external_requests:
-            req : IntersectService.ExternalRequest = self._external_requests[req_id_str]
+            self._external_requests_lock.acquire_lock(blocking=True)
+            req: IntersectService._ExternalRequest = self._external_requests.pop(req_id_str)
+            del req
+            self._external_requests_lock.release_lock()
+
+    def _get_external_request(self, req_id: UUID) -> IntersectService._ExternalRequest | None:
+        req_id_str = str(req_id)
+        if req_id_str in self._external_requests:
+            req: IntersectService._ExternalRequest = self._external_requests[req_id_str]
             return req
         return None
 
-    def create_external_request(self,
-                                request: IntersectClientMessageParams,
-                                response_handler : Callable = None) -> UUID:
-        # create an external request structure with a Condition we can wait on
-        extreq : IntersectService.ExternalRequest = self._new_external_request()
-        extreq.request = request
-        extreq.response_fn = response_handler
-        return extreq.request_id
-    
-    def process_external_requests(self) -> None:
+    def _process_external_requests(self) -> None:
         self._external_requests_lock.acquire_lock(blocking=True)
         for extreq in self._external_requests.values():
             if not extreq.processed:
                 self._process_external_request(extreq)
         self._external_requests_lock.release_lock()
 
-    def _process_external_request(self, extreq: IntersectService.ExternalRequest) -> None:
+    def _process_external_request(self, extreq: IntersectService._ExternalRequest) -> None:
+        if extreq.request is None:
+            return
         response = None
         cleanup_req = False
 
@@ -498,7 +535,7 @@ class IntersectService(IntersectEventObserver):
                 #           external request when this function is called while
                 #           handling an incoming request, so we are just ignoring
                 #           any wait timeouts below.
-                
+
                 # wait on the response condition and get the response
                 extreq.waiting = True
                 if extreq.cv.wait(timeout=1.0):
@@ -506,7 +543,9 @@ class IntersectService(IntersectEventObserver):
                         response = extreq.response
                     else:
                         error_msg = extreq.error
-                        logger.warning(f'External service request encountered an error: {error_msg}')
+                        logger.warning(
+                            f'External service request encountered an error: {error_msg}'
+                        )
                     cleanup_req = True
                 else:
                     logger.debug('Request wait timed-out!')
@@ -515,13 +554,12 @@ class IntersectService(IntersectEventObserver):
                 logger.warning('Failed to send request!')
 
             # process the response
-            if response is not None:
-                if extreq.response_fn is not None:
-                    extreq.response_fn(response)
+            if extreq.response_fn is not None and extreq.error is None:
+                extreq.response_fn(response)
 
         if cleanup_req:
-            self._delete_external_request(extreq.request_name)
-    
+            self._delete_external_request(extreq.request_id)
+
     def _handle_service_message_raw(self, raw: bytes) -> None:
         """Main broker callback function.
 
@@ -579,7 +617,7 @@ class IntersectService(IntersectEventObserver):
             err_msg = f"Function '{operation}' is currently not available for use."
             logger.error(err_msg)
             return self._make_error_message(err_msg, message)
-        
+
         operation_capability, operation_method = operation.split('.')
         target_capability = self._get_capability(operation_capability)
         if target_capability is None:
@@ -597,7 +635,9 @@ class IntersectService(IntersectEventObserver):
 
         try:
             # FOUR: CALL USER FUNCTION AND GET MESSAGE
-            response = self._call_user_function(target_capability, operation_method, operation_meta, request_params)
+            response = self._call_user_function(
+                target_capability, operation_method, operation_meta, request_params
+            )
             # FIVE: SEND DATA TO APPROPRIATE DATA STORE
             response_data_handler = getattr(operation_meta.method, RESPONSE_DATA)
             response_content_type = getattr(operation_meta.method, RESPONSE_CONTENT)
@@ -624,9 +664,9 @@ class IntersectService(IntersectEventObserver):
             data_handler=response_data_handler,
             operation_id=message['operationId'],
             payload=response_payload,
-            message_id=message['messageId'] # associate response with request
+            message_id=message['messageId'],  # associate response with request
         )
-    
+
     def _handle_client_message_raw(self, raw: bytes) -> None:
         """Broker callback, deserialize and validate a userspace message from a broker."""
         try:
@@ -640,10 +680,9 @@ class IntersectService(IntersectEventObserver):
 
     def _handle_client_message(self, message: UserspaceMessage) -> None:
         """Handle a deserialized userspace message."""
-
         extreq = self._get_external_request(message['messageId'])
         if extreq is not None:
-            error_msg : str = None
+            error_msg: str | None = None
             try:
                 msg_payload = GENERIC_MESSAGE_SERIALIZER.validate_json(
                     self._data_plane_manager.incoming_message_data_handler(message)
@@ -652,7 +691,7 @@ class IntersectService(IntersectEventObserver):
                 error_msg = f'Service sent back invalid response:\n{e}'
                 logger.warning(error_msg)
             except IntersectError:
-                error_msg = f'INTERNAL ERROR: failed to get message payload from data handler'
+                error_msg = 'INTERNAL ERROR: failed to get message payload from data handler'
                 logger.error(error_msg)
 
             with extreq.cv:
@@ -666,7 +705,7 @@ class IntersectService(IntersectEventObserver):
             error_msg = f'No external request found for message:\n{message}'
             logger.warning(error_msg)
 
-    def _send_client_message(self, request_id : UUID, params: IntersectClientMessageParams) -> bool:
+    def _send_client_message(self, request_id: UUID, params: IntersectClientMessageParams) -> bool:
         """Send a userspace message."""
         # ONE: VALIDATE AND SERIALIZE FUNCTION RESULTS
         try:
@@ -688,16 +727,15 @@ class IntersectService(IntersectEventObserver):
         msg = create_userspace_message(
             source=self._hierarchy.hierarchy_string('.'),
             destination=params.destination,
-            service_version=self._version,
             content_type=params.content_type,
             data_handler=params.data_handler,
             operation_id=params.operation,
             payload=request_payload,
-            message_id=request_id
+            message_id=request_id,
         )
         logger.debug(f'Sending client message:\n{msg}')
         request_channel = f"{params.destination.replace('.', '/')}/request"
-        self._control_plane_manager.publish_message(request_channel, msg)
+        self._control_plane_manager.publish_message(request_channel, msg, persist=True)
         return True
 
     def _call_user_function(
@@ -844,7 +882,7 @@ class IntersectService(IntersectEventObserver):
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id=original_message['operationId'],
             payload=error_string,
-            message_id=original_message['messageId'], # associate error reply with original
+            message_id=original_message['messageId'],  # associate error reply with original
             has_error=True,
         )
 
@@ -903,6 +941,5 @@ class IntersectService(IntersectEventObserver):
         if self._external_request_thread:
             self._external_request_thread.wait(10.0)
             while not self._external_request_thread.stopped():
-                self.process_external_requests()
+                self._process_external_requests()
                 self._external_request_thread.wait(0.5)
-

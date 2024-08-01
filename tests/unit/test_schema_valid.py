@@ -38,15 +38,10 @@ def test_schema_comparison():
 
 def test_verify_status_fn():
     dummy_cap = DummyCapabilityImplementation()
-    (
-        schema,
-        function_map,
-        _,
-        status_fn_capability,
-        status_fn_name,
-        status_type_adapter
-    ) = get_schema_and_functions_from_capability_implementations(
-        [dummy_cap], FAKE_HIERARCHY_CONFIG, set()
+    (schema, function_map, _, status_fn_capability, status_fn_name, status_type_adapter) = (
+        get_schema_and_functions_from_capability_implementations(
+            [dummy_cap], FAKE_HIERARCHY_CONFIG, set()
+        )
     )
     assert status_fn_capability is dummy_cap
     assert status_fn_name == 'get_status'
@@ -69,14 +64,30 @@ def test_verify_attributes():
         getattr(function_map['DummyCapability.verify_float_dict'].method, RESPONSE_DATA)
         == IntersectDataHandler.MESSAGE
     )
-    assert getattr(function_map['DummyCapability.verify_nested'].method, REQUEST_CONTENT) == IntersectMimeType.JSON
-    assert getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_CONTENT) == IntersectMimeType.JSON
+    assert (
+        getattr(function_map['DummyCapability.verify_nested'].method, REQUEST_CONTENT)
+        == IntersectMimeType.JSON
+    )
+    assert (
+        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_CONTENT)
+        == IntersectMimeType.JSON
+    )
     assert getattr(function_map['DummyCapability.verify_nested'].method, STRICT_VALIDATION) is False
 
     # test non-defaults
     assert (
-        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_DATA) == IntersectDataHandler.MINIO
+        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_DATA)
+        == IntersectDataHandler.MINIO
     )
-    assert getattr(function_map['DummyCapability.ip4_to_ip6'].method, RESPONSE_CONTENT) == IntersectMimeType.STRING
-    assert getattr(function_map['DummyCapability.test_path'].method, REQUEST_CONTENT) == IntersectMimeType.STRING
-    assert getattr(function_map['DummyCapability.calculate_weird_algorithm'].method, STRICT_VALIDATION) is True
+    assert (
+        getattr(function_map['DummyCapability.ip4_to_ip6'].method, RESPONSE_CONTENT)
+        == IntersectMimeType.STRING
+    )
+    assert (
+        getattr(function_map['DummyCapability.test_path'].method, REQUEST_CONTENT)
+        == IntersectMimeType.STRING
+    )
+    assert (
+        getattr(function_map['DummyCapability.calculate_weird_algorithm'].method, STRICT_VALIDATION)
+        is True
+    )
