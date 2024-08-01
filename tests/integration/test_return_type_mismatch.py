@@ -45,7 +45,7 @@ class ReturnTypeMismatchCapabilityImplementation(IntersectBaseCapabilityImplemen
 
 def make_intersect_service() -> IntersectService:
     capability = ReturnTypeMismatchCapabilityImplementation()
-    capability.capability_name = "ReturnTypeMismatchCapability"
+    capability.capability_name = 'ReturnTypeMismatchCapability'
     return IntersectService(
         [capability],
         IntersectServiceConfig(

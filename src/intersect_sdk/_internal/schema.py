@@ -8,7 +8,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Mapping,
     NamedTuple,
     get_origin,
@@ -339,7 +338,7 @@ def _introspection_baseline(
     # parse functions
     for class_name, name, method, min_params in response_funcs:
         public_name = f'{cap_name}.{name}'
-        
+
         # TODO - I'm placing this here for now because we'll eventually want to capture data plane and broker configs in the schema.
         # (It's possible we may want to separate the backing service schema from the application logic, but it's unlikely.)
         # At the moment, we're just validating that users can support their response_data_handler property.
@@ -495,7 +494,7 @@ def _introspection_baseline(
 
 
 def get_schema_and_functions_from_capability_implementations(
-    capabilities: List[IntersectBaseCapabilityImplementation],
+    capabilities: list[IntersectBaseCapabilityImplementation],
     service_name: HierarchyConfig,
     excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[
@@ -510,16 +509,16 @@ def get_schema_and_functions_from_capability_implementations(
 
     In-depth introspection is handled later on.
     """
-    capability_type_docs : str = ""
-    status_function_cap : IntersectBaseCapabilityImplementation = None
-    status_function_name : str = None
-    status_function_schema : dict[str, Any] = None
-    status_function_adapter : TypeAdapter[Any] = None
-    schemas : dict[Any, Any] = dict()
-    channels : dict[str, dict[str, dict[str, Any]]] = dict() # endpoint schemas
-    function_map : dict[str, FunctionMetadata] = dict()      # endpoint functionality
-    events : dict[str, Any] = dict()                         # event schemas
-    event_map : dict[str, EventMetadata] = dict()            # event functionality
+    capability_type_docs: str = ''
+    status_function_cap: IntersectBaseCapabilityImplementation | None = None
+    status_function_name: str | None = None
+    status_function_schema: dict[str, Any] | None = None
+    status_function_adapter: TypeAdapter[Any] | None = None
+    schemas: dict[Any, Any] = {}
+    channels: dict[str, dict[str, dict[str, Any]]] = {}  # endpoint schemas
+    function_map: dict[str, FunctionMetadata] = {}  # endpoint functionality
+    events: dict[str, Any] = {}  # event schemas
+    event_map: dict[str, EventMetadata] = {}  # event functionality
     for capability in capabilities:
         capability_type: type[IntersectBaseCapabilityImplementation] = type(capability)
         if capability_type.__doc__:
@@ -532,7 +531,7 @@ def get_schema_and_functions_from_capability_implementations(
             cap_events,
             cap_event_map,
         ) = _introspection_baseline(capability, excluded_data_handlers)
-        
+
         if cap_status_fn_name and cap_status_schema and cap_status_type_adapter:
             status_function_cap = capability
             status_function_name = cap_status_fn_name
@@ -544,7 +543,6 @@ def get_schema_and_functions_from_capability_implementations(
         function_map.update(cap_function_map)
         events.update(cap_events)
         event_map.update(cap_event_map)
-        
 
     asyncapi_spec = {
         'asyncapi': ASYNCAPI_VERSION,
@@ -576,7 +574,7 @@ def get_schema_and_functions_from_capability_implementations(
         },
     }
 
-    if capability_type_docs != "":
+    if capability_type_docs != '':
         asyncapi_spec['info']['description'] = capability_type_docs  # type: ignore[index]
 
     if status_function_schema:
@@ -591,4 +589,11 @@ def get_schema_and_functions_from_capability_implementations(
     },
     """
 
-    return asyncapi_spec, function_map, event_map, status_function_cap, status_function_name, status_function_adapter
+    return (
+        asyncapi_spec,
+        function_map,
+        event_map,
+        status_function_cap,
+        status_function_name,
+        status_function_adapter,
+    )
