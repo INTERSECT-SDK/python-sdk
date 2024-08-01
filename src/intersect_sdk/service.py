@@ -91,6 +91,7 @@ class IntersectService(IntersectEventObserver):
       - shutdown()
       - add_shutdown_messages()
       - is_connected()
+      - considered_unrecoverable()
       - forbid_keys()
       - allow_keys()
       - allow_all_functions()
@@ -218,13 +219,13 @@ class IntersectService(IntersectEventObserver):
         self._external_request_ctr = 0
 
         self._startup_messages: list[
-            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]
+            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]
         ] = []
         self._resend_startup_messages = True
         self._sent_startup_messages = False
 
         self._shutdown_messages: list[
-            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]
+            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]
         ] = []
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
@@ -443,7 +444,7 @@ class IntersectService(IntersectEventObserver):
         return self._function_keys.copy()
 
     def add_startup_messages(
-        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]]
+        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]]
     ) -> None:
         """Add request messages to send out to various microservices when this service starts.
 
@@ -454,7 +455,7 @@ class IntersectService(IntersectEventObserver):
         self._startup_messages.extend(messages)
 
     def add_shutdown_messages(
-        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE]]
+        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]]
     ) -> None:
         """Add request messages to send out to various microservices on shutdown.
 
@@ -519,8 +520,6 @@ class IntersectService(IntersectEventObserver):
         self._external_requests_lock.release_lock()
 
     def _process_external_request(self, extreq: IntersectService._ExternalRequest) -> None:
-        if extreq.request is None:
-            return
         response = None
         cleanup_req = False
 
@@ -707,12 +706,7 @@ class IntersectService(IntersectEventObserver):
 
     def _send_client_message(self, request_id: UUID, params: IntersectClientMessageParams) -> bool:
         """Send a userspace message."""
-        # ONE: VALIDATE AND SERIALIZE FUNCTION RESULTS
-        try:
-            params = IntersectClientMessageParams.model_validate(params)
-        except ValidationError as e:
-            logger.error(f'Invalid message parameters:\n{e}')
-            return False
+        # "params" should already be validated at this stage.
         request = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
