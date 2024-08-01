@@ -39,8 +39,8 @@ def run_example_test(example: str, timeout: int = 60) -> str:
     # make sure all service processes have been initialized before starting client process
     time.sleep(1.0)
     try:
-        client_output = subprocess.run(
-            [sys.executable, '-m', client_module],  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
+        client_output = subprocess.run(  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
+            [sys.executable, '-m', client_module],
             check=True,
             capture_output=True,
             text=True,

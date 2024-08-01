@@ -26,8 +26,7 @@ class IntersectBaseCapabilityImplementation:
 
         NOTE: If you write your own constructor, you MUST call super.__init__() inside of it. The Service will throw an error if you don't.
         """
-        
-        self._capability_name : str = "InvalidCapability"
+        self._capability_name: str = 'InvalidCapability'
         """
         The advertised name for the capability, as opposed to the implementation class name
         """
@@ -49,14 +48,14 @@ class IntersectBaseCapabilityImplementation:
         ):
             msg = f"{cls.__name__}: Cannot override functions '_intersect_sdk_register_observer' or 'intersect_sdk_emit_event'"
             raise RuntimeError(msg)
-        
+
     @property
     def capability_name(self) -> str:
-        """The advertised name for the capability provided by this implementation"""
+        """The advertised name for the capability provided by this implementation."""
         return self._capability_name
-    
+
     @capability_name.setter
-    def capability_name(self, cname : str) -> str:
+    def capability_name(self, cname: str) -> None:
         self._capability_name = cname
 
     @final

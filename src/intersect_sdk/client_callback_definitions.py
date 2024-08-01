@@ -1,6 +1,5 @@
 """Data types used in regard to client callbacks. Only relevant for Client authors."""
 
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,8 +9,7 @@ from .constants import SYSTEM_OF_SYSTEM_REGEX
 from .core_definitions import IntersectDataHandler, IntersectMimeType
 
 
-@dataclass
-class IntersectClientMessageParams:
+class IntersectClientMessageParams(BaseModel):
     """The user implementing the IntersectClient class will need to return this object in order to send a message to another Service."""
 
     destination: Annotated[str, Field(pattern=SYSTEM_OF_SYSTEM_REGEX)]
@@ -46,6 +44,9 @@ class IntersectClientMessageParams:
 
     default: IntersectDataHandler.MESSAGE
     """
+
+    # pydantic config
+    model_config = ConfigDict(revalidate_instances='always')
 
 
 @final

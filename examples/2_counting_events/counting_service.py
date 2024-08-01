@@ -83,7 +83,7 @@ if __name__ == '__main__':
         **from_config_file,
     )
     capability = CountingServiceCapabilityImplementation()
-    capability.capability_name = "CountingExample"
+    capability.capability_name = 'CountingExample'
     service = IntersectService([capability], config)
     logger.info('Starting counting_service, use Ctrl+C to exit.')
 
