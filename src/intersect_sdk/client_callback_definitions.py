@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Annotated, TypeAlias, final
 
 from .constants import SYSTEM_OF_SYSTEM_REGEX
-from .shared_callback_definitions import DirectMessageParams
+from .shared_callback_definitions import IntersectDirectMessageParams
 
 
 @final
@@ -19,7 +19,7 @@ class IntersectClientCallback(BaseModel):
     If you do not return a value of this type (or None), this will be treated as an Exception and will break the pub-sub loop.
     """
 
-    messages_to_send: List[DirectMessageParams] = []  # noqa: FA100 (runtime annotation)
+    messages_to_send: List[IntersectDirectMessageParams] = []  # noqa: FA100 (runtime annotation)
     """
     Messages to send as a result of an event or a response from a Service.
     """

@@ -4,10 +4,10 @@ import time
 
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
-    DirectMessageParams,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
+    IntersectDirectMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -38,7 +38,7 @@ class SampleOrchestrator:
         self.message_stack = [
             # wait 5 seconds before stopping the counter. "Count" in response will be approx. 6
             (
-                DirectMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
                     operation='CountingExample.stop_count',
                     payload=None,
@@ -47,7 +47,7 @@ class SampleOrchestrator:
             ),
             # start the counter up again - it will not be 0 at this point! "Count" in response will be approx. 7
             (
-                DirectMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
                     operation='CountingExample.start_count',
                     payload=None,
@@ -56,7 +56,7 @@ class SampleOrchestrator:
             ),
             # reset the counter, but have it immediately start running again. "Count" in response will be approx. 10
             (
-                DirectMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
                     operation='CountingExample.reset_count',
                     payload=True,
@@ -65,7 +65,7 @@ class SampleOrchestrator:
             ),
             # reset the counter, but don't have it run again. "Count" in response will be approx. 6
             (
-                DirectMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
                     operation='CountingExample.reset_count',
                     payload=False,
@@ -74,7 +74,7 @@ class SampleOrchestrator:
             ),
             # start the counter back up. "Count" in response will be approx. 1
             (
-                DirectMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
                     operation='CountingExample.start_count',
                     payload=None,
@@ -83,7 +83,7 @@ class SampleOrchestrator:
             ),
             # finally, stop the counter one last time. "Count" in response will be approx. 4
             (
-                DirectMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
                     operation='CountingExample.stop_count',
                     payload=None,
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     # The counter will start after the initial message.
     # If the service is already active and counting, this may do nothing.
     initial_messages = [
-        DirectMessageParams(
+        IntersectDirectMessageParams(
             destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
             operation='CountingExample.start_count',
             payload=None,

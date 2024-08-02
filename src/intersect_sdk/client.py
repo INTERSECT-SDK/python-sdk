@@ -49,7 +49,7 @@ if TYPE_CHECKING:
         INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
         INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
     )
-    from .shared_callback_definitions import DirectMessageParams
+    from .shared_callback_definitions import IntersectDirectMessageParams
 
 
 @final
@@ -425,7 +425,7 @@ class IntersectClient:
         for message in validated_result.messages_to_send:
             self._send_userspace_message(message)
 
-    def _send_userspace_message(self, params: DirectMessageParams) -> None:
+    def _send_userspace_message(self, params: IntersectDirectMessageParams) -> None:
         """Send a userspace message, be it an initial message from the user or from the user's callback function."""
         # ONE: SERIALIZE FUNCTION RESULTS
         # (function input should already be validated at this point)
