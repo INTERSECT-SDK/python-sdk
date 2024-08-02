@@ -2,6 +2,13 @@
 
 This module is internal-facing and should not be used directly by users.
 
+Services have two associated channels which handle userspace messages: their request channel
+and their response channel. Services always CONSUME messages from these channels, but never PRODUCE messages
+on these channels. (A message is always sent in the receiver's namespace).
+
+The response channel is how the service handles external requests, the request channel is used when this service itself
+needs to make external requests through INTERSECT.
+
 Services should ALWAYS be CONSUMING from their userspace channel.
 They should NEVER be PRODUCING messages on their userspace channel.
 

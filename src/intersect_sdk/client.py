@@ -40,7 +40,6 @@ from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
 from .client_callback_definitions import (
     IntersectClientCallback,
-    IntersectClientMessageParams,
 )
 from .config.client import IntersectClientConfig
 from .config.shared import HierarchyConfig
@@ -50,6 +49,7 @@ if TYPE_CHECKING:
         INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
         INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
     )
+    from .shared_callback_definitions import DirectMessageParams
 
 
 @final
@@ -425,7 +425,7 @@ class IntersectClient:
         for message in validated_result.messages_to_send:
             self._send_userspace_message(message)
 
-    def _send_userspace_message(self, params: IntersectClientMessageParams) -> None:
+    def _send_userspace_message(self, params: DirectMessageParams) -> None:
         """Send a userspace message, be it an initial message from the user or from the user's callback function."""
         # ONE: SERIALIZE FUNCTION RESULTS
         # (function input should already be validated at this point)

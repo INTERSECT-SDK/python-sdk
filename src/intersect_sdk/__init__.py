@@ -13,9 +13,7 @@ from .client import IntersectClient
 from .client_callback_definitions import (
     INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
     INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
-    INTERSECT_JSON_VALUE,
     IntersectClientCallback,
-    IntersectClientMessageParams,
 )
 from .config.client import IntersectClientConfig
 from .config.service import IntersectServiceConfig
@@ -28,11 +26,18 @@ from .config.shared import (
 from .core_definitions import IntersectDataHandler, IntersectMimeType
 from .schema import get_schema_from_capability_implementation
 from .service import IntersectService
+from .service_callback_definitions import (
+    INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
+)
 from .service_definitions import (
     IntersectEventDefinition,
     intersect_event,
     intersect_message,
     intersect_status,
+)
+from .shared_callback_definitions import (
+    INTERSECT_JSON_VALUE,
+    DirectMessageParams,
 )
 from .version import __version__, version_info, version_string
 
@@ -47,10 +52,11 @@ __all__ = [
     'IntersectService',
     'IntersectClient',
     'IntersectClientCallback',
-    'IntersectClientMessageParams',
+    'DirectMessageParams',
     'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE',
     'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE',
     'INTERSECT_JSON_VALUE',
+    'INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE',
     'IntersectBaseCapabilityImplementation',
     'default_intersect_lifecycle_loop',
     'IntersectClientConfig',
