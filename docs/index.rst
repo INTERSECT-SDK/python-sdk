@@ -31,16 +31,14 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    :maxdepth: 2
    :caption: API documentation
 
-   api/config_service
-   api/config_client
-   api/config_shared
+   api/config
    api/core_definitions
    api/schema
    api/capability
-   api/service_definitions
    api/service
-   api/client_callback_definitions
+   api/service_definitions
    api/client
+   api/callback_definitions
    api/app_lifecycle
    api/constants
    api/version

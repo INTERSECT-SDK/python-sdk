@@ -26,13 +26,13 @@ class IntersectBaseCapabilityImplementation:
     """Base class for all capabilities.
 
     EVERY capability implementation will need to extend this class. Additionally, if you redefine the constructor,
-    you MUST call super.__init__() .
+    you MUST call `super.__init__()` .
     """
 
     def __init__(self) -> None:
         """This constructor just sets up observers.
 
-        NOTE: If you write your own constructor, you MUST call super.__init__() inside of it. The Service will throw an error if you don't.
+        NOTE: If you write your own constructor, you MUST call `super.__init__()` inside of it. The Service will throw an error if you don't.
         """
         self._capability_name: str = 'InvalidCapability'
         """
@@ -49,7 +49,7 @@ class IntersectBaseCapabilityImplementation:
     def __init_subclass__(cls) -> None:
         """This prevents users from overriding a few key functions.
 
-        General rule of thumb is that any function which starts with "intersect_sdk_" is a protected namespace for defining
+        General rule of thumb is that any function which starts with `intersect_sdk_` is a protected namespace for defining
         the INTERSECT-SDK public API between a capability and its observers.
         """
         if (
