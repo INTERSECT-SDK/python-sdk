@@ -18,7 +18,7 @@ if TYPE_CHECKING:
         INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
     )
     from ..shared_callback_definitions import (
-        DirectMessageParams,
+        IntersectDirectMessageParams,
     )
 
 
@@ -131,7 +131,7 @@ class IntersectBaseCapabilityImplementation:
     @final
     def intersect_sdk_call_service(
         self,
-        request: DirectMessageParams,
+        request: IntersectDirectMessageParams,
         response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
     ) -> list[UUID]:
         """Create an external request that we'll send to a different Service.

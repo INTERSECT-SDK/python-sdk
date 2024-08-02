@@ -2,10 +2,10 @@ import logging
 
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
-    DirectMessageParams,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
+    IntersectDirectMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
       you'll get a message back.
     """
     initial_messages = [
-        DirectMessageParams(
+        IntersectDirectMessageParams(
             destination='hello-organization.hello-facility.hello-system.hello-subsystem.hello-service',
             operation='HelloExample.say_hello_to_name',
             payload='hello_client',
