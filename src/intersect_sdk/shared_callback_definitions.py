@@ -24,7 +24,7 @@ This is a simple type representation of JSON as a Python object. INTERSECT will 
 """
 
 
-class DirectMessageParams(BaseModel):
+class IntersectDirectMessageParams(BaseModel):
     """These are the public-facing properties of a message which can be sent to another Service.
 
     This object can be used by Clients, and by Services if initiating a service-to-service request.

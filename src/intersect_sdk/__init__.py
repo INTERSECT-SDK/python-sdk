@@ -37,7 +37,7 @@ from .service_definitions import (
 )
 from .shared_callback_definitions import (
     INTERSECT_JSON_VALUE,
-    DirectMessageParams,
+    IntersectDirectMessageParams,
 )
 from .version import __version__, version_info, version_string
 
@@ -52,7 +52,7 @@ __all__ = [
     'IntersectService',
     'IntersectClient',
     'IntersectClientCallback',
-    'DirectMessageParams',
+    'IntersectDirectMessageParams',
     'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE',
     'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE',
     'INTERSECT_JSON_VALUE',

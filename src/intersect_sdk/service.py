@@ -59,7 +59,7 @@ from .service_callback_definitions import (
 )
 from .shared_callback_definitions import (
     INTERSECT_JSON_VALUE,  # noqa: TCH001 (runtime-checked annotation)
-    DirectMessageParams,  # noqa: TCH001 (runtime-checked annotation)
+    IntersectDirectMessageParams,  # noqa: TCH001 (runtime-checked annotation)
 )
 from .version import version_string
 
@@ -111,7 +111,7 @@ class IntersectService(IntersectEventObserver):
             self,
             req_id: UUID,
             req_name: str,
-            request: DirectMessageParams,
+            request: IntersectDirectMessageParams,
             response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
         ) -> None:
             """Create an external request."""
@@ -223,13 +223,13 @@ class IntersectService(IntersectEventObserver):
         self._external_request_ctr = 0
 
         self._startup_messages: list[
-            tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
         ] = []
         self._resend_startup_messages = True
         self._sent_startup_messages = False
 
         self._shutdown_messages: list[
-            tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
         ] = []
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
@@ -449,7 +449,9 @@ class IntersectService(IntersectEventObserver):
 
     def add_startup_messages(
         self,
-        messages: list[tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]],
+        messages: list[
+            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+        ],
     ) -> None:
         """Add request messages to send out to various microservices when this service starts.
 
@@ -461,7 +463,9 @@ class IntersectService(IntersectEventObserver):
 
     def add_shutdown_messages(
         self,
-        messages: list[tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]],
+        messages: list[
+            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+        ],
     ) -> None:
         """Add request messages to send out to various microservices on shutdown.
 
@@ -474,7 +478,7 @@ class IntersectService(IntersectEventObserver):
     @validate_call(config=ConfigDict(revalidate_instances='always'))
     def create_external_request(
         self,
-        request: DirectMessageParams,
+        request: IntersectDirectMessageParams,
         response_handler: Union[INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE, None] = None,  # noqa: UP007 (runtime checked annotation)
     ) -> UUID:
         """Create an external request that we'll send to a different Service.
@@ -715,7 +719,7 @@ class IntersectService(IntersectEventObserver):
             error_msg = f'No external request found for message:\n{message}'
             logger.warning(error_msg)
 
-    def _send_client_message(self, request_id: UUID, params: DirectMessageParams) -> bool:
+    def _send_client_message(self, request_id: UUID, params: IntersectDirectMessageParams) -> bool:
         """Send a userspace message."""
         # "params" should already be validated at this stage.
         request = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)

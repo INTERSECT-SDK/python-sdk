@@ -6,8 +6,8 @@ from uuid import UUID, uuid4
 import pytest
 from intersect_sdk import (
     INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
-    DirectMessageParams,
     IntersectBaseCapabilityImplementation,
+    IntersectDirectMessageParams,
     IntersectEventDefinition,
     intersect_event,
     intersect_message,
@@ -23,7 +23,7 @@ class MockObserver(IntersectEventObserver):
         self.tracked_events: list[tuple[str, Any, str]] = []
         self.registered_requests: dict[
             UUID,
-            tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None],
+            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None],
         ] = {}
 
     def _on_observe_event(self, event_name: str, event_value: Any, operation: str) -> None:
@@ -31,7 +31,7 @@ class MockObserver(IntersectEventObserver):
 
     def create_external_request(
         self,
-        request: DirectMessageParams,
+        request: IntersectDirectMessageParams,
         response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
     ) -> UUID:
         request_id = uuid4()
@@ -64,7 +64,7 @@ def test_no_override():
         class BadClass3(IntersectBaseCapabilityImplementation):
             def intersect_sdk_call_service(
                 self,
-                request: DirectMessageParams,
+                request: IntersectDirectMessageParams,
                 response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
             ) -> None:
                 return super().intersect_sdk_call_service(request, response_handler)
@@ -154,7 +154,7 @@ def test_functions_handle_requests():
         @intersect_message()
         def mock_request_flow(self, fake_request_value: str) -> UUID:
             return self.intersect_sdk_call_service(
-                DirectMessageParams(
+                IntersectDirectMessageParams(
                     destination='fake.fake.fake.fake.fake',
                     operation='Fake.fake',
                     payload=fake_request_value,

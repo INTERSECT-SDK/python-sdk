@@ -10,7 +10,7 @@ if TYPE_CHECKING:
         INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
     )
     from ..shared_callback_definitions import (
-        DirectMessageParams,
+        IntersectDirectMessageParams,
     )
 
 
@@ -34,7 +34,7 @@ class IntersectEventObserver(ABC):
     @abstractmethod
     def create_external_request(
         self,
-        request: DirectMessageParams,
+        request: IntersectDirectMessageParams,
         response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
     ) -> UUID:
         """Observed entity (capabilitiy) tells observer (i.e. service) to send an external request.
