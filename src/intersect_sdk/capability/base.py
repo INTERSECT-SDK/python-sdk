@@ -11,7 +11,15 @@ from .._internal.constants import BASE_EVENT_ATTR, BASE_RESPONSE_ATTR, BASE_STAT
 from .._internal.logger import logger
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
     from .._internal.interfaces import IntersectEventObserver
+    from ..service_callback_definitions import (
+        INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
+    )
+    from ..shared_callback_definitions import (
+        DirectMessageParams,
+    )
 
 
 class IntersectBaseCapabilityImplementation:
@@ -39,14 +47,20 @@ class IntersectBaseCapabilityImplementation:
         """
 
     def __init_subclass__(cls) -> None:
-        """This prevents users from overriding a few key functions."""
+        """This prevents users from overriding a few key functions.
+
+        General rule of thumb is that any function which starts with "intersect_sdk_" is a protected namespace for defining
+        the INTERSECT-SDK public API between a capability and its observers.
+        """
         if (
             cls._intersect_sdk_register_observer
             is not IntersectBaseCapabilityImplementation._intersect_sdk_register_observer
             or cls.intersect_sdk_emit_event
             is not IntersectBaseCapabilityImplementation.intersect_sdk_emit_event
+            or cls.intersect_sdk_call_service
+            is not IntersectBaseCapabilityImplementation.intersect_sdk_call_service
         ):
-            msg = f"{cls.__name__}: Cannot override functions '_intersect_sdk_register_observer' or 'intersect_sdk_emit_event'"
+            msg = f"{cls.__name__}: Attempted to override a reserved INTERSECT-SDK function (don't start your function names with '_intersect_sdk_' or 'intersect_sdk_')"
             raise RuntimeError(msg)
 
     @property
@@ -113,3 +127,27 @@ class IntersectBaseCapabilityImplementation:
             return
         for observer in self.__intersect_sdk_observers__:
             observer._on_observe_event(event_name, event_value, annotated_operation)  # noqa: SLF001 (private for application devs, NOT for base implementation)
+
+    @final
+    def intersect_sdk_call_service(
+        self,
+        request: DirectMessageParams,
+        response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
+    ) -> list[UUID]:
+        """Create an external request that we'll send to a different Service.
+
+        Params:
+          - request: the request we want to send out, encapsulated as an IntersectClientMessageParams object
+          - response_handler: optional callback for how we want to handle the response from this request.
+
+        Returns:
+          - list of generated RequestIDs associated with your request. Note that for almost all use cases,
+            this list will have only one associated RequestID.
+
+        Raises:
+          - pydantic.ValidationError - if the request parameter isn't valid
+        """
+        return [
+            observer.create_external_request(request, response_handler)
+            for observer in self.__intersect_sdk_observers__
+        ]

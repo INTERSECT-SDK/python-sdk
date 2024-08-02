@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from threading import Condition, Lock
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Union
 from uuid import UUID, uuid1, uuid3
 
 from pydantic import ConfigDict, ValidationError, validate_call
@@ -52,16 +52,19 @@ from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die
 from ._internal.version_resolver import resolve_user_version
 from .capability.base import IntersectBaseCapabilityImplementation
-from .client_callback_definitions import INTERSECT_JSON_VALUE, IntersectClientMessageParams
 from .config.service import IntersectServiceConfig
 from .core_definitions import IntersectDataHandler, IntersectMimeType
+from .service_callback_definitions import (
+    INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,  # noqa: TCH001 (runtime-checked annotation)
+)
+from .shared_callback_definitions import (
+    INTERSECT_JSON_VALUE,  # noqa: TCH001 (runtime-checked annotation)
+    DirectMessageParams,  # noqa: TCH001 (runtime-checked annotation)
+)
 from .version import version_string
 
 if TYPE_CHECKING:
     from ._internal.function_metadata import FunctionMetadata
-
-
-RESPONSE_CALLBACK_TYPE = Callable[[INTERSECT_JSON_VALUE], None]
 
 
 @final
@@ -108,8 +111,8 @@ class IntersectService(IntersectEventObserver):
             self,
             req_id: UUID,
             req_name: str,
-            request: IntersectClientMessageParams,
-            response_handler: RESPONSE_CALLBACK_TYPE | None = None,
+            request: DirectMessageParams,
+            response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
         ) -> None:
             """Create an external request."""
             self.cv = Condition()
@@ -119,6 +122,7 @@ class IntersectService(IntersectEventObserver):
             self.error: str | None = None
             self.request = request
             self.response: INTERSECT_JSON_VALUE = None
+            self.got_valid_response: bool = False
             self.response_fn = response_handler
             self.waiting: bool = False
 
@@ -219,13 +223,13 @@ class IntersectService(IntersectEventObserver):
         self._external_request_ctr = 0
 
         self._startup_messages: list[
-            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]
+            tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
         ] = []
         self._resend_startup_messages = True
         self._sent_startup_messages = False
 
         self._shutdown_messages: list[
-            tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]
+            tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
         ] = []
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
@@ -444,7 +448,8 @@ class IntersectService(IntersectEventObserver):
         return self._function_keys.copy()
 
     def add_startup_messages(
-        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]]
+        self,
+        messages: list[tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]],
     ) -> None:
         """Add request messages to send out to various microservices when this service starts.
 
@@ -455,7 +460,8 @@ class IntersectService(IntersectEventObserver):
         self._startup_messages.extend(messages)
 
     def add_shutdown_messages(
-        self, messages: list[tuple[IntersectClientMessageParams, RESPONSE_CALLBACK_TYPE | None]]
+        self,
+        messages: list[tuple[DirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]],
     ) -> None:
         """Add request messages to send out to various microservices on shutdown.
 
@@ -468,10 +474,10 @@ class IntersectService(IntersectEventObserver):
     @validate_call(config=ConfigDict(revalidate_instances='always'))
     def create_external_request(
         self,
-        request: IntersectClientMessageParams,
-        response_handler: RESPONSE_CALLBACK_TYPE | None = None,
+        request: DirectMessageParams,
+        response_handler: Union[INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE, None] = None,  # noqa: UP007 (runtime checked annotation)
     ) -> UUID:
-        """Create an external request structure with a Condition we can wait on.
+        """Create an external request that we'll send to a different Service.
 
         Params:
           - request: the request we want to send out, encapsulated as an IntersectClientMessageParams object
@@ -553,7 +559,11 @@ class IntersectService(IntersectEventObserver):
                 logger.warning('Failed to send request!')
 
             # process the response
-            if extreq.response_fn is not None and extreq.error is None:
+            if (
+                extreq.got_valid_response
+                and extreq.response_fn is not None
+                and extreq.error is None
+            ):
                 extreq.response_fn(response)
 
         if cleanup_req:
@@ -698,13 +708,14 @@ class IntersectService(IntersectEventObserver):
                     extreq.error = error_msg
                 else:
                     extreq.response = msg_payload
+                    extreq.got_valid_response = True
                 if extreq.waiting:
                     extreq.cv.notify()
         else:
             error_msg = f'No external request found for message:\n{message}'
             logger.warning(error_msg)
 
-    def _send_client_message(self, request_id: UUID, params: IntersectClientMessageParams) -> bool:
+    def _send_client_message(self, request_id: UUID, params: DirectMessageParams) -> bool:
         """Send a userspace message."""
         # "params" should already be validated at this stage.
         request = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
