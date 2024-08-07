@@ -32,17 +32,13 @@ dependencies = [
     "paho-mqtt>=1.6.1,<2.0.0",
     "minio>=7.2.3",
     "jsonschema[format-nongpl]>=4.21.1", # extras necessary for enforcing formats
+    "eval-type-backport>=0.1.3;python_version<'3.10'", # make pydantic work with newer syntax and older python
     #"brotli>=1.1.0", # TODO - add this dependency when we add compression
 ]
 
 [project.optional-dependencies]
 amqp = [
     "pika>=1.3.2,<2.0.0",
-]
-# if running Python 3.8, you'll need this dependency if you want runtime eval types, i.e.
-# Literal[tuple(some_dict.keys())]
-py38 = [
-    "eval-type-backport>=0.1.3",
 ]
 docs = [
     "sphinx>=5.3.0",
