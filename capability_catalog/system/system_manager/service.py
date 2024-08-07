@@ -3,6 +3,7 @@ import warnings
 import wonderwords
 
 from datetime import datetime, timezone
+from os import getenv
 from typing import Generic, List
 from uuid import uuid3
 
@@ -91,10 +92,16 @@ class SystemManagerCapability(IntersectBaseCapabilityImplementation):
         self._system.information.system_enabled = 1
 
         # MJB TODO: this info should really be read in from some sort of resource config
-        self._resource_names = [ f"resource_{r}" for r in wordgen.random_words(amount=2, word_max_length=6) ]
+        dummy_resources = [ f"resource_{r}" for r in wordgen.random_words(amount=2, word_max_length=6) ]
+        env_resources = getenv("INTERSECT_SYSTEM_RESOURCES")
+        if env_resources:
+            self._resource_names = env_resources.split(',')
+        else:
+            self._resource_names = dummy_resources
 
         # name services we depend on (this should really be hidden from end users)
-        self.registrar = f'{self._org_name}.{self._facility_name}.intersect.infrastructure-management.domain-registrar'
+        default_registrar = f'{self._org_name}.{self._facility_name}.intersect.infrastructure-management.domain-registrar'
+        self.registrar = getenv("INTERSECT_DOMAIN_REGISTRAR", default_registrar)
         self.system_catalog = f'{self._org_name}.{self._facility_name}.{self._system_name}.infrastructure-management.{self._service_name}'
 
         self._update_status()

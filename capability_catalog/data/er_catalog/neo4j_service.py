@@ -111,26 +111,31 @@ class ERCatalogCapability(IntersectBaseCapabilityImplementation):
 
     def _create_entity(self,
                        entity : IntersectEntity) -> bool:
-        labels = f'{entity.entity_type}'
-        if entity.entity_labels is not None and len(entity.entity_labels) > 0:
-            labels += ':' + ':'.join(entity.entity_labels)
-        
-        all_props = {
-            "_name": entity.entity_name,
-            "_type": entity.entity_type,
-            "_desc": entity.entity_description,
-            "_uuid": str(entity.entity_uuid),
-        }
-        if entity.entity_properties is not None and len(entity.entity_properties) > 0:
-            for prop in entity.entity_properties:
-                kv_list = prop.split('=')
-                if len(kv_list) == 2:
-                    all_props[kv_list[0]] = kv_list[1]
- 
+        eid = str(entity.entity_uuid)
         try:
-            query = f'CREATE (e:{labels} $props) RETURN e._uuid AS uuid'
-            record = self._neo.execute_query(query, {"props": all_props},
+            query = f'MATCH (e WHERE e._uuid = "{eid}") RETURN e._uuid AS uuid'
+            record = self._neo.execute_query(query,
                                              result_transformer_=neo4j.Result.single)
+            if record is None:
+                labels = f'{entity.entity_type}'
+                if entity.entity_labels is not None and len(entity.entity_labels) > 0:
+                    labels += ':' + ':'.join(entity.entity_labels)
+                
+                all_props = {
+                    "_name": entity.entity_name,
+                    "_type": entity.entity_type,
+                    "_desc": entity.entity_description,
+                    "_uuid": eid,
+                }
+                if entity.entity_properties is not None and len(entity.entity_properties) > 0:
+                    for prop in entity.entity_properties:
+                        kv_list = prop.split('=')
+                        if len(kv_list) == 2:
+                            all_props[kv_list[0]] = kv_list[1]
+                
+                query = f'CREATE (e:{labels} $props) RETURN e._uuid AS uuid'
+                record = self._neo.execute_query(query, {"props": all_props},
+                                                 result_transformer_=neo4j.Result.single)
             if record is not None:
                 if record["uuid"] == str(entity.entity_uuid):
                     return True
@@ -152,39 +157,46 @@ class ERCatalogCapability(IntersectBaseCapabilityImplementation):
     
     def _create_relation(self,
                          relation : IntersectEntityRelation) -> bool:
-        have_props = False
-        if relation.relation_properties is not None and len(relation.relation_properties) > 0:
-            have_props = True
-            rel_props = dict()
-            rel_props_map = "{"
-            for prop in relation.relation_properties:
-                kv_list = prop.split('=')
-                if len(kv_list) == 2:
-                    key = kv_list[0]
-                    val = kv_list[1]
-                    rel_props[key] = val
-                    rel_props_map += f'{key}: $relprops.{key}, '
-            rel_props_map += "}"
-            rel_props_map = rel_props_map.replace(', }', '}')
-        
+        rel_name = relation.relation_name
         src = self._get_entity_by_uuid(relation.source_id)
         dst = self._get_entity_by_uuid(relation.target_id)
         if src is not None and dst is not None:
-            rel_name = relation.relation_name
-            query =  f'MATCH (src:{src.entity_type} {{_uuid: "{src.entity_uuid}"}})'
-            query += f' MATCH (dst:{dst.entity_type} {{_uuid: "{dst.entity_uuid}"}})'
-            if have_props:
-                query += f' CREATE (src)-[r:{rel_name} {rel_props_map}]->(dst)'
-            else:
-                query += f' CREATE (src)-[r:{rel_name}]->(dst)'
-            query += ' RETURN type(r) AS rname'
-    
             try:
-                if have_props:
-                    record = self._neo.execute_query(query, {"relprops": rel_props},
-                                                     result_transformer_=neo4j.Result.single)
-                else:
-                    record = self._neo.execute_query(query, result_transformer_=neo4j.Result.single)
+                query =  f'MATCH (src:{src.entity_type} {{_uuid: "{src.entity_uuid}"}})'
+                query += f' MATCH (dst:{dst.entity_type} {{_uuid: "{dst.entity_uuid}"}})'
+                query += f' MATCH (src)-[r:{rel_name}]->(dst) RETURN type(r) AS rname'
+                record = self._neo.execute_query(query, result_transformer_=neo4j.Result.single)
+                if record is None:
+                    have_props = False
+                    if relation.relation_properties is not None and len(relation.relation_properties) > 0:
+                        have_props = True
+                        rel_props = dict()
+                        rel_props_map = "{"
+                        for prop in relation.relation_properties:
+                            kv_list = prop.split('=')
+                            if len(kv_list) == 2:
+                                key = kv_list[0]
+                                val = kv_list[1]
+                                rel_props[key] = val
+                                rel_props_map += f'{key}: $relprops.{key}, '
+                        rel_props_map += "}"
+                        rel_props_map = rel_props_map.replace(', }', '}')
+
+                    
+                    query =  f'MATCH (src:{src.entity_type} {{_uuid: "{src.entity_uuid}"}})'
+                    query += f' MATCH (dst:{dst.entity_type} {{_uuid: "{dst.entity_uuid}"}})'
+                    if have_props:
+                        query += f' CREATE (src)-[r:{rel_name} {rel_props_map}]->(dst)'
+                    else:
+                        query += f' CREATE (src)-[r:{rel_name}]->(dst)'
+                    query += ' RETURN type(r) AS rname'
+        
+                    if have_props:
+                        record = self._neo.execute_query(query, {"relprops": rel_props},
+                                                        result_transformer_=neo4j.Result.single)
+                    else:
+                        record = self._neo.execute_query(query, result_transformer_=neo4j.Result.single)
+                
                 if record is not None:
                     if record["rname"] == rel_name:
                         return True

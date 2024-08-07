@@ -1,6 +1,7 @@
 import warnings
 
 from datetime import datetime, timezone
+from os import getenv
 from typing import Generic
 from uuid import uuid3
 
@@ -83,8 +84,10 @@ class SystemInformationCatalogCapability(IntersectBaseCapabilityImplementation):
         self._iservice : IntersectService = None
 
         # name services we depend on (this should really be hidden from end users)
-        self.er_catalog = f'{self._org_name}.{self._facility_name}.intersect.data-management.er-catalog'
-        self.system_manager = f'{self._org_name}.{self._facility_name}.{self._system_name}.infrastructure-management.system-manager'
+        default_catalog = f'{self._org_name}.{self._facility_name}.intersect.data-management.er-catalog'
+        self.er_catalog = getenv("INTERSECT_DOMAIN_CATALOG", default_catalog)
+        
+        self.system_manager = f'{self._org_name}.{self._facility_name}.{self._system_name}.{self._subsys_name}.system-manager'
 
     def get_capability_status(self) -> AvailabilityStatus:
         curr_status = AvailabilityStatus(current_status=self._current_status,
