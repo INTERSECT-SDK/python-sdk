@@ -697,7 +697,7 @@ class IntersectService(IntersectEventObserver):
         )
         logger.debug(f'Sending request message:\n{msg}')
         request_channel = f"{params.destination.replace('.', '/')}/request"
-        self._control_plane_manager.publish_message(request_channel, msg)
+        self._control_plane_manager.publish_message(request_channel, msg, persist=True)
         return True
 
     def _call_user_function(
