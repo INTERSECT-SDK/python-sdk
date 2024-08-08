@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ...config.shared import ControlPlaneConfig
     from .brokers.broker_client import BrokerClient
 
-GENERIC_MESSAGE_SERIALIZER = TypeAdapter(Any)
+GENERIC_MESSAGE_SERIALIZER: TypeAdapter[Any] = TypeAdapter(Any)
 
 
 def serialize_message(message: Any) -> bytes:
