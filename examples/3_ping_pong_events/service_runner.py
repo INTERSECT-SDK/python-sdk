@@ -58,7 +58,8 @@ def run_service(capability: P_ngBaseCapabilityImplementation) -> None:
         status_interval=30.0,
         **from_config_file,
     )
-    service = IntersectService(capability, config)
+    capability.capability_name = service_name
+    service = IntersectService([capability], config)
     logger.info('Starting %s_service, use Ctrl+C to exit.', service_name)
 
     """

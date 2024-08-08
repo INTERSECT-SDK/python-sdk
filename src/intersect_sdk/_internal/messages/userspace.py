@@ -2,12 +2,21 @@
 
 This module is internal-facing and should not be used directly by users.
 
+Services have two associated channels which handle userspace messages: their request channel
+and their response channel. Services always CONSUME messages from these channels, but never PRODUCE messages
+on these channels. (A message is always sent in the receiver's namespace).
+
+The response channel is how the service handles external requests, the request channel is used when this service itself
+needs to make external requests through INTERSECT.
+
 Services should ALWAYS be CONSUMING from their userspace channel.
 They should NEVER be PRODUCING messages on their userspace channel.
 
 Clients should be CONSUMING from their userspace channel, but should only get messages
 from services they explicitly messaged.
 """
+
+from __future__ import annotations
 
 import datetime
 import uuid
@@ -16,10 +25,13 @@ from typing import Any, Union
 from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
 
-from ...constants import SYSTEM_OF_SYSTEM_REGEX
-from ...core_definitions import IntersectDataHandler, IntersectMimeType
+from ...constants import SYSTEM_OF_SYSTEM_REGEX  # noqa: TCH001 (this is runtime checked)
+from ...core_definitions import (  # noqa: TCH001 (this is runtime checked)
+    IntersectDataHandler,
+    IntersectMimeType,
+)
 from ...version import version_string
-from ..data_plane.minio_utils import MinioPayload
+from ..data_plane.minio_utils import MinioPayload  # noqa: TCH001 (this is runtime checked)
 
 
 class UserspaceMessageHeader(TypedDict):
@@ -115,7 +127,7 @@ class UserspaceMessage(TypedDict):
     the headers of the message
     """
 
-    payload: Union[bytes, MinioPayload]  # noqa: FA100 (Pydantic uses runtime annotations)
+    payload: Union[bytes, MinioPayload]  # noqa: UP007 (Pydantic uses runtime annotations)
     """
     main payload of the message. Needs to match the schema format, including the content type.
 
@@ -141,11 +153,13 @@ def create_userspace_message(
     content_type: IntersectMimeType,
     data_handler: IntersectDataHandler,
     payload: Any,
+    message_id: uuid.UUID | None = None,
     has_error: bool = False,
 ) -> UserspaceMessage:
     """Payloads depend on the data_handler and has_error."""
+    msg_id = message_id if message_id else uuid.uuid4()
     return UserspaceMessage(
-        messageId=uuid.uuid4(),
+        messageId=msg_id,
         operationId=operation_id,
         contentType=content_type,
         payload=payload,

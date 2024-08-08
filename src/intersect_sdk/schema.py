@@ -33,7 +33,7 @@ from typing import (
     Any,
 )
 
-from ._internal.schema import get_schema_and_functions_from_capability_implementation
+from ._internal.schema import get_schema_and_functions_from_capability_implementations
 
 if TYPE_CHECKING:
     from .capability.base import IntersectBaseCapabilityImplementation
@@ -42,13 +42,13 @@ if TYPE_CHECKING:
 
 def get_schema_from_capability_implementation(
     capability_type: type[IntersectBaseCapabilityImplementation],
-    capability_name: HierarchyConfig,
+    service_name: HierarchyConfig,
 ) -> dict[str, Any]:
     """The goal of this function is to be able to generate a complete schema matching the AsyncAPI spec 2.6.0 from a BaseModel class.
 
     Params:
       - capability_type - the SDK user will provide the class of their capability handler, which generates the schema
-      - capability_name - ideally, this could be scanned by the package name. Meant to be descriptive, i.e. "nionswift"
+      - service_name - ideally, this could be scanned by the package name. Meant to be descriptive, i.e. "nionswift"
 
 
     SOME NOTES ABOUT THE SCHEMA
@@ -69,9 +69,10 @@ def get_schema_from_capability_implementation(
 
     - Channel names just mimic the function names for now
     """
-    schemas, _, _, _, _ = get_schema_and_functions_from_capability_implementation(
-        capability_type,
-        capability_name,
+    cap_instance = capability_type()
+    schemas, _, _, _, _, _ = get_schema_and_functions_from_capability_implementations(
+        [cap_instance],
+        service_name,
         set(),  # assume all data handlers are configured if user is just checking their schema
     )
     return schemas

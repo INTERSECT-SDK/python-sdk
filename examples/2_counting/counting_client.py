@@ -7,7 +7,7 @@ from intersect_sdk import (
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
-    IntersectClientMessageParams,
+    IntersectDirectMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -38,54 +38,54 @@ class SampleOrchestrator:
         self.message_stack = [
             # wait 5 seconds before stopping the counter. "Count" in response will be approx. 6
             (
-                IntersectClientMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='stop_count',
+                    operation='CountingExample.stop_count',
                     payload=None,
                 ),
                 5.0,
             ),
             # start the counter up again - it will not be 0 at this point! "Count" in response will be approx. 7
             (
-                IntersectClientMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='start_count',
+                    operation='CountingExample.start_count',
                     payload=None,
                 ),
                 1.0,
             ),
             # reset the counter, but have it immediately start running again. "Count" in response will be approx. 10
             (
-                IntersectClientMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='reset_count',
+                    operation='CountingExample.reset_count',
                     payload=True,
                 ),
                 3.0,
             ),
             # reset the counter, but don't have it run again. "Count" in response will be approx. 6
             (
-                IntersectClientMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='reset_count',
+                    operation='CountingExample.reset_count',
                     payload=False,
                 ),
                 5.0,
             ),
             # start the counter back up. "Count" in response will be approx. 1
             (
-                IntersectClientMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='start_count',
+                    operation='CountingExample.start_count',
                     payload=None,
                 ),
                 3.0,
             ),
             # finally, stop the counter one last time. "Count" in response will be approx. 4
             (
-                IntersectClientMessageParams(
+                IntersectDirectMessageParams(
                     destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-                    operation='stop_count',
+                    operation='CountingExample.stop_count',
                     payload=None,
                 ),
                 3.0,
@@ -158,9 +158,9 @@ if __name__ == '__main__':
     # The counter will start after the initial message.
     # If the service is already active and counting, this may do nothing.
     initial_messages = [
-        IntersectClientMessageParams(
+        IntersectDirectMessageParams(
             destination='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-            operation='start_count',
+            operation='CountingExample.start_count',
             payload=None,
         )
     ]

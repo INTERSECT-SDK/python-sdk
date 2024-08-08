@@ -38,5 +38,5 @@ def test_minio_not_allowed_without_config(caplog: pytest.LogCaptureFixture):
         ],
     )
     with pytest.raises(SystemExit):
-        IntersectService(cap, conf)
+        IntersectService([cap], conf)
     assert "function 'arbitrary_function' should not set response_data_type as 1" in caplog.text

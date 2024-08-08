@@ -12,6 +12,10 @@ class FunctionMetadata(NamedTuple):
     NOTE: both this class and all properties in it should remain immutable after creation
     """
 
+    capability: type
+    """
+    The type of the class that implements the target method.
+    """
     method: Callable[[Any], Any]
     """
     The raw method of the function. The function itself is useless and should not be called,

@@ -5,7 +5,7 @@
 groups = ["default", "amqp", "docs", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:e913b82a30d15af817ca98ba23e08ae31acc347d75874c44f85a834131ead111"
+content_hash = "sha256:efa263a9002fbf005d5af40603908ef32b5e97f5f6dea60176723fea2906dc09"
 
 [[metadata.targets]]
 requires_python = ">=3.8.10,<4.0"

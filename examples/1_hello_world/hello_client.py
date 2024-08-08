@@ -5,7 +5,7 @@ from intersect_sdk import (
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
-    IntersectClientMessageParams,
+    IntersectDirectMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -74,9 +74,9 @@ if __name__ == '__main__':
       you'll get a message back.
     """
     initial_messages = [
-        IntersectClientMessageParams(
+        IntersectDirectMessageParams(
             destination='hello-organization.hello-facility.hello-system.hello-subsystem.hello-service',
-            operation='say_hello_to_name',
+            operation='HelloExample.say_hello_to_name',
             payload='hello_client',
         )
     ]

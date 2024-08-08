@@ -82,13 +82,13 @@ def test_example_2_counter():
             == 'Source: "counting-organization.counting-facility.counting-system.counting-subsystem.counting-service"'
         )
     # test operation
-    assert lines[1] == 'Operation: "start_count"'
-    assert lines[5] == 'Operation: "stop_count"'
-    assert lines[9] == 'Operation: "start_count"'
-    assert lines[13] == 'Operation: "reset_count"'
-    assert lines[17] == 'Operation: "reset_count"'
-    assert lines[21] == 'Operation: "start_count"'
-    assert lines[25] == 'Operation: "stop_count"'
+    assert lines[1] == 'Operation: "CountingExample.start_count"'
+    assert lines[5] == 'Operation: "CountingExample.stop_count"'
+    assert lines[9] == 'Operation: "CountingExample.start_count"'
+    assert lines[13] == 'Operation: "CountingExample.reset_count"'
+    assert lines[17] == 'Operation: "CountingExample.reset_count"'
+    assert lines[21] == 'Operation: "CountingExample.start_count"'
+    assert lines[25] == 'Operation: "CountingExample.stop_count"'
 
     # test payloads
     # if 'count' is within 3 steps of the subtrahend, just pass the test
