@@ -35,6 +35,8 @@ class SampleOrchestrator:
           payload: Value of the response from the Service.
         """
         print(payload)
+        # break out of pubsub loop
+        raise Exception
 
 
 if __name__ == '__main__':

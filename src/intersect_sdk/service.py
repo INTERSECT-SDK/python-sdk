@@ -125,6 +125,8 @@ class IntersectService(IntersectEventObserver):
             self.got_valid_response: bool = False
             self.response_fn = response_handler
             self.waiting: bool = False
+            self.cleanup_req = False
+            """When this flag is set to True, mark this request for GC deletion."""
 
     def __init__(
         self,
@@ -507,14 +509,6 @@ class IntersectService(IntersectEventObserver):
         self._external_requests_lock.release_lock()
         return request_uuid
 
-    def _delete_external_request(self, req_id: UUID) -> None:
-        req_id_str = str(req_id)
-        if req_id_str in self._external_requests:
-            self._external_requests_lock.acquire_lock(blocking=True)
-            req: IntersectService._ExternalRequest = self._external_requests.pop(req_id_str)
-            del req
-            self._external_requests_lock.release_lock()
-
     def _get_external_request(self, req_id: UUID) -> IntersectService._ExternalRequest | None:
         req_id_str = str(req_id)
         if req_id_str in self._external_requests:
@@ -524,14 +518,25 @@ class IntersectService(IntersectEventObserver):
 
     def _process_external_requests(self) -> None:
         self._external_requests_lock.acquire_lock(blocking=True)
+
+        # process requests
         for extreq in self._external_requests.values():
             if not extreq.processed:
                 self._process_external_request(extreq)
+        # delete requests
+        cleanup_list = [
+            str(extreq.request_id)
+            for extreq in self._external_requests.values()
+            if extreq.cleanup_req
+        ]
+        for extreq_id in cleanup_list:
+            extreq = self._external_requests.pop(extreq_id)
+            del extreq
+
         self._external_requests_lock.release_lock()
 
     def _process_external_request(self, extreq: IntersectService._ExternalRequest) -> None:
         response = None
-        cleanup_req = False
 
         now = datetime.now(timezone.utc)
         logger.debug(f'Processing external request {extreq.request_id} @ {now}')
@@ -555,7 +560,7 @@ class IntersectService(IntersectEventObserver):
                         logger.warning(
                             f'External service request encountered an error: {error_msg}'
                         )
-                    cleanup_req = True
+                    extreq.cleanup_req = True
                 else:
                     logger.debug('Request wait timed-out!')
                 extreq.waiting = False
@@ -569,9 +574,6 @@ class IntersectService(IntersectEventObserver):
                 and extreq.error is None
             ):
                 extreq.response_fn(response)
-
-        if cleanup_req:
-            self._delete_external_request(extreq.request_id)
 
     def _handle_service_message_raw(self, raw: bytes) -> None:
         """Main broker callback function.
