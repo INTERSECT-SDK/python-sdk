@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 class SampleOrchestrator:
-    """Simply contains an event callback for events from Service One."""
+    """Simply contains an event callback for events from Service 1."""
 
     def event_callback(
         self, _source: str, _operation: str, _event_name: str, payload: INTERSECT_JSON_VALUE
     ) -> None:
-        """This simply prints the event from Service One  to your console.
+        """This simply prints the event from Service 1 to your console.
 
         Params:
           source: the source of the response message.
@@ -34,7 +34,6 @@ class SampleOrchestrator:
           _has_error: Boolean value which represents an error.
           payload: Value of the response from the Service.
         """
-        logger.info('making it to event callback')
         print(payload)
 
 

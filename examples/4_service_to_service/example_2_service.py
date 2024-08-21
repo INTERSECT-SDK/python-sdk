@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExampleServiceTwoCapabilityImplementation(IntersectBaseCapabilityImplementation):
-    """Service Two Capability."""
+    """Service 2 Capability."""
 
     @intersect_status()
     def status(self) -> str:
@@ -27,7 +27,6 @@ class ExampleServiceTwoCapabilityImplementation(IntersectBaseCapabilityImplement
     @intersect_message
     def test_service(self, text: str) -> str:
         """Returns the text given along with acknowledgement."""
-        logger.info('Making it to service 2')
         return f'Acknowledging service one text -> {text}'
 
 
@@ -56,7 +55,7 @@ if __name__ == '__main__':
     capability = ExampleServiceTwoCapabilityImplementation()
     capability.capability_name = 'ServiceTwo'
     service = IntersectService([capability], config)
-    logger.info('Starting service two, use Ctrl+C to exit.')
+    logger.info('Starting Service 2, use Ctrl+C to exit.')
     default_intersect_lifecycle_loop(
         service,
     )
