@@ -137,5 +137,5 @@ def test_example_3_ping_pong_events_amqp():
 def test_example_4_service_to_service():
     assert (
         run_example_test('4_service_to_service')
-        == 'Received Response from Service 2: Acknowledging service one text -> Kicking off the example!'
+        == 'Received Response from Service 2: Acknowledging service one text -> Kicking off the example!\n'
     )
