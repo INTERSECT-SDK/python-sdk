@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.6.4",
+  "x-intersect-version": "0.7.0",
   "info": {
     "title": "hello-organization.hello-facility.hello-system.hello-subsystem.hello-service",
     "version": "0.0.0",
