@@ -25,9 +25,10 @@ jobs:
           PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: pdm publish --username __token__ --repository pypi
       - name: upload to github release
-        uses: softprops/action-gh-release@v2
+        uses: docker://antonyurchenko/git-release:v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # assume any version with "a" (gets "ALPHA") or "b" (gets BETA) or "rc" (release candidates) will be a prerelease
+          PRE_RELEASE: "${{ contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc') }}"
         with:
-          files: |
-            dist/*
-          # assume any version with "a" (gets "ALPHA") or "b" (gets BETA) will be a prerelease
-          prerelease: ${{ contains(github.ref_name, 'a') || contains(github.ref_name, 'b') }}
+          args: dist/*

@@ -72,3 +72,9 @@ Docstrings
 Docstrings for Python classes, functions, and modules should adhere to the `Google style <https://google.github.io/styleguide/pyguide.html>`_. The docstrings are processed by the `napoleon extension <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/>`_ for the Sphinx generated documentation.
 
 We require docstrings for all public classes, functions, and modules.
+
+
+Changelog
+---------
+
+We follow the `Common Changelog <https://common-changelog.org>`_ format. When changing/adding/removing functionality, or for bugfixes, please add an appropriate entry in the Change Group (Changed/Added/Removed/Fixed) . See sections 2.2 and 2.4 for details.
