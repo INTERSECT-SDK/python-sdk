@@ -36,6 +36,12 @@ dependencies = [
     #"brotli>=1.1.0", # TODO - add this dependency when we add compression
 ]
 
+[project.urls]
+Homepage = "https://github.com/INTERSECT-SDK/python-sdk/"
+Changelog = "https://github.com/INTERSECT-SDK/python-sdk/blob/main/CHANGELOG.md"
+Documentation = "https://intersect-python-sdk.readthedocs.io/en/latest/"
+Issues = "https://github.com/INTERSECT-SDK/python-sdk/issues"
+
 [project.optional-dependencies]
 amqp = [
     "pika>=1.3.2,<2.0.0",
