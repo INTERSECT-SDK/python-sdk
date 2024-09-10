@@ -33,6 +33,7 @@ class MockObserver(IntersectEventObserver):
         self,
         request: IntersectDirectMessageParams,
         response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
+        timeout: float = 300.0,
     ) -> UUID:
         request_id = uuid4()
         self.registered_requests[request_id] = (request, response_handler)
@@ -160,9 +161,16 @@ def test_functions_handle_requests():
                     payload=fake_request_value,
                 ),
                 self._mock_other_service_callback,
+                300.0,
             )[0]
 
-        def _mock_other_service_callback(self, param: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE):
+        def _mock_other_service_callback(
+            self,
+            _source: str,
+            _operation: str,
+            _has_error: bool,
+            param: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
+        ):
             self.tracked_responses.append(param)
 
     # setup
@@ -178,6 +186,6 @@ def test_functions_handle_requests():
     assert req.payload == body
 
     # mock calling the response handler
-    res('pong')
+    res('fake.fake.fake.fake.fake', 'Fake.fake', False, 'pong')
     assert len(capability.tracked_responses) == 1
     assert capability.tracked_responses[0] == 'pong'
