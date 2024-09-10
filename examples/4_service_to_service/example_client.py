@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 class SampleOrchestrator:
     """Simply contains an event callback for events from Service 1."""
 
+    def __init__(self) -> None:
+        """Straightforward constructor, just initializes global variable which counts events."""
+        self.got_first_event = False
+
     def event_callback(
         self, _source: str, _operation: str, _event_name: str, payload: INTERSECT_JSON_VALUE
     ) -> None:
@@ -35,8 +39,11 @@ class SampleOrchestrator:
           payload: Value of the response from the Service.
         """
         print(payload)
-        # break out of pubsub loop
-        raise Exception
+        if self.got_first_event:
+            # break out of pubsub loop
+            raise Exception
+        self.got_first_event = True
+        # empty return, don't send any additional messages or modify the events listened to
 
 
 if __name__ == '__main__':

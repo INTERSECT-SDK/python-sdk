@@ -36,12 +36,14 @@ class IntersectEventObserver(ABC):
         self,
         request: IntersectDirectMessageParams,
         response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
+        timeout: float = 300.0,
     ) -> UUID:
         """Observed entity (capabilitiy) tells observer (i.e. service) to send an external request.
 
         Params:
           - request: the request we want to send out, encapsulated as an IntersectClientMessageParams object
           - response_handler: optional callback for how we want to handle the response from this request.
+          - timeout: optional value for how long we should wait on the request, in seconds (default: 300 seconds)
 
         Returns:
           - generated RequestID associated with your request

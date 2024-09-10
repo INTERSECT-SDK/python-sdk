@@ -40,9 +40,26 @@ class ExampleServiceOneCapabilityImplementation(IntersectBaseCapabilityImplement
         self.intersect_sdk_call_service(msg_to_send, self.service_2_handler)
 
     @intersect_event(events={'response_event': IntersectEventDefinition(event_type=str)})
-    def service_2_handler(self, msg: str) -> None:
-        """Handles response from service 2 and emits the response as an event for the client."""
+    def service_2_handler(self, _source: str, _operation: str, _has_error: bool, msg: str) -> None:
+        """Handles first response from service 2, emits the response as an event for the client, and sends a hardcoded message to service 2."""
         self.intersect_sdk_emit_event('response_event', f'Received Response from Service 2: {msg}')
+
+        # verify that we can call the service multiple
+        msg_to_send = IntersectDirectMessageParams(
+            destination='example-organization.example-facility.example-system.example-subsystem.service-two',
+            operation='ServiceTwo.test_service',
+            payload='Final Verification',
+        )
+        self.intersect_sdk_call_service(msg_to_send, self.additional_service_handler)
+
+    @intersect_event(events={'response_event': IntersectEventDefinition(event_type=str)})
+    def additional_service_handler(
+        self, _source: str, _operation: str, _has_error: bool, msg: str
+    ) -> None:
+        """Handles second response from service 2 and emits the response as an event for the client."""
+        self.intersect_sdk_emit_event(
+            'response_event', f'Received Second Response from Service 2: {msg}'
+        )
 
 
 if __name__ == '__main__':

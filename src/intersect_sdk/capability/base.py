@@ -133,12 +133,14 @@ class IntersectBaseCapabilityImplementation:
         self,
         request: IntersectDirectMessageParams,
         response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
+        timeout: float = 300,
     ) -> list[UUID]:
         """Create an external request that we'll send to a different Service.
 
         Params:
           - request: the request we want to send out, encapsulated as an IntersectClientMessageParams object
           - response_handler: optional callback for how we want to handle the response from this request.
+          - timeout: optional value for how long we should wait on the request, in seconds (default: 300 seconds)
 
         Returns:
           - list of generated RequestIDs associated with your request. Note that for almost all use cases,
@@ -148,6 +150,6 @@ class IntersectBaseCapabilityImplementation:
           - pydantic.ValidationError - if the request parameter isn't valid
         """
         return [
-            observer.create_external_request(request, response_handler)
+            observer.create_external_request(request, response_handler, timeout)
             for observer in self.__intersect_sdk_observers__
         ]

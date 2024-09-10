@@ -24,6 +24,7 @@ The following commit tracks several issues with MINIO: https://code.ornl.gov/int
 """
 
 ControlProvider = Literal['mqtt3.1.1', 'amqp0.9.1']
+"""The type of broker we connect to."""
 
 
 class HierarchyConfig(BaseModel):

@@ -19,6 +19,7 @@ from .config.client import IntersectClientConfig
 from .config.service import IntersectServiceConfig
 from .config.shared import (
     ControlPlaneConfig,
+    ControlProvider,
     DataStoreConfig,
     DataStoreConfigMap,
     HierarchyConfig,
@@ -63,6 +64,7 @@ __all__ = [
     'IntersectServiceConfig',
     'HierarchyConfig',
     'ControlPlaneConfig',
+    'ControlProvider',
     'DataStoreConfig',
     'DataStoreConfigMap',
     '__version__',

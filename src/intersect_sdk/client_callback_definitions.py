@@ -3,13 +3,13 @@
 See shared_callback_definitions for additional typings which are also shared by service authors.
 """
 
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Annotated, TypeAlias, final
+from typing_extensions import Annotated, final
 
 from .constants import SYSTEM_OF_SYSTEM_REGEX
-from .shared_callback_definitions import IntersectDirectMessageParams
+from .shared_callback_definitions import INTERSECT_JSON_VALUE, IntersectDirectMessageParams
 
 
 @final
@@ -42,22 +42,6 @@ class IntersectClientCallback(BaseModel):
 
     # pydantic config
     model_config = ConfigDict(revalidate_instances='always')
-
-
-INTERSECT_JSON_VALUE: TypeAlias = Union[
-    List['INTERSECT_JSON_VALUE'],
-    Dict[str, 'INTERSECT_JSON_VALUE'],
-    str,
-    bool,
-    int,
-    float,
-    None,
-]
-"""
-This is a simple type representation of JSON as a Python object. INTERSECT will automatically deserialize service payloads into one of these types.
-
-(Pydantic has a similar type, "JsonValue", which should be used if you desire functionality beyond type hinting. This is strictly a type hint.)
-"""
 
 
 INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE = Callable[

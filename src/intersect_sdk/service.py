@@ -16,10 +16,10 @@ Most useful definitions and typings will be found in the service_definitions mod
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from threading import Condition, Lock
+import time
+from threading import Lock
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, Union
 from uuid import UUID, uuid1, uuid3
 
 from pydantic import ConfigDict, ValidationError, validate_call
@@ -105,7 +105,22 @@ class IntersectService(IntersectEventObserver):
     """
 
     class _ExternalRequest:
-        """Class representative of an ongoing request to another service."""
+        """Class representative of an ongoing request to another service.
+
+        TODO - currently only works as a nonblocking API.
+        """
+
+        RequestState = Literal[
+            'unhandled', 'sending', 'sent', 'received', 'processing', 'finalized'
+        ]
+        """
+        - unhandled = message has not been sent yet
+        - sending = intermediate state marking that we are currently sending a message (do not use in control flow)
+        - sent = message has been sent but we have not yet gotten a response
+        - received = we got a message back from the service (may be an error or not) but we have not processed it yet
+        - processing = intermediate state marking that we are currently processing a message through the callback function (do not use in control flow)
+        - finalized = will not handle request any further, mark for deletion
+        """
 
         def __init__(
             self,
@@ -113,20 +128,31 @@ class IntersectService(IntersectEventObserver):
             req_name: str,
             request: IntersectDirectMessageParams,
             response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
+            timeout: float = 300.0,
         ) -> None:
             """Create an external request."""
-            self.cv = Condition()
+            self.request_state: IntersectService._ExternalRequest.RequestState = 'unhandled'
+            """The state of this request, used as the baseline for all comparisons.
+
+            This is modified across threads, but since the value should have a 'linear progression'
+            (for example - once set to 'finalized', will not be set to anything else), it should be safe to modify across threads.
+            """
+            self.sent_time = float('-inf')
+            """
+            Time that we sent off the message.
+
+            Initialized as negative infinity, but will be set to time.time() once we send off the message.
+            """
+            self.timeout = timeout
+            """Maximum amount of time to wait after the message is sent (immutable after object creation)."""
             self.request_id = req_id
             self.request_name = req_name
-            self.processed: bool = False
-            self.error: str | None = None
             self.request = request
-            self.response: INTERSECT_JSON_VALUE = None
-            self.got_valid_response: bool = False
+            self.has_error = False
+            self.response_payload: INTERSECT_JSON_VALUE = None
+            """Value we get back as response"""
             self.response_fn = response_handler
-            self.waiting: bool = False
-            self.cleanup_req = False
-            """When this flag is set to True, mark this request for GC deletion."""
+            """User callback function"""
 
     def __init__(
         self,
@@ -482,12 +508,14 @@ class IntersectService(IntersectEventObserver):
         self,
         request: IntersectDirectMessageParams,
         response_handler: Union[INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE, None] = None,  # noqa: UP007 (runtime checked annotation)
+        timeout: float = 300.0,
     ) -> UUID:
         """Create an external request that we'll send to a different Service.
 
         Params:
           - request: the request we want to send out, encapsulated as an IntersectClientMessageParams object
           - response_handler: optional callback for how we want to handle the response from this request.
+          - timeout: optional value for how long we should wait on the request, in seconds (default: 300 seconds)
 
         Returns:
           - generated RequestID associated with your request
@@ -503,6 +531,7 @@ class IntersectService(IntersectEventObserver):
             req_name=request_name,
             request=request,
             response_handler=response_handler,
+            timeout=timeout,
         )
         self._external_requests_lock.acquire_lock(blocking=True)
         self._external_requests[str(request_uuid)] = extreq
@@ -517,63 +546,62 @@ class IntersectService(IntersectEventObserver):
         return None
 
     def _process_external_requests(self) -> None:
+        # use the lock to get an initial list of requests, but do not process them while we have obtained the lock; processing can take time
         self._external_requests_lock.acquire_lock(blocking=True)
+        requests_to_process = [
+            req
+            for req in self._external_requests.values()
+            if req.request_state not in ('finalized', 'sent')
+        ]
+        self._external_requests_lock.release_lock()
 
-        # process requests
-        for extreq in self._external_requests.values():
-            if not extreq.processed:
-                self._process_external_request(extreq)
-        # delete requests
+        # process the requests without holding the lock - these requests can potentially take time
+        # the request values ARE mutable, but the main external request dictionary is NOT
+        for req in requests_to_process:
+            self._process_external_request(req)
+
+        # acquire lock for cleanup
+        self._external_requests_lock.acquire_lock(blocking=True)
         cleanup_list = [
             str(extreq.request_id)
             for extreq in self._external_requests.values()
-            if extreq.cleanup_req
+            if extreq.request_state == 'finalized'
+            or (extreq.request_state == 'sent' and time.time() - extreq.sent_time > extreq.timeout)
         ]
         for extreq_id in cleanup_list:
             extreq = self._external_requests.pop(extreq_id)
             del extreq
-
         self._external_requests_lock.release_lock()
 
     def _process_external_request(self, extreq: IntersectService._ExternalRequest) -> None:
-        response = None
-
-        now = datetime.now(timezone.utc)
-        logger.debug(f'Processing external request {extreq.request_id} @ {now}')
-
-        with extreq.cv:
-            # execute the request
-            extreq.processed = True
+        if extreq.request_state == 'unhandled':
+            # use temporary intermediate state to avoid sending message twice
+            extreq.request_state = 'sending'
+            # need to send the request
             if self._send_client_message(request_id=extreq.request_id, params=extreq.request):
-                # MJB NOTE: currently it is impossible to get a response for the
-                #           external request when this function is called while
-                #           handling an incoming request, so we are just ignoring
-                #           any wait timeouts below.
-
-                # wait on the response condition and get the response
-                extreq.waiting = True
-                if extreq.cv.wait(timeout=1.0):
-                    if extreq.error is None:
-                        response = extreq.response
-                    else:
-                        error_msg = extreq.error
-                        logger.warning(
-                            f'External service request encountered an error: {error_msg}'
-                        )
-                    extreq.cleanup_req = True
-                else:
-                    logger.debug('Request wait timed-out!')
-                extreq.waiting = False
+                extreq.request_state = 'sent'
+                extreq.sent_time = time.time()
             else:
-                logger.warning('Failed to send request!')
-
-            # process the response
-            if (
-                extreq.got_valid_response
-                and extreq.response_fn is not None
-                and extreq.error is None
-            ):
-                extreq.response_fn(response)
+                # we were unable to even send the message, so immediately mark it for cleanup
+                extreq.request_state = 'finalized'
+        elif extreq.request_state == 'received':
+            # use temporary intermediate state to avoid calling user function twice
+            extreq.request_state = 'processing'
+            if extreq.response_fn:
+                # call user function
+                try:
+                    extreq.response_fn(
+                        extreq.request.destination,
+                        extreq.request.operation,
+                        extreq.has_error,
+                        extreq.response_payload,
+                    )
+                except Exception as e:  # noqa: BLE001 (need to catch all user exceptions)
+                    logger.warning(
+                        f'!!! INTERSECT: service callback function "{extreq.response_fn.__name__}" produced uncaught exception',
+                        e,
+                    )
+            extreq.request_state = 'finalized'
 
     def _handle_service_message_raw(self, raw: bytes) -> None:
         """Main broker callback function.
@@ -683,7 +711,10 @@ class IntersectService(IntersectEventObserver):
         )
 
     def _handle_client_message_raw(self, raw: bytes) -> None:
-        """Broker callback, deserialize and validate a userspace message from a broker."""
+        """Broker callback, deserialize and validate a userspace message from a broker.
+
+        These are 'response' messages from this service calling another service.
+        """
         try:
             message = deserialize_and_validate_userspace_message(raw)
             logger.debug(f'Received userspace message:\n{message}')
@@ -694,7 +725,7 @@ class IntersectService(IntersectEventObserver):
             )
 
     def _handle_client_message(self, message: UserspaceMessage) -> None:
-        """Handle a deserialized userspace message."""
+        """Handle a deserialized service-2-service message."""
         extreq = self._get_external_request(message['messageId'])
         if extreq is not None:
             error_msg: str | None = None
@@ -709,14 +740,29 @@ class IntersectService(IntersectEventObserver):
                 error_msg = 'INTERNAL ERROR: failed to get message payload from data handler'
                 logger.error(error_msg)
 
-            with extreq.cv:
-                if error_msg is not None:
-                    extreq.error = error_msg
-                else:
-                    extreq.response = msg_payload
-                    extreq.got_valid_response = True
-                if extreq.waiting:
-                    extreq.cv.notify()
+            if error_msg:
+                # we did not get a valid INTERSECT message back, so just mark it for cleanup
+                extreq.request_state = 'finalized'
+            elif (
+                extreq.request.destination != message['headers']['source']
+                or extreq.request.operation != message['operationId']
+            ):
+                logger.warning(
+                    'Possible spoof message, discarding. Target destination',
+                    extreq.request.destination,
+                    'Actual source',
+                    message['headers']['source'],
+                    'Target operation',
+                    extreq.request.operation,
+                    'Actual operation',
+                    message['operationId'],
+                )
+                extreq.request_state = 'finalized'
+            else:
+                # success
+                extreq.response_payload = msg_payload
+                extreq.has_error = message['headers']['has_error']
+                extreq.request_state = 'received'
         else:
             error_msg = f'No external request found for message:\n{message}'
             logger.warning(error_msg)
