@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.7.0",
+  "x-intersect-version": "0.8.0",
   "info": {
     "title": "test.test.test.test.test",
     "description": "INTERSECT schema",
