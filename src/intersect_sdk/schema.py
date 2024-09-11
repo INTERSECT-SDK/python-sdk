@@ -34,45 +34,37 @@ from typing import (
 )
 
 from ._internal.schema import get_schema_and_functions_from_capability_implementations
+from .capability.base import IntersectBaseCapabilityImplementation
 
 if TYPE_CHECKING:
-    from .capability.base import IntersectBaseCapabilityImplementation
     from .config.shared import HierarchyConfig
 
 
-def get_schema_from_capability_implementation(
-    capability_type: type[IntersectBaseCapabilityImplementation],
-    service_name: HierarchyConfig,
+def get_schema_from_capability_implementations(
+    capability_types: list[type[IntersectBaseCapabilityImplementation]],
+    hierarchy: HierarchyConfig,
 ) -> dict[str, Any]:
-    """The goal of this function is to be able to generate a complete schema matching the AsyncAPI spec 2.6.0 from a BaseModel class.
+    """The goal of this function is to be able to generate a complete schema somewhat resembling the AsyncAPI spec 2.6.0 from a BaseModel class.
+
+    The generated schema is currently not a complete replica of the AsyncAPI spec. See https://www.asyncapi.com/docs/reference/specification/v2.6.0 for the complete specification.
+    Some key differences:
+      - We utilize three custom fields: "capabilities", "events", and "status".
+      - "capabilities" contains a dictionary: the keys of this dictionary are capability names. The values are dictionaries with the "description" property being a string which describes the capability,
+        and a "channels" property which more closely follows the AsyncAPI specification of the top-level value "channels".
+      - "events" is a key-value dictionary: the keys represent the event name, the values represent the associated schema of the event type. Events are currently shared across all capabilities.
+      - "status" will have a value of the status schema - if no status has been defined, a null schema is used.
 
     Params:
-      - capability_type - the SDK user will provide the class of their capability handler, which generates the schema
-      - service_name - ideally, this could be scanned by the package name. Meant to be descriptive, i.e. "nionswift"
-
-
-    SOME NOTES ABOUT THE SCHEMA
-
-    - Inspired on AsyncAPI 2.6.0 (https://www.asyncapi.com/docs/reference/specification/v2.6.0) and OpenAPI 3.1.0 (https://swagger.io/specification/).
-      Currently, the generated object tries to follow only AsyncAPI closely, though ideas from OpenAPI are used.
-
-    - While all _required_ fields from the AsyncAPI spec are included, not all information is exposed.
-
-    - There is currently no need to store information about the "servers" object, as this will be handled
-      entirely via the SDK and its services. In the instance that multiple brokers are used,
-      this field could potentially be useful to store information about the broker.
-
-    - Not listing security mechanisms, as this gets handled by the SDK and its services.
-
-    - No need to describe operation bindings for now. NOTE: this might be useful later on
-      if we need to handle various protocols (i.e. http, mqtt, ws, nats, pulsar...)
-
-    - Channel names just mimic the function names for now
+      - capability_types - list of classes (not objects) of capabilities. We do not require capabilities to be instantiated here, in case the instantiation of a capability has external dependencies.
+      - hierarchy - the hierarchy configuration. This is currently only reflected in the title of the global schema.
     """
-    cap_instance = capability_type()
+    if not all(issubclass(cap, IntersectBaseCapabilityImplementation) for cap in capability_types):
+        msg = 'get_schema_from_capability_implementations - not all provided values are valid capabilities (class must extend IntersectBaseCapabilityImplementation)'
+        raise RuntimeError(msg)
+
     schemas, _, _, _, _, _ = get_schema_and_functions_from_capability_implementations(
-        [cap_instance],
-        service_name,
+        capability_types,
+        hierarchy,
         set(),  # assume all data handlers are configured if user is just checking their schema
     )
     return schemas

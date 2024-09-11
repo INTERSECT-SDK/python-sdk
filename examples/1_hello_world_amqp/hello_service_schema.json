@@ -3,42 +3,50 @@
   "x-intersect-version": "0.7.0",
   "info": {
     "title": "hello-organization.hello-facility.hello-system.hello-subsystem.hello-service",
-    "version": "0.0.0",
-    "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload."
+    "description": "INTERSECT schema",
+    "version": "0.0.0"
   },
   "defaultContentType": "application/json",
-  "channels": {
-    "say_hello_to_name": {
-      "publish": {
-        "message": {
-          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-          "contentType": "application/json",
-          "traits": {
-            "$ref": "#/components/messageTraits/commonHeaders"
+  "capabilities": {
+    "HelloExample": {
+      "channels": {
+        "say_hello_to_name": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string"
+              }
+            },
+            "description": "Takes in a string parameter and says 'Hello' to the parameter!"
           },
-          "payload": {
-            "type": "string"
-          }
-        },
-        "description": "Takes in a string parameter and says 'Hello' to the parameter!"
-      },
-      "subscribe": {
-        "message": {
-          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-          "contentType": "application/json",
-          "traits": {
-            "$ref": "#/components/messageTraits/commonHeaders"
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string"
+              }
+            },
+            "description": "Takes in a string parameter and says 'Hello' to the parameter!"
           },
-          "payload": {
-            "type": "string"
-          }
-        },
-        "description": "Takes in a string parameter and says 'Hello' to the parameter!"
+          "events": []
+        }
       },
-      "events": []
+      "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload."
     }
   },
   "events": {},
+  "status": {
+    "type": "string"
+  },
   "components": {
     "schemas": {},
     "messageTraits": {
@@ -47,10 +55,7 @@
           "$defs": {
             "IntersectDataHandler": {
               "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
+              "enum": [0, 1],
               "title": "IntersectDataHandler",
               "type": "integer"
             }
@@ -97,12 +102,7 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "source",
-            "destination",
-            "created_at",
-            "sdk_version"
-          ],
+          "required": ["source", "destination", "created_at", "sdk_version"],
           "title": "UserspaceMessageHeader",
           "type": "object"
         },
@@ -110,10 +110,7 @@
           "$defs": {
             "IntersectDataHandler": {
               "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
+              "enum": [0, 1],
               "title": "IntersectDataHandler",
               "type": "integer"
             }
@@ -152,19 +149,11 @@
               "type": "string"
             }
           },
-          "required": [
-            "source",
-            "created_at",
-            "sdk_version",
-            "event_name"
-          ],
+          "required": ["source", "created_at", "sdk_version", "event_name"],
           "title": "EventMessageHeaders",
           "type": "object"
         }
       }
     }
-  },
-  "status": {
-    "type": "string"
   }
 }

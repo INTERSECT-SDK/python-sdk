@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 class ExampleServiceTwoCapabilityImplementation(IntersectBaseCapabilityImplementation):
     """Service 2 Capability."""
 
+    intersect_sdk_capability_name = 'ServiceTwo'
+
     @intersect_status()
     def status(self) -> str:
         """Basic status function which returns a hard-coded string."""
@@ -53,7 +55,6 @@ if __name__ == '__main__':
         **from_config_file,
     )
     capability = ExampleServiceTwoCapabilityImplementation()
-    capability.capability_name = 'ServiceTwo'
     service = IntersectService([capability], config)
     logger.info('Starting Service 2, use Ctrl+C to exit.')
     default_intersect_lifecycle_loop(

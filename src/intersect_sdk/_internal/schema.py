@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -54,6 +55,9 @@ For Pydantic specific type, https://docs.pydantic.dev/latest/api/types/
 For networking types, https://docs.pydantic.dev/latest/api/networks/
 For a complete reference, https://docs.pydantic.dev/latest/concepts/conversion_table
 """
+
+CAPABILITY_NAME_PATTERN = r'[\w-]+'
+"""Regular expression we use to check valid capability names. Since capability namespacing only occurs in services, we can be more lax than for how we name services/systems/etc. """
 
 
 class _FunctionAnalysisResult(NamedTuple):
@@ -302,7 +306,7 @@ def _add_events(
 
 
 def _introspection_baseline(
-    capability: IntersectBaseCapabilityImplementation,
+    capability: type[IntersectBaseCapabilityImplementation],
     excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[
     dict[Any, Any],  # $defs for schemas (common)
@@ -332,8 +336,9 @@ def _introspection_baseline(
     function_map = {}
     event_metadatas: dict[str, EventMetadata] = {}
 
-    cap_name = capability.capability_name
-    status_func, response_funcs, event_funcs = _get_functions(type(capability))
+    # capability_name should have already been checked before calling this function
+    cap_name = capability.intersect_sdk_capability_name
+    status_func, response_funcs, event_funcs = _get_functions(capability)
 
     # parse functions
     for class_name, name, method, min_params in response_funcs:
@@ -439,7 +444,7 @@ def _introspection_baseline(
 
         # final function mapping
         function_map[public_name] = FunctionMetadata(
-            type(capability),
+            capability,
             method,
             function_cache_request_adapter,
             function_cache_response_adapter,
@@ -477,7 +482,7 @@ def _introspection_baseline(
     if status_fn_type_adapter and status_fn and status_fn_name:
         public_status_name = f'{cap_name}.{status_fn_name}'
         function_map[public_status_name] = FunctionMetadata(
-            type(capability),
+            capability,
             status_fn,
             None,
             status_fn_type_adapter,
@@ -494,52 +499,78 @@ def _introspection_baseline(
 
 
 def get_schema_and_functions_from_capability_implementations(
-    capabilities: list[IntersectBaseCapabilityImplementation],
+    capabilities: list[type[IntersectBaseCapabilityImplementation]],
     service_name: HierarchyConfig,
     excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[
     dict[str, Any],
     dict[str, FunctionMetadata],
     dict[str, EventMetadata],
-    IntersectBaseCapabilityImplementation | None,
+    type[IntersectBaseCapabilityImplementation] | None,
     str | None,
     TypeAdapter[Any] | None,
 ]:
     """This function generates the core AsyncAPI schema, and the core mappings which are derived from the schema.
 
+    Importantly, this function needs to be able to work with static classes, and not instances. This is because users
+    should be free to define their constructor as they wish, with any arbitrary parameters. Users should also be allowed
+    to execute whatever code they'd like in their constructor, such as establishing remote connections. At the same time,
+    we want to allow users to quickly generate an INTERSECT schema, without having to worry about any dependencies from their constructor code.
+
     In-depth introspection is handled later on.
     """
-    capability_type_docs: str = ''
-    status_function_cap: IntersectBaseCapabilityImplementation | None = None
+    status_function_cap: type[IntersectBaseCapabilityImplementation] | None = None
     status_function_name: str | None = None
     status_function_schema: dict[str, Any] | None = None
     status_function_adapter: TypeAdapter[Any] | None = None
-    schemas: dict[Any, Any] = {}
-    channels: dict[str, dict[str, dict[str, Any]]] = {}  # endpoint schemas
+    shared_schemas: dict[Any, Any] = {}  # "shared" schemas which get put in $defs
+    capability_schemas: dict[str, Any] = {}  # endpoint schemas
     function_map: dict[str, FunctionMetadata] = {}  # endpoint functionality
-    events: dict[str, Any] = {}  # event schemas
+    events: dict[
+        str, Any
+    ] = {}  # event schemas - TODO event names are currently "global" across capabilities, may want to change this?
     event_map: dict[str, EventMetadata] = {}  # event functionality
-    for capability in capabilities:
-        capability_type: type[IntersectBaseCapabilityImplementation] = type(capability)
-        if capability_type.__doc__:
-            capability_type_docs += inspect.cleandoc(capability_type.__doc__) + '\n'
+    for capability_type in capabilities:
+        cap_name = capability_type.intersect_sdk_capability_name
+        if (
+            not cap_name
+            or not isinstance(cap_name, str)
+            or not re.fullmatch(CAPABILITY_NAME_PATTERN, cap_name)
+        ):
+            die(
+                f'Invalid intersect_sdk_capability_name on capability {capability_type.__name__} - must be a non-empty string with only alphanumeric characters and hyphens (you must explicitly set this, and do so on the class and not an instance).'
+            )
+        if cap_name in capability_schemas:
+            die(
+                f'Invalid intersect_sdk_capability_name on capability {capability_type.__name__} - value "{cap_name}" is a duplicate and has already appeared in another capability.'
+            )
+
         (
-            cap_schemas,
+            subschemas,
             (cap_status_fn_name, cap_status_schema, cap_status_type_adapter),
-            cap_channels,
+            cap_functions,
             cap_function_map,
             cap_events,
             cap_event_map,
-        ) = _introspection_baseline(capability, excluded_data_handlers)
+        ) = _introspection_baseline(capability_type, excluded_data_handlers)
 
         if cap_status_fn_name and cap_status_schema and cap_status_type_adapter:
-            status_function_cap = capability
+            if status_function_name is not None:
+                # TODO may want to change this later
+                die('Only one capabilitiy may have an @intersect_status function')
+            status_function_cap = capability_type
             status_function_name = cap_status_fn_name
             status_function_schema = cap_status_schema
             status_function_adapter = cap_status_type_adapter
 
-        schemas.update(cap_schemas)
-        channels.update(cap_channels)
+        shared_schemas.update(subschemas)
+        # NOTE: we will still add the capability to the schema, even if there are no @intersect_message annotations
+        capability_schemas[cap_name] = {
+            'channels': cap_functions,
+        }
+        # add documentation for the capabilities
+        if capability_type.__doc__:
+            capability_schemas[cap_name]['description'] = inspect.cleandoc(capability_type.__doc__)
         function_map.update(cap_function_map)
         events.update(cap_events)
         event_map.update(cap_event_map)
@@ -549,15 +580,17 @@ def get_schema_and_functions_from_capability_implementations(
         'x-intersect-version': version_string,
         'info': {
             'title': service_name.hierarchy_string('.'),
+            'description': 'INTERSECT schema',
             'version': '0.0.0',  # NOTE: this will be modified by INTERSECT CORE, users do not manage their schema versions
         },
         # applies to how an incoming message payload will be parsed.
         # can be changed per channel
         'defaultContentType': 'application/json',
-        'channels': channels,
+        'capabilities': capability_schemas,
         'events': events,
+        'status': status_function_schema if status_function_schema else {'type': 'null'},
         'components': {
-            'schemas': schemas,
+            'schemas': shared_schemas,
             'messageTraits': {
                 # this is where we can define our message headers
                 'commonHeaders': {
@@ -573,21 +606,6 @@ def get_schema_and_functions_from_capability_implementations(
             },
         },
     }
-
-    if capability_type_docs != '':
-        asyncapi_spec['info']['description'] = capability_type_docs  # type: ignore[index]
-
-    if status_function_schema:
-        asyncapi_spec['status'] = status_function_schema
-
-    """
-    TODO - might want to include these fields
-    "securitySchemes": {},
-    "operationTraits": {},
-    "externalDocumentation": {
-        "url": "https://example.com",  # REQUIRED
-    },
-    """
 
     return (
         asyncapi_spec,

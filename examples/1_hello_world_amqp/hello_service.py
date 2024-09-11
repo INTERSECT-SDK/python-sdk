@@ -26,6 +26,8 @@ class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation
     and will send a string back in its own payload.
     """
 
+    intersect_sdk_capability_name = 'HelloExample'
+
     @intersect_status()
     def status(self) -> str:
         """Basic status function which returns a hard-coded string."""
@@ -44,15 +46,6 @@ if __name__ == '__main__':
     In most cases, everything under from_config_file should come from a configuration file, command line arguments, or environment variables.
     """
     from_config_file = {
-        'data_stores': {
-            'minio': [
-                {
-                    'username': 'AKIAIOSFODNN7EXAMPLE',
-                    'password': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                    'port': 9000,
-                },
-            ],
-        },
         'brokers': [
             {
                 'username': 'intersect_username',
@@ -80,7 +73,6 @@ if __name__ == '__main__':
     @intersect_message and @intersect_status, and that these functions are appropriately type-annotated.
     """
     capability = HelloServiceCapabilityImplementation()
-    capability.capability_name = 'HelloExample'
 
     """
     step three - create service from both the configuration and your own capability

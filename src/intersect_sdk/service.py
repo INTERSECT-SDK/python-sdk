@@ -187,14 +187,19 @@ class IntersectService(IntersectEventObserver):
             schema,
             function_map,
             event_map,
-            status_fn_capability,
+            status_fn_capability_type,
             status_fn_name,
             status_type_adapter,
         ) = get_schema_and_functions_from_capability_implementations(
-            self.capabilities,
+            [c.__class__ for c in self.capabilities],
             service_name=config.hierarchy,
             excluded_data_handlers=config.data_stores.get_missing_data_store_types(),
         )
+        status_fn_capability = None
+        if status_fn_capability_type:
+            status_fn_capability = next(
+                c for c in self.capabilities if c.__class__ is status_fn_capability_type
+            )
         self._schema = schema
         """
         Stringified schema of the user's application. Gets sent in several status message requests.
@@ -283,7 +288,7 @@ class IntersectService(IntersectEventObserver):
 
     def _get_capability(self, target: str) -> Any | None:
         for cap in self.capabilities:
-            if cap.capability_name == target:
+            if cap.intersect_sdk_capability_name == target:
                 return cap
         return None
 

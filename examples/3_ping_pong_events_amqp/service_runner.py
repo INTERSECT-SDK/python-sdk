@@ -28,15 +28,6 @@ def run_service(capability: P_ngBaseCapabilityImplementation) -> None:
     The interesting configuration mostly happens in the Client, look at that one for details.
     """
     from_config_file = {
-        'data_stores': {
-            'minio': [
-                {
-                    'username': 'AKIAIOSFODNN7EXAMPLE',
-                    'password': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                    'port': 9000,
-                },
-            ],
-        },
         'brokers': [
             {
                 'username': 'intersect_username',
@@ -58,7 +49,6 @@ def run_service(capability: P_ngBaseCapabilityImplementation) -> None:
         status_interval=30.0,
         **from_config_file,
     )
-    capability.capability_name = service_name
     service = IntersectService([capability], config)
     logger.info('Starting %s_service, use Ctrl+C to exit.', service_name)
 

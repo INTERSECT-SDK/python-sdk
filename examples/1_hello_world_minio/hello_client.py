@@ -5,6 +5,7 @@ from intersect_sdk import (
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
+    IntersectDataHandler,
     IntersectDirectMessageParams,
     default_intersect_lifecycle_loop,
 )
@@ -36,27 +37,6 @@ def simple_client_callback(
     raise Exception
 
 
-def simple_event_callback(
-    _source: str, _operation: str, _event_name: str, payload: INTERSECT_JSON_VALUE
-) -> None:
-    """This simply prints the event from the service to your console.
-
-    We will always get the event before we get the response, so we don't break out of the loop yet.
-
-    Params:
-      _source: the source of the response message. In this case it will always be from the hello_service.
-      _operation: the name of the function we called in the original message. In this case it will always be "say_hello_to_name".
-      _event_name: the name of the event. In this case it will always be "hello_event".
-      payload: Value of the response from the Service. The typing of the payload varies, based on the operation called and whether or not
-        _has_error was set to "True". In this case, since we do not have an error, we can defer to the operation's response type. This response type is
-        "str", so the type will be "str". The value will always be "Hello, hello_client!".
-
-        Note that the payload will always be a deserialized Python object, but the types are fairly limited: str, bool, float, int, None, List[T], and Dict[str, T]
-        are the only types the payload can have. "T" in this case can be any of the 7 types just mentioned.
-    """
-    print(payload)
-
-
 if __name__ == '__main__':
     """
     step one: create configuration class, which handles user input validation - see the IntersectClientConfig class documentation for more info
@@ -64,6 +44,16 @@ if __name__ == '__main__':
     In most cases, everything under from_config_file should come from a configuration file, command line arguments, or environment variables.
     """
     from_config_file = {
+        # NOTE: for this example, you will need a MINIO instance configured at this stage.
+        'data_stores': {
+            'minio': [
+                {
+                    'username': 'AKIAIOSFODNN7EXAMPLE',
+                    'password': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+                    'port': 9000,
+                },
+            ],
+        },
         'brokers': [
             {
                 'username': 'intersect_username',
@@ -90,15 +80,12 @@ if __name__ == '__main__':
             destination='hello-organization.hello-facility.hello-system.hello-subsystem.hello-service',
             operation='HelloExample.say_hello_to_name',
             payload='hello_client',
+            # the sender of the message determines how the message is delivered - the receiver must support MINIO
+            data_handler=IntersectDataHandler.MINIO,
         )
     ]
     config = IntersectClientConfig(
-        initial_message_event_config=IntersectClientCallback(
-            messages_to_send=initial_messages,
-            services_to_start_listening_for_events=[
-                'hello-organization.hello-facility.hello-system.hello-subsystem.hello-service'
-            ],
-        ),
+        initial_message_event_config=IntersectClientCallback(messages_to_send=initial_messages),
         **from_config_file,
     )
 
@@ -110,7 +97,6 @@ if __name__ == '__main__':
     client = IntersectClient(
         config=config,
         user_callback=simple_client_callback,
-        event_callback=simple_event_callback,
     )
 
     """

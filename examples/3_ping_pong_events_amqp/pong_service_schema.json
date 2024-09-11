@@ -3,14 +3,23 @@
   "x-intersect-version": "0.7.0",
   "info": {
     "title": "p-ng-organization.p-ng-facility.p-ng-system.p-ng-subsystem.pong-service",
+    "description": "INTERSECT schema",
     "version": "0.0.0"
   },
   "defaultContentType": "application/json",
-  "channels": {},
+  "capabilities": {
+    "pong": {
+      "channels": {},
+      "description": "Basic capability definition, very similar to the other capability except for the type of event it emits."
+    }
+  },
   "events": {
     "pong": {
       "type": "string"
     }
+  },
+  "status": {
+    "type": "null"
   },
   "components": {
     "schemas": {},

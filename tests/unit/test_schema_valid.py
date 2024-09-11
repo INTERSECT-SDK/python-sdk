@@ -9,7 +9,7 @@ from intersect_sdk._internal.constants import (
     STRICT_VALIDATION,
 )
 from intersect_sdk._internal.schema import get_schema_and_functions_from_capability_implementations
-from intersect_sdk.schema import get_schema_from_capability_implementation
+from intersect_sdk.schema import get_schema_from_capability_implementations
 
 from tests.fixtures.example_schema import (
     FAKE_HIERARCHY_CONFIG,
@@ -29,25 +29,24 @@ def get_fixture_path(fixture: str):
 def test_schema_comparison():
     with Path.open(get_fixture_path('example_schema.json'), 'rb') as f:
         expected_schema = json.load(f)
-    actual_schema = get_schema_from_capability_implementation(
-        DummyCapabilityImplementation,
+    actual_schema = get_schema_from_capability_implementations(
+        [DummyCapabilityImplementation],
         FAKE_HIERARCHY_CONFIG,
     )
     assert expected_schema == actual_schema
 
 
 def test_verify_status_fn():
-    dummy_cap = DummyCapabilityImplementation()
     (schema, function_map, _, status_fn_capability, status_fn_name, status_type_adapter) = (
         get_schema_and_functions_from_capability_implementations(
-            [dummy_cap], FAKE_HIERARCHY_CONFIG, set()
+            [DummyCapabilityImplementation], FAKE_HIERARCHY_CONFIG, set()
         )
     )
-    assert status_fn_capability is dummy_cap
+    assert status_fn_capability is DummyCapabilityImplementation
     assert status_fn_name == 'get_status'
-    assert status_fn_name not in schema['channels']
+    assert status_fn_name not in schema['capabilities']
 
-    scoped_name = f'{status_fn_capability.capability_name}.{status_fn_name}'
+    scoped_name = f'{status_fn_capability.intersect_sdk_capability_name}.{status_fn_name}'
     assert scoped_name in function_map
     assert status_type_adapter == function_map[scoped_name].response_adapter
     assert function_map[scoped_name].request_adapter is None
@@ -55,9 +54,8 @@ def test_verify_status_fn():
 
 
 def test_verify_attributes():
-    dummy_cap = DummyCapabilityImplementation()
     _, function_map, _, _, _, _ = get_schema_and_functions_from_capability_implementations(
-        [dummy_cap], FAKE_HIERARCHY_CONFIG, set()
+        [DummyCapabilityImplementation], FAKE_HIERARCHY_CONFIG, set()
     )
     # test defaults
     assert (

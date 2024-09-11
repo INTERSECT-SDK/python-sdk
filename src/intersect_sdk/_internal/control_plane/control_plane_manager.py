@@ -66,7 +66,7 @@ class ControlPlaneManager:
         """
         if control_configs == 'discovery':
             msg = 'Discovery service not implemented yet'
-            raise ValueError(msg)
+            raise NotImplementedError(msg)
         self._control_providers = [
             create_control_provider(config, self.get_subscription_channels)
             for config in control_configs

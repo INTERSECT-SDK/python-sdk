@@ -15,20 +15,21 @@ Modules are allowed but should be contained within the example directory. Any mo
 All example services should have an associated schema file (.json) in the repository. Here are a few ways we can
 generate the schema for the HelloWorld Service:
 
-1) Write your own script which uses `get_schema_from_capability_implementation` from the INTERSECT-SDK, which returns a dictionary. You'll need to provide this function your CapabilityImplementation class, your HierarchyConfig, and your application version. You can then dump the dictionary to JSON (please use `indent=2` as an argument).
+1) Write your own script which uses `get_schema_from_capability_implementations` from the INTERSECT-SDK, which returns a dictionary. You'll need to provide this function your CapabilityImplementation class, your HierarchyConfig, and your application version. You can then dump the dictionary to JSON (please use `indent=2` as an argument).
 
 ```python
 # imports condensed for readability
 import json
 from ...sdk import (
     HierarchyConfig,
+    IntersectBaseCapabilityImplementation,
     intersect_message,
     intersect_status,
-    get_schema_from_capability_implementation,
+    get_schema_from_capability_implementations,
 )
 
 # copy the CapabilityImplementation EXACTLY as-is. Note that docstrings will be added to the schema!
-class HelloServiceCapabilityImplementation:
+class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation):
     """
     Rudimentary capability implementation example.
 
@@ -39,6 +40,14 @@ class HelloServiceCapabilityImplementation:
     an operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,
     and will send a string back in its own payload.
     """
+
+    # it's best to define the capability name here, it must be defined on the class
+    # for an example of defining this at runtime, you could also call:
+    #
+    # >>> HelloServiceCapabilityImplementation.intersect_sdk_capability_name = 'HelloExample'
+    #
+    # ... but you must do this BEFORE initializing the Service or calling the schema generation function
+    intersect_sdk_capability_name = 'HelloExample'
 
     @intersect_status()
     def status(self) -> str:
@@ -63,7 +72,7 @@ if __name__ == '__main__':
         subsystem='subsystem',
         service='service',
     )
-    schema = get_schema_from_capability_implementation(HelloServiceCapabilityImplementation, hierarchy)
+    schema = get_schema_from_capability_implementations([HelloServiceCapabilityImplementation], hierarchy)
 
 
     print(json.dumps(schema, indent=2))

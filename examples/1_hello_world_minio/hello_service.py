@@ -3,6 +3,7 @@ import logging
 from intersect_sdk import (
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
+    IntersectDataHandler,
     IntersectService,
     IntersectServiceConfig,
     default_intersect_lifecycle_loop,
@@ -32,7 +33,8 @@ class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation
         """Basic status function which returns a hard-coded string."""
         return 'Up'
 
-    @intersect_message()
+    # you cannot control the data plane regarding how you RECEIVE messages, but you can control how you SEND messages
+    @intersect_message(response_data_transfer_handler=IntersectDataHandler.MINIO)
     def say_hello_to_name(self, name: str) -> str:
         """Takes in a string parameter and says 'Hello' to the parameter!"""
         return f'Hello, {name}!'
@@ -45,6 +47,16 @@ if __name__ == '__main__':
     In most cases, everything under from_config_file should come from a configuration file, command line arguments, or environment variables.
     """
     from_config_file = {
+        # NOTE: for this example, you will need a MINIO instance configured at this stage.
+        'data_stores': {
+            'minio': [
+                {
+                    'username': 'AKIAIOSFODNN7EXAMPLE',
+                    'password': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+                    'port': 9000,
+                },
+            ],
+        },
         'brokers': [
             {
                 'username': 'intersect_username',

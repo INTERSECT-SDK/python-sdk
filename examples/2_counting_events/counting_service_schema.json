@@ -3,15 +3,23 @@
   "x-intersect-version": "0.7.0",
   "info": {
     "title": "counting-organization.counting-facility.counting-system.counting-subsystem.counting-service",
-    "version": "0.0.0",
-    "description": "This example is meant to showcase a simple event emitter.\n\nThis service does not have any endpoints, but simply fires off a single event every three seconds."
+    "description": "INTERSECT schema",
+    "version": "0.0.0"
   },
   "defaultContentType": "application/json",
-  "channels": {},
+  "capabilities": {
+    "CountingExample": {
+      "channels": {},
+      "description": "This example is meant to showcase a simple event emitter.\n\nThis service does not have any endpoints, but simply fires off a single event every three seconds."
+    }
+  },
   "events": {
     "increment_counter": {
       "type": "integer"
     }
+  },
+  "status": {
+    "type": "null"
   },
   "components": {
     "schemas": {},

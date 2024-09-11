@@ -226,6 +226,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
     example of a parameter, which should NOT be inspected
     """
 
+    intersect_sdk_capability_name = 'DummyCapability'
+
     def __init__(self) -> None:
         """
         Users have complete freedom over the capability constructor (and are free to use stateful or stateless design paradigms).
@@ -235,7 +237,6 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         which handles talking to the various INTERSECT-related backing services.
         """
         super().__init__()
-        self.capability_name = 'DummyCapability'
         self._status_example = DummyStatus(
             functions_called=0,
             last_function_called='',

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import final
 
@@ -29,16 +29,23 @@ class IntersectBaseCapabilityImplementation:
     you MUST call `super.__init__()` .
     """
 
+    intersect_sdk_capability_name: ClassVar[str] = ''
+    """The advertised name of your capability, as provided by the extension of this class.
+
+    You MUST override this value per class and set it as a string - it's ideal to do so on the class itself for static analysis purposes,
+    though as long as this variable has been set before the capability is added to the Service,
+    everything should work fine.
+
+    Each capability within a Service MUST have a unique capability name.
+    This value should not be modified once the capability has been added to the Service.
+    This value should ONLY contain alphanumeric characters, hyphens, and underscores.
+    """
+
     def __init__(self) -> None:
         """This constructor just sets up observers.
 
         NOTE: If you write your own constructor, you MUST call `super.__init__()` inside of it. The Service will throw an error if you don't.
         """
-        self._capability_name: str = 'InvalidCapability'
-        """
-        The advertised name for the capability, as opposed to the implementation class name
-        """
-
         self.__intersect_sdk_observers__: list[IntersectEventObserver] = []
         """
         INTERNAL USE ONLY.
@@ -63,15 +70,6 @@ class IntersectBaseCapabilityImplementation:
             msg = f"{cls.__name__}: Attempted to override a reserved INTERSECT-SDK function (don't start your function names with '_intersect_sdk_' or 'intersect_sdk_')"
             raise RuntimeError(msg)
 
-    @property
-    def capability_name(self) -> str:
-        """The advertised name for the capability provided by this implementation."""
-        return self._capability_name
-
-    @capability_name.setter
-    def capability_name(self, cname: str) -> None:
-        self._capability_name = cname
-
     @final
     def _intersect_sdk_register_observer(self, observer: IntersectEventObserver) -> None:
         """INTERNAL USE ONLY."""
@@ -91,7 +89,9 @@ class IntersectBaseCapabilityImplementation:
         register the event on the @intersect_event decorator. The @intersect_event annotation will be IGNORED if you place it
         after an @intersect_message annotation; its intended use is for threaded functions you start from the capability.
 
-        You MAY NOT emit an event from any function called from an @intersect_status decorated function.
+        Do NOT call this function from:
+          - any function called from an @intersect_status decorated function
+          - outside of the capability class (for example: capability_instance.intersect_sdk_emit_event(...) will not work). Create a function in the capability, decorate it with @intersect_event, and call that function.
 
         params:
           event_name: the type of event you are emitting. Note that you must advertise the event in your "entrypoint" function
@@ -133,7 +133,7 @@ class IntersectBaseCapabilityImplementation:
         self,
         request: IntersectDirectMessageParams,
         response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
-        timeout: float = 300,
+        timeout: float = 300.0,
     ) -> list[UUID]:
         """Create an external request that we'll send to a different Service.
 

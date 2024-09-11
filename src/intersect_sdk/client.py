@@ -35,7 +35,6 @@ from ._internal.messages.userspace import (
     create_userspace_message,
     deserialize_and_validate_userspace_message,
 )
-from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
 from .client_callback_definitions import (
@@ -121,9 +120,6 @@ class IntersectClient:
             organization=config.organization,
         )
 
-        self._heartbeat_thread: StoppableThread | None = None
-        self._heartbeat = 0.0
-
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
         self._control_plane_manager = ControlPlaneManager(
             control_configs=config.brokers,
@@ -176,15 +172,6 @@ class IntersectClient:
         # and has nothing to do with the Service at all.
         time.sleep(1.0)
 
-        # start the heartbeat thread
-        if self._heartbeat_thread is None:
-            self._heartbeat = time.time()
-            self._heartbeat_thread = StoppableThread(
-                target=self._heartbeat_ticker,
-                name=f'IntersectClient_{uuid4()!s}_heartbeat_thread',
-            )
-            self._heartbeat_thread.start()
-
         if self._resend_initial_messages or not self._sent_initial_messages:
             for message in self._initial_messages:
                 self._send_userspace_message(message)
@@ -212,13 +199,6 @@ class IntersectClient:
           - reason: an optional description you may provide as to why the adapter is shutting down (currently unused for client).
         """
         logger.info(f'Client is shutting down (reason: {reason})')
-
-        # Stop listening to the heartbeat
-        if self._heartbeat_thread is not None:
-            self._heartbeat_thread.stop()
-            self._heartbeat_thread.join()
-            self._heartbeat_thread = None
-            self._heartbeat = 0.0
 
         self._control_plane_manager.disconnect()
 
@@ -249,7 +229,6 @@ class IntersectClient:
         if self._terminate_after_initial_messages:
             return
 
-        self._heartbeat = time.time()
         try:
             message = deserialize_and_validate_userspace_message(raw)
             logger.debug(f'Received userspace message:\n{message}')
@@ -330,7 +309,6 @@ class IntersectClient:
             # safety check in case we get messages back faster than we can send them
             return
 
-        self._heartbeat = time.time()
         try:
             message = deserialize_and_validate_event_message(raw)
             logger.debug(f'Received userspace message:\n{message}')
@@ -458,26 +436,3 @@ class IntersectClient:
         # but cannot communicate the response to the Client.
         # in experiment controllers or production, you'll want to set persist to True
         self._control_plane_manager.publish_message(channel, msg, persist=False)
-
-    # TODO - consider removing this entire concept
-    def _heartbeat_ticker(self) -> None:
-        """Separate thread which checks to see how long it has been since a broker message was received.
-
-        If a broker has been connected for 5 minutes without sending a message, prepare to terminate the application.
-        """
-        if self._heartbeat_thread:
-            self._heartbeat_thread.wait(300.0)
-            while not self._heartbeat_thread.stopped():
-                elapsed = time.time() - self._heartbeat
-                if elapsed > 300.0:
-                    # NOTE
-                    # This is by design. We explicitly don't want dangling clients
-                    # sucking up bandwidth on brokers. It could even be argued that we should
-                    # just call os.abort() here (this way so the Python application can't catch the SIGABRT),
-                    # but SIGTERM is the soundest to ensure graceful application shutdown.
-                    # However, graceful application shutdown is not as important for clients as it is for services...
-                    logger.warning(
-                        'Client has sat 5 minutes without sending or receiving any messages, exiting'
-                    )
-                    send_os_signal()
-                self._heartbeat_thread.wait(300.0)

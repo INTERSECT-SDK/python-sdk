@@ -64,6 +64,10 @@ def test_example_1_hello_world_mqtt():
     assert run_example_test('1_hello_world') == 'Hello, hello_client!\n'
 
 
+def test_example_1_hello_world_minio():
+    assert run_example_test('1_hello_world_minio') == 'Hello, hello_client!\n'
+
+
 def test_example_1_hello_world_events():
     assert (
         run_example_test('1_hello_world_events')

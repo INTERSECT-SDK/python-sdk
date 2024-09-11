@@ -22,6 +22,8 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
     This service does not have any endpoints, but simply fires off a single event every three seconds.
     """
 
+    intersect_sdk_capability_name = 'CountingExample'
+
     def after_service_startup(self) -> None:
         """This is a 'post-initialization' method.
 
@@ -53,15 +55,6 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
 
 if __name__ == '__main__':
     from_config_file = {
-        'data_stores': {
-            'minio': [
-                {
-                    'username': 'AKIAIOSFODNN7EXAMPLE',
-                    'password': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                    'port': 9000,
-                },
-            ],
-        },
         'brokers': [
             {
                 'username': 'intersect_username',
@@ -83,7 +76,6 @@ if __name__ == '__main__':
         **from_config_file,
     )
     capability = CountingServiceCapabilityImplementation()
-    capability.capability_name = 'CountingExample'
     service = IntersectService([capability], config)
     logger.info('Starting counting_service, use Ctrl+C to exit.')
 

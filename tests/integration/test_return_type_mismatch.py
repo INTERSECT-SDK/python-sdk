@@ -35,6 +35,8 @@ from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 
 
 class ReturnTypeMismatchCapabilityImplementation(IntersectBaseCapabilityImplementation):
+    intersect_sdk_capability_name = 'ReturnTypeMismatchCapability'
+
     @intersect_message()
     def wrong_return_annotation(self, param: int) -> int:
         return 'this is not an integer!'
@@ -45,7 +47,6 @@ class ReturnTypeMismatchCapabilityImplementation(IntersectBaseCapabilityImplemen
 
 def make_intersect_service() -> IntersectService:
     capability = ReturnTypeMismatchCapabilityImplementation()
-    capability.capability_name = 'ReturnTypeMismatchCapability'
     return IntersectService(
         [capability],
         IntersectServiceConfig(

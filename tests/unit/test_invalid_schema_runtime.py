@@ -1,7 +1,7 @@
 """
 This module runs some edge cases: we need to verify that some schemas are invalid.
 
-HOWEVER - we can only do this through the Service class, as get_schema_from_capability_implementation does not
+HOWEVER - we can only do this through the Service class, as get_schema_from_capability_implementations does not
 check that service configuration is valid.
 """
 
@@ -19,6 +19,8 @@ from ..fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 
 
 class CapabilityWithMinio(IntersectBaseCapabilityImplementation):
+    intersect_sdk_capability_name = 'TestMinioCapability'
+
     @intersect_message(response_data_transfer_handler=IntersectDataHandler.MINIO)
     def arbitrary_function(self, param: int) -> int: ...
 

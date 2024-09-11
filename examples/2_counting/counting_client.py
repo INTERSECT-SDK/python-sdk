@@ -136,15 +136,6 @@ class SampleOrchestrator:
 
 if __name__ == '__main__':
     from_config_file = {
-        'data_stores': {
-            'minio': [
-                {
-                    'username': 'AKIAIOSFODNN7EXAMPLE',
-                    'password': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                    'port': 9000,
-                },
-            ],
-        },
         'brokers': [
             {
                 'username': 'intersect_username',

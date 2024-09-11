@@ -15,6 +15,8 @@ logging.getLogger('pika').setLevel(logging.WARNING)
 class PingCapabilityImplementation(P_ngBaseCapabilityImplementation):
     """Basic capability definition, very similar to the other capability except for the type of event it emits."""
 
+    intersect_sdk_capability_name = 'ping'
+
     def after_service_startup(self) -> None:
         """Called after service startup."""
         self.counter_thread = threading.Thread(
