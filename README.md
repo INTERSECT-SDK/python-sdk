@@ -1,3 +1,5 @@
+[![Static Badge](https://img.shields.io/badge/DOI-10.11578%2Fdc.20240927.1-blue)](https://doi.org/10.11578/dc.20240927.1)
+
 # INTERSECT-SDK
 
 The INTERSECT-SDK is a framework for microservices to integrate themselves into the wider Interconnected Science Ecosystem (INTERSECT).
