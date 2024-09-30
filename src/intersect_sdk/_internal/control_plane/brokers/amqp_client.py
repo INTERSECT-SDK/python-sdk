@@ -254,7 +254,7 @@ class AMQPClient(BrokerClient):
         if self._should_disconnect:
             connection.ioloop.stop()
         else:
-            logger.warn('Connection closed, reopening in 5 seconds: %s', reason)
+            logger.warning('Connection closed, reopening in 5 seconds: %s', reason)
             connection.ioloop.call_later(5, connection.ioloop.stop)
         self._channel_flags.unset_all()
         self._channel_out = None

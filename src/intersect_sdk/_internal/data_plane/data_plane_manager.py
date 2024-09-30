@@ -32,7 +32,7 @@ class DataPlaneManager:
 
         # warn users about missing data plane
         if not self._minio_providers:
-            logger.warn('WARNING: This service cannot support any MINIO instances')
+            logger.warning('WARNING: This service cannot support any MINIO instances')
 
     def incoming_message_data_handler(self, message: UserspaceMessage | EventMessage) -> bytes:
         """Get data from the request data provider.
