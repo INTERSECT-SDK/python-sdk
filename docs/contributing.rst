@@ -10,7 +10,7 @@ Follow the steps discussed in this section to install the intersect-sdk package 
 
 .. code-block:: bash
 
-   git clone https://code.ornl.gov/intersect/sdk/python-sdk/sdk.git
+   git clone https://github.com/INTERSECT-SDK/python-sdk/
 
 Create a Python virtual environment in the root level of the repository and activate the environment.
 

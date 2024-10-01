@@ -1,7 +1,7 @@
 Installation and usage
 ======================
 
-You will need to use a Python version >= 3.8.10 . You can install Python via `Anaconda <https://www.anaconda.com>`_ or `Conda <https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html>`_. Anaconda installs Python along with many other graphical tools and scientific packages. Conda is an open-source packaging, dependency, and environment management tool which also installs Python. Notice that Miniconda is a smaller version of Anaconda that includes only Conda and a few dependencies.
+INTERSECT-SDK requires a Python version >= 3.8.10 .
 
 After installing Python, make a folder for your project, then create a virtual environment in that folder and activate the environment as follows:
 
@@ -37,15 +37,6 @@ Use the command shown below to deactivate the virtual environment:
 
 If you would like to run the examples, such as the :doc:`examples/hello-world` example, you may need to install Docker and run a broker service. See the sections below for more information.
 
-Installation using a prebuilt Docker image
-------------------------------------------
-
-If you want to utilize the prebuilt INTERSECT-SDK Docker container, you need to login to the GitLab Container registry using the command shown below. Then sign in with your UCAMS or XCAMS credentials.
-
-.. code-block:: bash
-
-   docker login code.ornl.gov:4567
-
 Docker
 ------
 
@@ -54,7 +45,7 @@ Docker
 Backing Services (Brokers, Data planes)
 ---------------------------------------
 
-A Docker Compose configuration for SDK development is included below.
+A Docker Compose configuration for SDK development is included below. This sets up the primary backing services (message brokers, data storage layers) needed to use INTERSECT.
 
 Note that this configuration is meant for testing, and should not be included in production.
 

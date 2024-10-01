@@ -1,9 +1,13 @@
-ARG IMAGE=code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/base/main
-ARG TAG=latest
-ARG NGINX_IMAGE=code.ornl.gov:4567/rse/images/
+# This Dockerfile allows you to quickly build and run the docs website in Docker.
+# it is built from an existing intersect-sdk image, there is no other build context
+# run this command to build it from the repository root:
+#       docker build --build-arg IMAGE=<YOUR_INTERSCT_SDK_IMAGE_HERE> -t intersect-sdk-python-docs - < docs/Dockerfile
+
+ARG IMAGE
+ARG NGINX_IMAGE=
 
 # Build the HTML from docs
-FROM ${IMAGE}:${TAG} as docs
+FROM ${IMAGE} as docs
 WORKDIR /sdk/docs
 ENV SPHINXOPTS="-W --keep-going"
 RUN pdm run make html

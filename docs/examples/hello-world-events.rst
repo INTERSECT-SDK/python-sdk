@@ -45,12 +45,11 @@ The client will exit automatically; you will have to use Ctrl+C on the terminal 
 Running it yourself: Using Docker
 ---------------------------------
 
-First, you will need to pull the latest INTERSECT-SDK image:
+First, you will need to build the latest INTERSECT-SDK image; run the following command from the repository root:
 
 .. code-block:: bash
 
-   docker login code.ornl.gov:4567
-   docker pull code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/main:latest
+   docker build -t intersect-sdk .
 
 Then you can run the examples like this:
 
@@ -61,10 +60,10 @@ Then you can run the examples like this:
    # to the end of your command on UNIX systems
 
    # First, run the service
-   docker run --rm -it --name intersect-service --network host code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/main:latest python -m examples.1_hello_world_events.hello_service
+   docker run --rm -it --name intersect-service --network host intersect-sdk python -m examples.1_hello_world_events.hello_service
 
    # Next, run the client in a separate terminal
-   docker run --rm -it --name intersect-client --network host code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/main:latest python -m examples.1_hello_world_events.hello_client
+   docker run --rm -it --name intersect-client --network host intersect-sdk python -m examples.1_hello_world_events.hello_client
 
 After several seconds, the output from ``hello_client`` will be:
 

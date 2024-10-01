@@ -67,12 +67,11 @@ You can also run the client again while NOT killing the service; the output will
 Running it yourself: Using Docker
 ---------------------------------
 
-First, you will need to pull the latest INTERSECT-SDK image:
+First, you will need to build the latest INTERSECT-SDK image; run the following command from the repository root:
 
 .. code-block:: bash
 
-   docker login code.ornl.gov:4567
-   docker pull code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/main:latest
+   docker build -t intersect-sdk .
 
 Then you can run the examples like this:
 
@@ -83,13 +82,13 @@ Then you can run the examples like this:
    # to the end of your command on UNIX systems
 
    # First, start up the ping service in one terminal
-   docker run --rm -it --name intersect-service --network host code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/main:latest python examples.3_ping_pong_events.ping_service
+   docker run --rm -it --name intersect-service --network host intersect-sdk python examples.3_ping_pong_events.ping_service
 
    # Next, start up the pong service in a second terminal
-   docker run --rm -it --name intersect-service --network host code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/main:latest python examples.3_ping_pong_events.pong_service
+   docker run --rm -it --name intersect-service --network host intersect-sdk python examples.3_ping_pong_events.pong_service
 
    # Finally, run the client in a third terminal
-   docker run --rm -it --name intersect-service --network host code.ornl.gov:4567/intersect/sdk/python-sdk/sdk/main:latest python examples.3_ping_pong_events.ping_pong_client
+   docker run --rm -it --name intersect-service --network host intersect-sdk python examples.3_ping_pong_events.ping_pong_client
 
 After several seconds, the output from ``ping_pong_client`` will look something like this:
 
