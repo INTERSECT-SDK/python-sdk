@@ -9,6 +9,8 @@ Please note that this README is currently a work in progress.
 ## What is INTERSECT?
 [INTERSECT](https://www.ornl.gov/intersect) was designed as a specific usecase - as an open federated hardware/software architecture for the laboratory of the future, which connects scientific instruments, robot-controlled laboratories and edge/center computing/data resources to enable autonomous experiments, self-driving laboratories, smart manufacturing, and AI-driven design, discovery and evaluation.
 
+For a high-level overview, please see [the architecture website.](https://intersect-architecture.readthedocs.io/en/latest/)
+
 ## What are the core design philosophies of the SDK?
 
 - Event-driven architecture
