@@ -41,7 +41,7 @@ class IntersectEventObserver(ABC):
         """Observed entity (capabilitiy) tells observer (i.e. service) to send an external request.
 
         Params:
-          - request: the request we want to send out, encapsulated as an IntersectClientMessageParams object
+          - request: the request we want to send out, encapsulated as an IntersectDirectMessageParams object
           - response_handler: optional callback for how we want to handle the response from this request.
           - timeout: optional value for how long we should wait on the request, in seconds (default: 300 seconds)
 

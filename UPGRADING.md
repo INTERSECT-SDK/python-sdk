@@ -153,6 +153,8 @@ Additionally, this reserves the `intersect_sdk_call_service` function - if you a
 
 ### Clients
 
+`IntersectClientMessageParams` has been renamed to `IntersectDirectMessageParams` because this object can be used in both Clients and in the new Service-to-Service calls.
+
 When calling another Service's operation, the namespacing has changed from `<function_name>` to `<capability_name>.<function_name>` . So for example, if we were calling `my_endpoint` in the above Service example, the code would change from:
 
 ```python
@@ -166,7 +168,7 @@ params = IntersectClientMessageParams(
 to
 
 ```python
-params = IntersectClientMessageParams(
+params = IntersectDirectMessageParams(
     operation='MyCapability.my_endpoint',
    # ... other parameters unchanged
 )

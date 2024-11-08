@@ -31,6 +31,7 @@ _If you are upgrading: please see [`UPGRADING.md`](UPGRADING.md)._
 ### Changed
 
 - **Breaking:** Services now work with multiple Capabilities instead of a single Capability ([!9](https://github.com/INTERSECT-SDK/python-sdk/pull/9)) .
+- **Breaking:** Renamed `IntersectClientMessageParams` to `IntersectDirectMessageParams` ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/ae0dab312b9ebdb87bc5a9bb62404d9b18953dfe))
 
 ### Added
 
