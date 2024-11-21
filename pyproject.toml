@@ -197,3 +197,10 @@ exclude_also = [
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*,*.lock'
+check-hidden = true
+# ignore-regex = ''
+# ignore-words-list = ''
