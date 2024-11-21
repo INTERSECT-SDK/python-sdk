@@ -28,7 +28,7 @@ ControlProvider = Literal['mqtt3.1.1', 'amqp0.9.1']
 
 
 class HierarchyConfig(BaseModel):
-    """Configuration for registring this service in a system-of-system architecture."""
+    """Configuration for registering this service in a system-of-system architecture."""
 
     service: Annotated[str, Field(pattern=HIERARCHY_REGEX)]
     """

@@ -1,6 +1,6 @@
 """Client for service to service example.
 
-Kicks off exmaple by sending message to service one, and then
+Kicks off example by sending message to service one, and then
 waits for an event from service one to confirm the messages were passed between the two services properly.
 
 """
