@@ -113,7 +113,7 @@ class MQTTClient(BrokerClient):
             topic: The topic on which to publish the message as a string.
             payload: The message to publish, as raw bytes.
             persist: Determine if the message should live until queue consumers or available (True), or
-              if it should be removed immediatedly (False)
+              if it should be removed immediately (False)
         """
         # NOTE: RabbitMQ only works with QOS of 1 and 0, and seems to convert QOS2 to QOS1
         self._connection.publish(topic, payload, qos=2 if persist else 0)

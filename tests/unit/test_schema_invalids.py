@@ -132,7 +132,7 @@ def test_disallow_unparsable_annotation(caplog: pytest.LogCaptureFixture):
             three: str
 
         @intersect_message()
-        def cant_parse_annotation(self, unparseable: PydanticUnparsableInner) -> None: ...
+        def cant_parse_annotation(self, unparsable: PydanticUnparsableInner) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([PydanticUnparsable])
@@ -158,7 +158,7 @@ def test_disallow_object_typing(caplog: pytest.LogCaptureFixture):
 
 def test_disallow_object_subtyping(caplog: pytest.LogCaptureFixture):
     # should fail because return type has a subtyping object (dynamic typing)
-    # note that 'object' is evalutated exactly like it is as a root type
+    # note that 'object' is evaluated exactly like it is as a root type
     class MockObjectSubtype(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
 
@@ -456,7 +456,7 @@ def test_disallow_empty_dataclass(caplog: pytest.LogCaptureFixture):
 
 
 def test_disallow_ambiguous_typealiastype(caplog: pytest.LogCaptureFixture):
-    # should fail because the TypeVar is ambigous and would resolve to "Any"
+    # should fail because the TypeVar is ambiguous and would resolve to "Any"
     class AmbiguousTypeAliasType(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
         T = TypeVar('T')
@@ -975,4 +975,4 @@ def test_multiple_status_functions_across_capabilities(caplog: pytest.LogCapture
 
     with pytest.raises(SystemExit):
         get_schema_helper([CapabilityName1, CapabilityName2])
-    assert 'Only one capabilitiy may have an @intersect_status function' in caplog.text
+    assert 'Only one capability may have an @intersect_status function' in caplog.text

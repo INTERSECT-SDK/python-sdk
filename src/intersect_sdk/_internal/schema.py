@@ -557,7 +557,7 @@ def get_schema_and_functions_from_capability_implementations(
         if cap_status_fn_name and cap_status_schema and cap_status_type_adapter:
             if status_function_name is not None:
                 # TODO may want to change this later
-                die('Only one capabilitiy may have an @intersect_status function')
+                die('Only one capability may have an @intersect_status function')
             status_function_cap = capability_type
             status_function_name = cap_status_fn_name
             status_function_schema = cap_status_schema

@@ -42,7 +42,7 @@ def definition_metadata_differences(
 ) -> list[tuple[str, str, str]]:
     """Return a list of differences between 'definition' and 'metadata'.
 
-    First tuple value = defintion key
+    First tuple value = definition key
     Second tuple value = second value
     Third tuple value = already cached value
     """

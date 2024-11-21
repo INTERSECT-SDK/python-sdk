@@ -62,7 +62,7 @@ def test_incorrect_intersect_event_annotations():
     assert len(errors) == 1
     assert {'type': 'missing', 'loc': ('event_type',)} in errors
 
-    # special case: we have a custom vaildator for event_type which fails on some common instantiations
+    # special case: we have a custom validator for event_type which fails on some common instantiations
     with pytest.raises(ValidationError) as ex:
 
         class BadEventArgs4(IntersectBaseCapabilityImplementation):
