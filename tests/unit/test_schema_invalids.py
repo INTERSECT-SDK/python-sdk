@@ -137,7 +137,7 @@ def test_disallow_unparsable_annotation(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([PydanticUnparsable])
     assert (
-        "On capability 'PydanticUnparsable', parameter 'unparseable' type annotation" in caplog.text
+        "On capability 'PydanticUnparsable', parameter 'unparsable' type annotation" in caplog.text
     )
     assert "on function 'cant_parse_annotation' is invalid" in caplog.text
 
