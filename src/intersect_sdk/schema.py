@@ -50,7 +50,7 @@ def get_schema_from_capability_implementations(
     Some key differences:
     - We utilize three custom fields: "capabilities", "events", and "status".
     - "capabilities" contains a dictionary: the keys of this dictionary are capability names. The values are dictionaries with the "description" property being a string which describes the capability,
-      and a "channels" property which more closely follows the AsyncAPI specification of the top-level value "channels".
+    and a "channels" property which more closely follows the AsyncAPI specification of the top-level value "channels".
     - "events" is a key-value dictionary: the keys represent the event name, the values represent the associated schema of the event type. Events are currently shared across all capabilities.
     - "status" will have a value of the status schema - if no status has been defined, a null schema is used.
 
