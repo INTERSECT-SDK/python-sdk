@@ -104,8 +104,6 @@ ignore = [
     'COM812',  # formatter, handled by Ruff format
     'ISC001',  # formatter, handled by Ruff format
     'SIM105',  # "with contextlib.suppress():" is slower than try-except-pass
-    'ANN101',  # don't need to annotate "self" typing
-    'ANN102',  # don't need to annotate "cls" typing for class methods
     'ANN401',  # allow explicit "Any" typing, use with care
     'PLR2004', # allow "magic numbers"
 ]
@@ -171,7 +169,7 @@ exclude_also = [
 [tool.pdm.dev-dependencies]
 lint = [
     "pre-commit>=3.3.1",
-    "ruff==0.5.7",
+    "ruff==0.9.4",
     "mypy>=1.10.0",
     "types-paho-mqtt>=1.6.0.20240106",
     "codespell>=2.3.0",

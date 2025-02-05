@@ -25,13 +25,13 @@ from typing import Any, Union
 from pydantic import AwareDatetime, Field, TypeAdapter
 from typing_extensions import Annotated, TypedDict
 
-from ...constants import SYSTEM_OF_SYSTEM_REGEX  # noqa: TCH001 (this is runtime checked)
-from ...core_definitions import (  # noqa: TCH001 (this is runtime checked)
+from ...constants import SYSTEM_OF_SYSTEM_REGEX
+from ...core_definitions import (
     IntersectDataHandler,
     IntersectMimeType,
 )
 from ...version import version_string
-from ..data_plane.minio_utils import MinioPayload  # noqa: TCH001 (this is runtime checked)
+from ..data_plane.minio_utils import MinioPayload  # noqa: TC001 (this is runtime checked)
 
 
 class UserspaceMessageHeader(TypedDict):

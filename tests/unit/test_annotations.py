@@ -1,4 +1,6 @@
 import pytest
+from pydantic import ValidationError
+
 from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
     IntersectEventDefinition,
@@ -6,7 +8,6 @@ from intersect_sdk import (
     intersect_message,
     intersect_status,
 )
-from pydantic import ValidationError
 
 
 # this should immediately fail when trying to define the class itself

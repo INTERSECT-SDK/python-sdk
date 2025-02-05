@@ -28,16 +28,6 @@ from typing import (
 from uuid import UUID
 
 from annotated_types import Ge, Le
-from intersect_sdk import (
-    HierarchyConfig,
-    IntersectBaseCapabilityImplementation,
-    IntersectDataHandler,
-    IntersectEventDefinition,
-    IntersectMimeType,
-    intersect_event,
-    intersect_message,
-    intersect_status,
-)
 from pydantic import (
     BaseModel,
     Field,
@@ -48,6 +38,17 @@ from pydantic import (
 )
 from pydantic_core import PydanticCustomError, Url
 from typing_extensions import Annotated, TypeAliasType, TypedDict
+
+from intersect_sdk import (
+    HierarchyConfig,
+    IntersectBaseCapabilityImplementation,
+    IntersectDataHandler,
+    IntersectEventDefinition,
+    IntersectMimeType,
+    intersect_event,
+    intersect_message,
+    intersect_status,
+)
 
 FAKE_HIERARCHY_CONFIG = HierarchyConfig(
     organization='test',
@@ -450,7 +451,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         self.update_status('test_decimal')
         decimal.getcontext().prec = 20
         decimal.getcontext().rounding = decimal.ROUND_HALF_UP
-        return input_value / Decimal(3.14159265358979323846)
+        return input_value / Decimal('3.14159265358979323846')
 
     @intersect_message(
         response_content_type=IntersectMimeType.STRING,

@@ -6,12 +6,13 @@ import datetime
 import uuid
 
 import pytest
+from pydantic import ValidationError
+
 from intersect_sdk import IntersectDataHandler, IntersectMimeType, version_string
 from intersect_sdk._internal.messages.userspace import (
     create_userspace_message,
     deserialize_and_validate_userspace_message,
 )
-from pydantic import ValidationError
 
 
 def test_valid_userspace_message_deserializes():

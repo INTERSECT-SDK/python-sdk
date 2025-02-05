@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
+
 from intersect_sdk import (
     INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
     IntersectBaseCapabilityImplementation,

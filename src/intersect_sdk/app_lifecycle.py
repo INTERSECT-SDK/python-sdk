@@ -82,7 +82,7 @@ class SignalHandler:
         ----------
         signal (int): signal code.
         """
-        logger.warning('shutting down and handling signal %d' % signal)
+        logger.warning('shutting down and handling signal {}', signal)
         if self._cleanup_callback:
             self._cleanup_callback(signal)
         self._exit.set()

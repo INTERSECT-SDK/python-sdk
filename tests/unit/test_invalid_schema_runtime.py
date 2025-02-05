@@ -6,6 +6,7 @@ check that service configuration is valid.
 """
 
 import pytest
+
 from intersect_sdk import (
     ControlPlaneConfig,
     IntersectBaseCapabilityImplementation,

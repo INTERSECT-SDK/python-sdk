@@ -129,7 +129,7 @@ class IntersectClient:
             if user_callback:
                 # Do not persist, as we use the temporary client information to build this.
                 self._control_plane_manager.add_subscription_channel(
-                    f"{self._hierarchy.hierarchy_string('/')}/response",
+                    f'{self._hierarchy.hierarchy_string("/")}/response',
                     {self._handle_userspace_message_raw},
                     persist=False,
                 )
@@ -140,7 +140,7 @@ class IntersectClient:
                     service
                 ) in config.initial_message_event_config.services_to_start_listening_for_events:
                     self._control_plane_manager.add_subscription_channel(
-                        f"{service.replace('.', '/')}/events",
+                        f'{service.replace(".", "/")}/events',
                         {self._handle_event_message_raw},
                         persist=False,
                     )
@@ -390,13 +390,13 @@ class IntersectClient:
         if self._event_callback:
             for add_event in validated_result.services_to_start_listening_for_events:
                 self._control_plane_manager.add_subscription_channel(
-                    f"{add_event.replace('.', '/')}/events",
+                    f'{add_event.replace(".", "/")}/events',
                     {self._handle_event_message_raw},
                     persist=False,
                 )
             for remove_event in validated_result.services_to_stop_listening_for_events:
                 self._control_plane_manager.remove_subscription_channel(
-                    f"{remove_event.replace('.', '/')}/events"
+                    f'{remove_event.replace(".", "/")}/events'
                 )
 
         # sending userspace messages without the callback is okay, we just won't get the response
@@ -431,7 +431,7 @@ class IntersectClient:
             payload=out_payload,
         )
         logger.debug(f'Send userspace message:\n{msg}')
-        channel = f"{params.destination.replace('.', '/')}/request"
+        channel = f'{params.destination.replace(".", "/")}/request'
         # WARNING: If both the Service and the Client drop, the Service will execute the command
         # but cannot communicate the response to the Client.
         # in experiment controllers or production, you'll want to set persist to True

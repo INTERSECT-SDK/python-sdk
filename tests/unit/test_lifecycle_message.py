@@ -6,13 +6,14 @@ import datetime
 import uuid
 
 import pytest
+from pydantic import ValidationError
+
 from intersect_sdk import version_string
 from intersect_sdk._internal.messages.lifecycle import (
     LifecycleType,
     create_lifecycle_message,
     deserialize_and_validate_lifecycle_message,
 )
-from pydantic import ValidationError
 
 
 def test_valid_lifecycle_message_deserializes():

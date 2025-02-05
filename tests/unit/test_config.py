@@ -1,4 +1,6 @@
 import pytest
+from pydantic import TypeAdapter, ValidationError
+
 from intersect_sdk import (
     ControlPlaneConfig,
     DataStoreConfig,
@@ -8,7 +10,6 @@ from intersect_sdk import (
     IntersectClientConfig,
     IntersectServiceConfig,
 )
-from pydantic import TypeAdapter, ValidationError
 
 # TESTS #####################
 
