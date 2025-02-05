@@ -4,6 +4,9 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
+
 from intersect_sdk import (
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
@@ -13,8 +16,6 @@ from intersect_sdk import (
     intersect_message,
     intersect_status,
 )
-from pydantic import BaseModel, Field
-from typing_extensions import Annotated
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

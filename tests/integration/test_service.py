@@ -31,7 +31,6 @@ from intersect_sdk._internal.messages.userspace import (
     create_userspace_message,
     deserialize_and_validate_userspace_message,
 )
-
 from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG, DummyCapabilityImplementation
 
 # HELPERS #############################

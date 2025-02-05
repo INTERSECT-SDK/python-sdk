@@ -10,7 +10,6 @@ from intersect_sdk._internal.constants import (
 )
 from intersect_sdk._internal.schema import get_schema_and_functions_from_capability_implementations
 from intersect_sdk.schema import get_schema_from_capability_implementations
-
 from tests.fixtures.example_schema import (
     FAKE_HIERARCHY_CONFIG,
     DummyCapabilityImplementation,
