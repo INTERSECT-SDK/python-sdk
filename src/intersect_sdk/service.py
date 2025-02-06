@@ -567,10 +567,6 @@ class IntersectService(IntersectEventObserver):
         hierarchy = service.hierarchy_string('.')
         self._svc2svc_events[hierarchy][event_name].add(response_handler)
 
-        logger.info(
-            '----------- PREPARE_SUBSCRIBE_TO ----------------',
-            f'{service.hierarchy_string("/")}/events',
-        )
         self._control_plane_manager.add_subscription_channel(
             f'{service.hierarchy_string("/")}/events',
             {self._svc2svc_event_callback},
