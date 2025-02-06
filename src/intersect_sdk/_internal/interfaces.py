@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from ..client_callback_definitions import INTERSECT_CLIENT_EVENT_CALLBACK_TYPE
+    from ..config.shared import HierarchyConfig
     from ..service_callback_definitions import (
         INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
     )
@@ -14,13 +15,12 @@ if TYPE_CHECKING:
     )
 
 
-class IntersectEventObserver(ABC):
+class IntersectEventObserver(Protocol):
     """Abstract definition of an entity which observes an INTERSECT event (i.e. IntersectService).
 
     Used as the common interface for event emitters (i.e. CapabilityImplementations).
     """
 
-    @abstractmethod
     def _on_observe_event(self, event_name: str, event_value: Any, operation: str) -> None:
         """How to react to an event being fired.
 
@@ -31,7 +31,6 @@ class IntersectEventObserver(ABC):
         """
         ...
 
-    @abstractmethod
     def create_external_request(
         self,
         request: IntersectDirectMessageParams,
@@ -47,5 +46,20 @@ class IntersectEventObserver(ABC):
 
         Returns:
           - generated RequestID associated with your request
+        """
+        ...
+
+    def register_event(
+        self,
+        service: HierarchyConfig,
+        event_name: str,
+        response_handler: INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
+    ) -> None:
+        """Observed entity (capability) tells observer (i.e. service) to subscribe to a specific event.
+
+        Params:
+          - service: HierarchyConfig of the service we want to talk to
+          - event_name: name of event to subscribe to
+          - response_handler: callback for how to handle the reception of an event
         """
         ...

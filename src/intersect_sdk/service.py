@@ -17,6 +17,7 @@ Most useful definitions and typings will be found in the service_definitions mod
 from __future__ import annotations
 
 import time
+from collections import defaultdict
 from threading import Lock
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Literal, Union
@@ -40,7 +41,10 @@ from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectApplicationError, IntersectError
 from ._internal.interfaces import IntersectEventObserver
 from ._internal.logger import logger
-from ._internal.messages.event import create_event_message
+from ._internal.messages.event import (
+    create_event_message,
+    deserialize_and_validate_event_message,
+)
 from ._internal.messages.lifecycle import LifecycleType, create_lifecycle_message
 from ._internal.messages.userspace import (
     UserspaceMessage,
@@ -52,19 +56,24 @@ from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die
 from ._internal.version_resolver import resolve_user_version
 from .capability.base import IntersectBaseCapabilityImplementation
+from .client_callback_definitions import (
+    INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,  # noqa: TC001 (runtime-checked-annotation)
+)
 from .config.service import IntersectServiceConfig
+from .config.shared import HierarchyConfig
 from .core_definitions import IntersectDataHandler, IntersectMimeType
 from .service_callback_definitions import (
-    INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,  # noqa: TCH001 (runtime-checked annotation)
+    INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,  # noqa: TC001 (runtime-checked annotation)
 )
 from .shared_callback_definitions import (
-    INTERSECT_JSON_VALUE,  # noqa: TCH001 (runtime-checked annotation)
-    IntersectDirectMessageParams,  # noqa: TCH001 (runtime-checked annotation)
+    INTERSECT_JSON_VALUE,  # noqa: TC001 (runtime-checked annotation)
+    IntersectDirectMessageParams,  # noqa: TC001 (runtime-checked annotation)
 )
 from .version import version_string
 
 if TYPE_CHECKING:
     from ._internal.function_metadata import FunctionMetadata
+    from .config.shared import HierarchyConfig
 
 
 @final
@@ -241,7 +250,9 @@ class IntersectService(IntersectEventObserver):
         self._status_retrieval_fn: Callable[[], bytes] = (
             (
                 lambda: status_type_adapter.dump_json(
-                    getattr(status_fn_capability, status_fn_name)(), by_alias=True, warnings='error'
+                    getattr(status_fn_capability, status_fn_name)(),
+                    by_alias=True,
+                    warnings='error',
                 )
             )
             if status_type_adapter and status_fn_name
@@ -255,25 +266,49 @@ class IntersectService(IntersectEventObserver):
         self._external_requests: dict[str, IntersectService._ExternalRequest] = {}
         self._external_request_ctr = 0
 
+        self._svc2svc_events: defaultdict[
+            str, defaultdict[str, set[INTERSECT_CLIENT_EVENT_CALLBACK_TYPE]]
+        ] = defaultdict(lambda: defaultdict(set))
+        """
+        tree of other service events we're subscribed to, and what we need to call when we get an event
+
+        i.e.
+
+        {
+          "org.fac.sys1.subsys.service": {
+            "event_name_1": [
+              # user_function_1,
+              # user_function_2
+            ]
+          }
+        }
+        """
+
         self._startup_messages: list[
-            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+            tuple[
+                IntersectDirectMessageParams,
+                INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None,
+            ]
         ] = []
         self._resend_startup_messages = True
         self._sent_startup_messages = False
 
         self._shutdown_messages: list[
-            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+            tuple[
+                IntersectDirectMessageParams,
+                INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None,
+            ]
         ] = []
 
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
         # we PUBLISH messages on this channel
-        self._lifecycle_channel_name = f"{config.hierarchy.hierarchy_string('/')}/lifecycle"
+        self._lifecycle_channel_name = f'{config.hierarchy.hierarchy_string("/")}/lifecycle'
         # we PUBLISH event messages on this channel
-        self._events_channel_name = f"{config.hierarchy.hierarchy_string('/')}/events"
+        self._events_channel_name = f'{config.hierarchy.hierarchy_string("/")}/events'
         # we SUBSCRIBE to messages on this channel to receive requests
-        self._service_channel_name = f"{config.hierarchy.hierarchy_string('/')}/request"
+        self._service_channel_name = f'{config.hierarchy.hierarchy_string("/")}/request'
         # we SUBSCRIBE to messages on this channel to receive responses
-        self._client_channel_name = f"{config.hierarchy.hierarchy_string('/')}/response"
+        self._client_channel_name = f'{config.hierarchy.hierarchy_string("/")}/response'
 
         self._control_plane_manager = ControlPlaneManager(
             control_configs=config.brokers,
@@ -323,7 +358,8 @@ class IntersectService(IntersectEventObserver):
         # Start the status thread if it doesn't already exist
         if self._status_thread is None:
             self._status_thread = StoppableThread(
-                target=self._status_ticker, name=f'IntersectService_{self._uuid}_status_thread'
+                target=self._status_ticker,
+                name=f'IntersectService_{self._uuid}_status_thread',
             )
             self._status_thread.start()
 
@@ -483,7 +519,10 @@ class IntersectService(IntersectEventObserver):
     def add_startup_messages(
         self,
         messages: list[
-            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+            tuple[
+                IntersectDirectMessageParams,
+                INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None,
+            ]
         ],
     ) -> None:
         """Add request messages to send out to various microservices when this service starts.
@@ -497,7 +536,10 @@ class IntersectService(IntersectEventObserver):
     def add_shutdown_messages(
         self,
         messages: list[
-            tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None]
+            tuple[
+                IntersectDirectMessageParams,
+                INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None,
+            ]
         ],
     ) -> None:
         """Add request messages to send out to various microservices on shutdown.
@@ -507,6 +549,62 @@ class IntersectService(IntersectEventObserver):
               second value in tuple contains the callback function for handling the response from the other Service.
         """
         self._shutdown_messages.extend(messages)
+
+    @validate_call(config=ConfigDict(revalidate_instances='always'))
+    def register_event(
+        self,
+        service: HierarchyConfig,
+        event_name: str,
+        response_handler: INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
+    ) -> None:
+        """Begin subscribing to events from a different Service.
+
+        Params:
+          - service: HierarchyConfig of the service we want to talk to
+          - event_name: name of event to subscribe to
+          - response_handler: callback for how to handle the reception of an event
+        """
+        hierarchy = service.hierarchy_string('.')
+        self._svc2svc_events[hierarchy][event_name].add(response_handler)
+
+        logger.info(
+            '----------- PREPARE_SUBSCRIBE_TO ----------------',
+            f'{service.hierarchy_string("/")}/events',
+        )
+        self._control_plane_manager.add_subscription_channel(
+            f'{service.hierarchy_string("/")}/events',
+            {self._svc2svc_event_callback},
+            persist=True,
+        )
+
+    def _svc2svc_event_callback(self, raw: bytes) -> None:
+        """Callback received when this service gets an event from another service.
+
+        Deserializes and validates an EventMessage, will call a userspace function accordingly.
+        """
+        try:
+            message = deserialize_and_validate_event_message(raw)
+        except ValidationError as e:
+            logger.warning(
+                "Invalid message received from another service's events channel, ignoring. Full message:\n{}",
+                e,
+            )
+            return
+        logger.debug('Received event message:\n{}', message)
+        try:
+            payload = GENERIC_MESSAGE_SERIALIZER.validate_json(
+                self._data_plane_manager.incoming_message_data_handler(message)
+            )
+        except ValidationError as e:
+            logger.warning(
+                'Invalid payload message received as an event, ignoring. Full message: {}',
+                e,
+            )
+            return
+        source = message['headers']['source']
+        event_name = message['headers']['event_name']
+        for user_callback in self._svc2svc_events[source][event_name]:
+            user_callback(source, message['operationId'], event_name, payload)
 
     @validate_call(config=ConfigDict(revalidate_instances='always'))
     def create_external_request(
@@ -625,7 +723,7 @@ class IntersectService(IntersectEventObserver):
                     'error' if response_msg['headers']['has_error'] else 'userspace',
                     response_msg,
                 )
-                response_channel = f"{message['headers']['source'].replace('.', '/')}/response"
+                response_channel = f'{message["headers"]["source"].replace(".", "/")}/response'
                 # Persistent userspace messages may be useful for orchestration.
                 # Persistence will not hurt anything.
                 self._control_plane_manager.publish_message(
@@ -796,7 +894,7 @@ class IntersectService(IntersectEventObserver):
             message_id=request_id,
         )
         logger.debug(f'Sending client message:\n{msg}')
-        request_channel = f"{params.destination.replace('.', '/')}/request"
+        request_channel = f'{params.destination.replace(".", "/")}/request'
         self._control_plane_manager.publish_message(request_channel, msg, persist=True)
         return True
 
@@ -923,8 +1021,7 @@ class IntersectService(IntersectEventObserver):
             event_name=event_name,
             payload=response_payload,
         )
-        # Event messages are meant to be short-lived and should not persist.
-        self._control_plane_manager.publish_message(self._events_channel_name, msg, persist=False)
+        self._control_plane_manager.publish_message(self._events_channel_name, msg, persist=True)
 
     def _make_error_message(
         self, error_string: str, original_message: UserspaceMessage

@@ -143,3 +143,10 @@ def test_example_4_service_to_service():
         'Received Response from Service 2: Acknowledging service one text -> Kicking off the example!\n'
         'Received Second Response from Service 2: Acknowledging service one text -> Final Verification\n'
     )
+
+
+def test_example_4_service_to_service_events():
+    assert run_example_test('4_service_to_service_events') == (
+        'From event "internal_service_event", received message "not_feeling_creative" from "example-organization.example-facility.example-system.example-subsystem.internal-service"\n'
+        'From event "internal_service_event", received message "not_feeling_creative" from "example-organization.example-facility.example-system.example-subsystem.internal-service"\n'
+    )

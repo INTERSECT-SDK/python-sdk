@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from .._internal.interfaces import IntersectEventObserver
+    from ..client_callback_definitions import INTERSECT_CLIENT_EVENT_CALLBACK_TYPE
+    from ..config.shared import HierarchyConfig
     from ..service_callback_definitions import (
         INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
     )
@@ -137,6 +139,8 @@ class IntersectBaseCapabilityImplementation:
     ) -> list[UUID]:
         """Create an external request that we'll send to a different Service.
 
+        Note: You should generally NOT call this function until after you have initialized the IntersectService class.
+
         Params:
           - request: the request we want to send out, encapsulated as an IntersectDirectMessageParams object
           - response_handler: optional callback for how we want to handle the response from this request.
@@ -153,3 +157,27 @@ class IntersectBaseCapabilityImplementation:
             observer.create_external_request(request, response_handler, timeout)
             for observer in self.__intersect_sdk_observers__
         ]
+
+    @final
+    def intersect_sdk_listen_for_service_event(
+        self,
+        service: HierarchyConfig,
+        event_name: str,
+        response_handler: INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
+    ) -> None:
+        """Start listening to events from a specific Service.
+
+        Note: You should generally NOT call this function until after you have initialized the IntersectService class.
+
+        Params:
+          - service: The system-of-system hierarchy which points to the specific service
+          - event_name: The name of the event we want to listen for
+          - response_handler: callback for how to handle the reception of an event
+          The callback submits these parameters:
+            1) message source
+            2) name of operation
+            3) name of event
+            4) payload
+        """
+        for observer in self.__intersect_sdk_observers__:
+            observer.register_event(service, event_name, response_handler)
