@@ -173,7 +173,7 @@ class IntersectBaseCapabilityImplementation:
           - service: The system-of-system hierarchy which points to the specific service
           - event_name: The name of the event we want to listen for
           - response_handler: callback for how to handle the reception of an event
-          The callback submits these parameters:
+            The callback submits these parameters:
             1) message source
             2) name of operation
             3) name of event
