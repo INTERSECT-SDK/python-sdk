@@ -182,7 +182,8 @@ test-all = "pytest tests/ --cov=src/intersect_sdk/ --cov-fail-under=80 --cov-rep
 test-all-debug = "pytest tests/ --cov=src/intersect_sdk/ --cov-fail-under=80 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage_report.xml --junitxml=reports/junit.xml -s"
 test-unit = "pytest tests/unit --cov=src/intersect_sdk/"
 test-e2e = "pytest tests/e2e --cov=src/intersect_sdk/"
-lint = { composite = ["lint-format", "lint-ruff", "lint-mypy", "lint-spelling"] }
+lint = { composite = ["lint-format", "lint-ruff", "lint-mypy", "lint-spelling", "lint-docs"] }
+lint-docs = "sphinx-build -W --keep-going docs docs/_build"
 lint-format = "ruff format"
 lint-ruff = "ruff check --fix"
 lint-mypy = "mypy src/intersect_sdk/"
