@@ -600,7 +600,16 @@ class IntersectService(IntersectEventObserver):
         source = message['headers']['source']
         event_name = message['headers']['event_name']
         for user_callback in self._svc2svc_events[source][event_name]:
-            user_callback(source, message['operationId'], event_name, payload)
+            try:
+                user_callback(source, message['operationId'], event_name, payload)
+            except Exception as e:  # noqa: BLE001 (need to catch any possible user exception)
+                logger.warning(
+                    '!!! INTERSECT: event callback function "%s" produced uncaught exception when handling event "%s" from "%s"',
+                    user_callback.__name__,
+                    event_name,
+                    source,
+                )
+                logger.warning(e)
 
     @validate_call(config=ConfigDict(revalidate_instances='always'))
     def create_external_request(
