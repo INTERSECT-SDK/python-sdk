@@ -8,7 +8,7 @@ from __future__ import annotations
 from ._internal.version import strip_version_metadata
 
 # may include build metadata
-__version__ = '0.8.0'
+__version__ = '0.8.1'
 
 version_string = strip_version_metadata(__version__)
 """

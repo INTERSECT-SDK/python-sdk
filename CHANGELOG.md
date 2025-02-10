@@ -1,6 +1,18 @@
 # Changelog
 
+We follow [Common Changelog](https://common-changelog.org/) formatting for this document.
+
 ## Unreleased
+
+## [0.8.1] - 2025-02-10
+
+### Changed
+
+- Events associated with Services are now considered to be persistent ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/b57d72022f8fc8fb1c25e7985eaf4e18ed2d1904)). If your microservice loses INTERSECT connection and later regains it, it will now handle any events which occurred while disconnected from INTERSECT.
+
+### Added
+
+- Added ability for services to listen for events from other services ([issue](https://github.com/INTERSECT-SDK/python-sdk/issues/20)) ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/b57d72022f8fc8fb1c25e7985eaf4e18ed2d1904)) .
 
 ## [0.8.0] - 2024-09-10
 
@@ -37,5 +49,6 @@ _If you are upgrading: please see [`UPGRADING.md`](UPGRADING.md)._
 
 - **Breaking:** Added service-to-service request/response mechanism ([!9](https://github.com/INTERSECT-SDK/python-sdk/pull/9)) .
 
-[0.8.0]: https://github.com/Level/level/releases/tag/0.8.0
-[0.7.0]: https://github.com/Level/level/releases/tag/0.7.0
+[0.8.1]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.1
+[0.8.0]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.0
+[0.7.0]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.7.0
