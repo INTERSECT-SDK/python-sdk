@@ -1,4 +1,8 @@
 [![Static Badge](https://img.shields.io/badge/DOI-10.11578%2Fdc.20240927.1-blue)](https://doi.org/10.11578/dc.20240927.1)
+[![CI](https://github.com/INTERSECT-SDK/python-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/INTERSECT-SDK/python-sdk/actions/workflows/ci.yml)
+[![Release to PyPi](https://github.com/INTERSECT-SDK/python-sdk/actions/workflows/publish.yml/badge.svg)](https://github.com/INTERSECT-SDK/python-sdk/actions/workflows/publish.yml)
+[![PyPI version](https://badge.fury.io/py/intersect-sdk.svg)](https://badge.fury.io/py/intersect-sdk)
+[![ReadTheDocs](https://readthedocs.org/projects/intersect-python-sdk/badge/?version=latest)](https://intersect-python-sdk.readthedocs.io/en/latest/)
 
 # INTERSECT-SDK
 
