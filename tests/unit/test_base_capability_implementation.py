@@ -73,6 +73,19 @@ def test_no_override():
 
     assert 'BadClass3: Attempted to override a reserved INTERSECT-SDK function' in str(ex)
 
+    with pytest.raises(RuntimeError) as ex:
+
+        class BadClass4(IntersectBaseCapabilityImplementation):
+            def intersect_sdk_listen_for_service_event(
+                self,
+                service,
+                event_name,
+                response_handler,
+            ) -> None:
+                pass
+
+    assert 'BadClass4: Attempted to override a reserved INTERSECT-SDK function' in str(ex)
+
 
 # Note that the ONLY thing the capability itself checks for are annotated functions.
 # The event definitions and overall schema validation are a service-specific feature

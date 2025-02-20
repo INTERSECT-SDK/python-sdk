@@ -68,6 +68,8 @@ class IntersectBaseCapabilityImplementation:
             is not IntersectBaseCapabilityImplementation.intersect_sdk_emit_event
             or cls.intersect_sdk_call_service
             is not IntersectBaseCapabilityImplementation.intersect_sdk_call_service
+            or cls.intersect_sdk_listen_for_service_event
+            is not IntersectBaseCapabilityImplementation.intersect_sdk_listen_for_service_event
         ):
             msg = f"{cls.__name__}: Attempted to override a reserved INTERSECT-SDK function (don't start your function names with '_intersect_sdk_' or 'intersect_sdk_')"
             raise RuntimeError(msg)
