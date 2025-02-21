@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.8.1",
+  "x-intersect-version": "0.8.2",
   "info": {
     "title": "p-ng-organization.p-ng-facility.p-ng-system.p-ng-subsystem.ping-service",
     "description": "INTERSECT schema",

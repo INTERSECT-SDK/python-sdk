@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.8.1",
+  "x-intersect-version": "0.8.2",
   "info": {
     "title": "example-organization.example-facility.example-system.example-subsystem.exposed-service",
     "description": "INTERSECT schema",
