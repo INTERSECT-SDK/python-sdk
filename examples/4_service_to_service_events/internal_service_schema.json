@@ -1,0 +1,149 @@
+{
+  "asyncapi": "2.6.0",
+  "x-intersect-version": "0.8.1",
+  "info": {
+    "title": "example-organization.example-facility.example-system.example-subsystem.internal-service",
+    "description": "INTERSECT schema",
+    "version": "0.0.0"
+  },
+  "defaultContentType": "application/json",
+  "capabilities": {
+    "InternalService": {
+      "channels": {},
+      "description": "Internal service capability."
+    }
+  },
+  "events": {
+    "internal_service_event": {
+      "type": "string"
+    }
+  },
+  "status": {
+    "type": "null"
+  },
+  "components": {
+    "schemas": {},
+    "messageTraits": {
+      "commonHeaders": {
+        "messageHeaders": {
+          "$defs": {
+            "IntersectDataHandler": {
+              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
+              "enum": [
+                0,
+                1
+              ],
+              "title": "IntersectDataHandler",
+              "type": "integer"
+            }
+          },
+          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "properties": {
+            "source": {
+              "description": "source of the message",
+              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "title": "Source",
+              "type": "string"
+            },
+            "destination": {
+              "description": "destination of the message",
+              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "title": "Destination",
+              "type": "string"
+            },
+            "created_at": {
+              "description": "the UTC timestamp of message creation",
+              "format": "date-time",
+              "title": "Created At",
+              "type": "string"
+            },
+            "sdk_version": {
+              "description": "SemVer string of SDK's version, used to check for compatibility",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "title": "Sdk Version",
+              "type": "string"
+            },
+            "data_handler": {
+              "allOf": [
+                {
+                  "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler"
+                }
+              ],
+              "default": 0,
+              "description": "Code signifying where data is stored."
+            },
+            "has_error": {
+              "default": false,
+              "description": "If this value is True, the payload will contain the error message (a string)",
+              "title": "Has Error",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "source",
+            "destination",
+            "created_at",
+            "sdk_version"
+          ],
+          "title": "UserspaceMessageHeader",
+          "type": "object"
+        },
+        "eventHeaders": {
+          "$defs": {
+            "IntersectDataHandler": {
+              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
+              "enum": [
+                0,
+                1
+              ],
+              "title": "IntersectDataHandler",
+              "type": "integer"
+            }
+          },
+          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "properties": {
+            "source": {
+              "description": "source of the message",
+              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "title": "Source",
+              "type": "string"
+            },
+            "created_at": {
+              "description": "the UTC timestamp of message creation",
+              "format": "date-time",
+              "title": "Created At",
+              "type": "string"
+            },
+            "sdk_version": {
+              "description": "SemVer string of SDK's version, used to check for compatibility",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "title": "Sdk Version",
+              "type": "string"
+            },
+            "data_handler": {
+              "allOf": [
+                {
+                  "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler"
+                }
+              ],
+              "default": 0,
+              "description": "Code signifying where data is stored."
+            },
+            "event_name": {
+              "title": "Event Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "source",
+            "created_at",
+            "sdk_version",
+            "event_name"
+          ],
+          "title": "EventMessageHeaders",
+          "type": "object"
+        }
+      }
+    }
+  }
+}
