@@ -1,7 +1,15 @@
 import json
 from pathlib import Path
 
-from intersect_sdk import IntersectDataHandler, IntersectMimeType
+from intersect_sdk import (
+    IntersectBaseCapabilityImplementation,
+    IntersectDataHandler,
+    IntersectEventDefinition,
+    IntersectMimeType,
+    intersect_event,
+    intersect_message,
+    intersect_status,
+)
 from intersect_sdk._internal.constants import (
     REQUEST_CONTENT,
     RESPONSE_CONTENT,
@@ -22,7 +30,43 @@ def get_fixture_path(fixture: str):
     return Path(__file__).absolute().parents[1] / 'fixtures' / fixture
 
 
-# TESTS ##################
+# MINIMAL ANNOTATION TESTS ######################
+
+
+def test_minimal_intersect_annotations():
+    class CapWithMessage(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'CapWithMessage'
+
+        @intersect_message
+        def message_function(self, theinput: int) -> int:
+            return theinput * 4
+
+    class CapWithEvent(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'CapWithEvent'
+
+        @intersect_event(events={'event': IntersectEventDefinition(event_type=str)})
+        def event_function(self):
+            self.intersect_sdk_emit_event('event', 'emitted_value')
+
+    class CapWithStatus(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'CapWithStatus'
+
+        @intersect_status
+        def status_function(self) -> str:
+            return 'Up'
+
+    schemas = get_schema_from_capability_implementations(
+        [
+            CapWithEvent,
+            CapWithMessage,
+            CapWithStatus,
+        ],
+        FAKE_HIERARCHY_CONFIG,
+    )
+    assert len(schemas['capabilities']) == 3
+
+
+# FIXTURE TESTS ##################
 
 
 def test_schema_comparison():

@@ -143,9 +143,9 @@ def _get_functions(
         logger.warning(
             f"Class '{capability.__name__}' has no function annotated with the @intersect_status() decorator. No status information will be provided when sending status messages."
         )
-    if not intersect_messages and not intersect_events:
+    if not intersect_messages and not intersect_events and not intersect_status:
         die(
-            f"No intersect annotations detected on class '{capability.__name__}'. Please annotate at least one entrypoint with '@intersect_message()', or one event-emitting function with '@intersect_event()' ."
+            f"No intersect annotations detected on class '{capability.__name__}'. Please annotate at least one entrypoint with '@intersect_message()', or one event-emitting function with '@intersect_event()', or create an '@intersect_status' function."
         )
     return intersect_status, intersect_messages, intersect_events
 
