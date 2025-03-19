@@ -75,17 +75,6 @@ class LifecycleMessageHeaders(TypedDict):
     source of the message
     """
 
-    destination: Annotated[
-        str,
-        Field(
-            description='destination of the message',
-            pattern=SYSTEM_OF_SYSTEM_REGEX,
-        ),
-    ]
-    """
-    destination of the message
-    """
-
     created_at: Annotated[
         AwareDatetime,
         Field(
@@ -144,7 +133,6 @@ class LifecycleMessage(TypedDict):
 
 def create_lifecycle_message(
     source: str,
-    destination: str,
     lifecycle_type: LifecycleType,
     payload: Any,
 ) -> LifecycleMessage:
@@ -153,7 +141,6 @@ def create_lifecycle_message(
         messageId=uuid.uuid4(),
         headers=LifecycleMessageHeaders(
             source=source,
-            destination=destination,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             sdk_version=version_string,
             lifecycle_type=lifecycle_type,

@@ -1054,7 +1054,6 @@ class IntersectService(IntersectEventObserver):
         """Send out a lifecycle message."""
         msg = create_lifecycle_message(
             source=self._hierarchy.hierarchy_string('.'),
-            destination=self._lifecycle_channel_name,
             lifecycle_type=lifecycle_type,
             payload=payload,
         )
