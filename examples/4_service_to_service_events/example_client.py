@@ -8,11 +8,13 @@ import logging
 
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
+    ControlPlaneConfig,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
     default_intersect_lifecycle_loop,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,16 +50,18 @@ class SampleOrchestrator:
 
 
 if __name__ == '__main__':
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 5672,
-                'protocol': 'amqp0.9.1',
-            },
-        ],
-    }
+    broker_configs = [
+        {'host': 'localhost', 'port': 1883},
+    ]
+
+    brokers = [
+        ControlPlaneConfig(
+            protocol='mqtt3.1.1',
+            username='intersect_username',
+            password='intersect_password',
+            brokers=[BrokerConfig(**broker) for broker in broker_configs],
+        )
+    ]
 
     # Listen for an event on the exposed service
     config = IntersectClientConfig(
@@ -66,7 +70,7 @@ if __name__ == '__main__':
                 'example-organization.example-facility.example-system.example-subsystem.exposed-service'
             ],
         ),
-        **from_config_file,
+        brokers=brokers,
     )
     orchestrator = SampleOrchestrator()
     client = IntersectClient(

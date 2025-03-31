@@ -1,7 +1,9 @@
 """Configuration types shared across both Clients and Services."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import List, Literal, Optional, Set
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 from typing_extensions import Annotated
@@ -35,7 +37,7 @@ class HierarchyConfig(BaseModel):
     The name of this application - should be unique within an INTERSECT system
     """
 
-    subsystem: Optional[str] = Field(default=None, pattern=HIERARCHY_REGEX)  # noqa: FA100 (Pydantic uses runtime annotations)
+    subsystem: str | None = Field(default=None, pattern=HIERARCHY_REGEX)
     """
     An associated subsystem / service-grouping of the system (should be unique within an INTERSECT system)
     """
@@ -81,8 +83,34 @@ class HierarchyConfig(BaseModel):
 
 
 @dataclass
+class BrokerConfig:
+    """Configuration for a single broker instance."""
+
+    host: Annotated[str, Field(min_length=1)]
+    """Broker hostname."""
+
+    port: PositiveInt
+    """
+    Broker port. List of common ports:
+
+    - 1883 (MQTT)
+    - 4222 (NATS default port)
+    - 5222 (XMPP)
+    - 5223 (XMPP over TLS)
+    - 5671 (AMQP over TLS)
+    - 5672 (AMQP)
+    - 7400 (DDS Discovery)
+    - 7401 (DDS User traffic)
+    - 8883 (MQTT over TLS)
+    - 61613 (RabbitMQ STOMP - WARNING: ephemeral port)
+
+    NOTE: INTERSECT currently only supports AMQP and MQTT.
+    """
+
+
+@dataclass
 class ControlPlaneConfig:
-    """Configuration for interacting with a broker."""
+    """Configuration for interacting with a broker or broker cluster."""
 
     protocol: ControlProvider
     """
@@ -100,27 +128,10 @@ class ControlPlaneConfig:
     Password credentials for broker connection.
     """
 
-    host: Annotated[str, Field(min_length=1)] = '127.0.0.1'
+    brokers: list[BrokerConfig]
     """
-    Broker hostname (default: 127.0.0.1)
-    """
-
-    port: Optional[PositiveInt] = None  # noqa: FA100 (Pydantic uses runtime annotations)
-    """
-    Broker port. List of common ports:
-
-    - 1883 (MQTT)
-    - 4222 (NATS default port)
-    - 5222 (XMPP)
-    - 5223 (XMPP over TLS)
-    - 5671 (AMQP over TLS)
-    - 5672 (AMQP)
-    - 7400 (DDS Discovery)
-    - 7401 (DDS User traffic)
-    - 8883 (MQTT over TLS)
-    - 61613 (RabbitMQ STOMP - WARNING: ephemeral port)
-
-    NOTE: INTERSECT currently only supports AMQP and MQTT.
+    List of broker configurations to connect to. The client will attempt to connect
+    to these brokers sequentially in the order provided.
     """
 
 
@@ -143,7 +154,7 @@ class DataStoreConfig:
     Data store hostname (default: 127.0.0.1)
     """
 
-    port: Optional[PositiveInt] = None  # noqa: FA100 (Pydantic uses runtime annotations)
+    port: PositiveInt | None = None
     """
     Data store port
     """
@@ -153,12 +164,12 @@ class DataStoreConfig:
 class DataStoreConfigMap:
     """Configurations for any data stores the application should talk to."""
 
-    minio: List[DataStoreConfig] = field(default_factory=list)  # noqa: FA100 (Pydantic uses runtime annotations)
+    minio: list[DataStoreConfig] = field(default_factory=list)
     """
     minio configurations
     """
 
-    def get_missing_data_store_types(self) -> Set[IntersectDataHandler]:  # noqa: FA100 (not technically a runtime annotation)
+    def get_missing_data_store_types(self) -> set[IntersectDataHandler]:
         """Return a set of IntersectDataHandlers which will not be permitted, due to a configuration type missing.
 
         If all data configurations exist, returns an empty set

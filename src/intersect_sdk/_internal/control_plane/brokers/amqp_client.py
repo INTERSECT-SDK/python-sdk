@@ -10,7 +10,9 @@ SYSTEM is generally the level where Auth should occur, and where you should conf
 from __future__ import annotations
 
 import functools
+import random
 import threading
+import time
 from hashlib import sha384
 from typing import TYPE_CHECKING, Callable
 
@@ -28,10 +30,72 @@ if TYPE_CHECKING:
     from pika.frame import Frame
     from pika.spec import Basic, BasicProperties
 
+    from ....config.shared import BrokerConfig
     from ..topic_handler import TopicHandler
 
 
 _AMQP_MAX_RETRIES = 10
+
+
+class ClusterConnectionParameters:
+    """Configuration for an AMQP cluster.
+
+    Attributes:
+        brokers: List of broker configurations for AMQP cluster nodes
+        username: AMQP broker username
+        password: AMQP broker password
+        connection_attempts: Number of connection attempts per node
+        connection_retry_delay: Delay between connection attempts in seconds
+    """
+
+    def __init__(
+        self,
+        brokers: list[BrokerConfig],
+        username: str,
+        password: str,
+        connection_attempts: int = 3,
+        connection_retry_delay: float = 2.0,
+    ) -> None:
+        """Initialize cluster connection parameters.
+
+        Args:
+            brokers: List of broker configurations for AMQP cluster nodes
+            username: AMQP broker username
+            password: AMQP broker password
+            connection_attempts: Number of connection attempts per node
+            connection_retry_delay: Delay between connection attempts in seconds
+        """
+        self.brokers = brokers
+        self.username = username
+        self.password = password
+        self.connection_attempts = connection_attempts
+        self.connection_retry_delay = connection_retry_delay
+
+    def get_random_node(self) -> BrokerConfig:
+        """Get a random node from the cluster.
+
+        Returns:
+            A BrokerConfig randomly selected from the available cluster nodes
+        """
+        index = random.randint(0, len(self.brokers) - 1)  # noqa: S311
+        return self.brokers[index]
+
+    def get_next_node(self, previous_index: int | None = None) -> tuple[int, BrokerConfig]:
+        """Get the next node in a round-robin fashion.
+
+        Args:
+            previous_index: Index of the previously used node
+
+        Returns:
+            A tuple containing (index, BrokerConfig) of the next node to try
+        """
+        if previous_index is None or previous_index >= len(self.brokers) - 1:
+            next_index = 0
+        else:
+            next_index = previous_index + 1
+
+        return next_index, self.brokers[next_index]
+
 
 # Note that we deliberately do NOT want this configurable at runtime. Any two INTERSECT services/clients could potentially exchange messages between one another.
 _INTERSECT_MESSAGE_EXCHANGE = 'intersect-messages'
@@ -64,14 +128,33 @@ def _amqp_2_hierarchy(amqp_routing_key: str) -> str:
     return amqp_routing_key.replace('.', '/')
 
 
+def _check_broker_connectivity(host: str, port: int, timeout: int = 2.0) -> bool:
+    """Check if we can connect to a broker host:port.
+
+    Returns True if reachable, False otherwise.
+    """
+    try:
+        import socket
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        return result == 0  # noqa: TRY300 annoyingly, lint complains about this if I put it in an if/else also. It's circular in suggestions.
+    except socket.gaierror:
+        # Handle name resolution errors specially
+        return False
+    return True
+
+
 class AMQPClient(BrokerClient):
     """Client for performing broker actions backed by a AMQP broker.
 
     NOTE: Currently, thread safety has been attempted, but may not be guaranteed
 
     Attributes:
-        id: A string representation of the client's UUID.
-        _connection_params: connection information to the AMQP broker (includes credentials)
+        username: Username for broker authentication.
+        password: Password for broker authentication.
         _publish_connection: AMQP connection dedicated to publishing messages
         _consume_connection: AMQP connection dedicated to consuming messages
         _topics_to_handlers: Dictionary of string topic names to lists of
@@ -80,28 +163,19 @@ class AMQPClient(BrokerClient):
 
     def __init__(
         self,
-        host: str,
-        port: int,
-        username: str,
-        password: str,
         topics_to_handlers: Callable[[], dict[str, TopicHandler]],
+        cluster_params: ClusterConnectionParameters,
     ) -> None:
         """The default constructor.
 
         Args:
-            host: String for hostname of AMQP broker
-            port: port number of AMQP broker
             username: username credentials for AMQP broker
             password: password credentials for AMQP broker
             topics_to_handlers: callback function which gets the topic to handler map from the channel manager
+            cluster_params: Optional cluster configuration parameters. If provided, brokers/username/password are ignored.
         """
-        self._connection_params = pika.ConnectionParameters(
-            host=host,
-            port=port,
-            virtual_host='/',
-            credentials=pika.PlainCredentials(username, password),
-            connection_attempts=3,
-        )
+        self._cluster_params: ClusterConnectionParameters = cluster_params
+        self._current_broker_index: int = None
 
         # The pika connection to the broker
         self._connection: pika.adapters.SelectConnection = None
@@ -109,6 +183,7 @@ class AMQPClient(BrokerClient):
         self._channel_out: Channel = None
 
         self._thread: threading.Thread | None = None
+        self._node_reconnect_thread: threading.Thread | None = None
 
         # Callback to the topics_to_handler list inside of
         self._topics_to_handlers = topics_to_handlers
@@ -120,6 +195,7 @@ class AMQPClient(BrokerClient):
         self._unrecoverable = False
         # tracking both channels is the best way to handle continuations
         self._channel_flags = MultiFlagThreadEvent(2)
+        self._cluster_connection_attempts = 0
 
     def connect(self) -> None:
         """Connect to the defined broker.
@@ -127,13 +203,25 @@ class AMQPClient(BrokerClient):
         Try to connect to the broker, performing exponential backoff if connection fails.
         """
         self._should_disconnect = False
+        self._unrecoverable = False
+        self._connection_retries = 0
         self._channel_flags.unset_all()
 
-        if not self._thread:
-            self._thread = threading.Thread(target=self._init_connection, daemon=True)
+        self._current_broker_index = 0
+        logger.info(f'Starting with broker index {self._current_broker_index} (first broker)')
+
+        if not self._thread or not self._thread.is_alive():
+            self._thread = threading.Thread(
+                target=self._init_connection, daemon=True, name='amqp_init_connection'
+            )
             self._thread.start()
 
+        timeout = 30.0
+        start_time = time.time()
         while not self._channel_flags.is_set():
+            if time.time() - start_time > timeout:
+                logger.error(f'Timeout waiting for AMQP connection after {timeout} seconds')
+                break
             self._channel_flags.wait(1.0)
 
     def disconnect(self) -> None:
@@ -156,10 +244,15 @@ class AMQPClient(BrokerClient):
         Returns:
             A boolean. True if there is a connection, False if not.
         """
-        # We are connected to the broker if either the publish or consume connections is open
-        return self._connection is not None and (
-            not self._connection.is_closed or not self._connection.is_closing
+        # We need to check both the connection and at least one channel
+        is_conn_ok = self._connection is not None and not self._connection.is_closed
+        has_channel = (self._channel_in is not None and self._channel_in.is_open) or (
+            self._channel_out is not None and self._channel_out.is_open
         )
+
+        # Only consider ourselves connected if we have both a connection and at least one channel
+        logger.debug(f'Connection status: conn={is_conn_ok}, channel={has_channel}')
+        return is_conn_ok and has_channel
 
     def considered_unrecoverable(self) -> bool:
         return self._unrecoverable
@@ -233,62 +326,297 @@ class AMQPClient(BrokerClient):
     # BEGIN CALLBACKS + THREADSAFE FUNCTIONS #
 
     def _init_connection(self) -> None:
-        """Open the consuming connection and start its io loop.
+        """Open the consuming connection and start its io loop."""
+        # Start with a clean state
+        self._connection = None
+        self._channel_in = None
+        self._channel_out = None
 
-        NOTE: ANY functions which are not eventually called from this function
-        should be called via self._connection.ioloop.add_callback_threadsafe(cb)
-        """
-        while not self._should_disconnect:
-            self._connection = pika.adapters.SelectConnection(
-                parameters=self._connection_params,
-                on_close_callback=self._on_connection_closed,
-                on_open_error_callback=self._on_connection_open_error,
-                on_open_callback=self._on_connection_open,
-            )
+        # Main connection loop - run until shutdown or all brokers fail
+        while not self._should_disconnect and not self._unrecoverable:
+            try:
+                # Initialize broker index if needed
+                if self._current_broker_index is None:
+                    self._current_broker_index = 0
 
-            # Loops forever until ioloop.stop is called WHEN self._should_disconnect is True
-            self._connection.ioloop.start()
+                # Get current broker info
+                broker = self._cluster_params.brokers[self._current_broker_index]
+                logger.warning(
+                    f'====== TRYING BROKER {self._current_broker_index}: {broker.host}:{broker.port} ======'
+                )
+
+                # Check server availability with TCP connection test first
+                try:
+                    import socket
+
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(1.0)
+
+                    # Try to connect directly with TCP
+                    result = sock.connect_ex((broker.host, broker.port))
+                    sock.close()
+
+                    # If we can't connect at TCP level, try next broker right away
+                    if result != 0:
+                        logger.warning(
+                            f'✗ TCP connectivity test failed for {broker.host}:{broker.port} (error: {result})'
+                        )
+
+                        # Move to next broker if we have multiple
+                        if len(self._cluster_params.brokers) > 1:
+                            self._current_broker_index = (self._current_broker_index + 1) % len(
+                                self._cluster_params.brokers
+                            )
+                            logger.warning(
+                                f'Switching to next broker (index {self._current_broker_index})'
+                            )
+                            time.sleep(0.5)  # Brief delay to avoid hammering servers
+                            continue
+                        # No other brokers to try, pause longer before retry
+                        logger.warning(
+                            'No alternative brokers available, retrying same one in a moment...'
+                        )
+                        time.sleep(2.0)
+                        continue
+                except Exception as e:  # noqa: BLE001 I think I can clean this up later but for now catching it all.
+                    # Handle DNS resolution or other socket-related errors gracefully
+                    logger.warning(
+                        f'✗ Socket connection error for {broker.host}:{broker.port}: {e!s}'
+                    )
+
+                    # If we already have an active connection to another broker, don't disrupt it
+                    if self.is_connected():
+                        logger.info(
+                            f'Already connected to another broker, will retry {broker.host} later'
+                        )
+                        time.sleep(5.0)  # Longer delay when already connected
+                        continue
+
+                    # Otherwise, try the next broker
+                    if len(self._cluster_params.brokers) > 1:
+                        self._current_broker_index = (self._current_broker_index + 1) % len(
+                            self._cluster_params.brokers
+                        )
+                        logger.warning(
+                            f'Socket error, switching to broker {self._current_broker_index}'
+                        )
+                        time.sleep(0.5)
+                        continue
+                    logger.warning('Socket error with only broker, waiting to retry...')
+                    time.sleep(2.0)
+                    continue
+
+                # TCP connection successful, now try AMQP connection
+                logger.info(
+                    f'✓ TCP connection succeeded for {broker.host}:{broker.port}, now trying AMQP connection'
+                )
+
+                self._connection = pika.adapters.SelectConnection(
+                    parameters=pika.ConnectionParameters(
+                        host=broker.host,
+                        port=broker.port,
+                        virtual_host='/',
+                        credentials=pika.PlainCredentials(
+                            self._cluster_params.username, self._cluster_params.password
+                        ),
+                        connection_attempts=1,  # Only try once
+                        heartbeat=10,
+                        retry_delay=0.5,
+                    ),
+                    on_close_callback=self._on_connection_closed,
+                    on_open_error_callback=self._on_connection_open_error,
+                    on_open_callback=self._on_connection_open,
+                )
+
+                # Start IO loop - blocks until connection closes
+                self._connection.ioloop.start()
+
+                # If we get here, the IO loop has stopped - check why
+                if self._should_disconnect:
+                    logger.info('Connection loop exited due to shutdown request')
+                    break
+
+                # If not shutting down, we must have had a connection failure
+                logger.warning('Connection IO loop exited, will retry...')
+
+                # Brief pause before trying again
+                time.sleep(1.0)
+
+            except Exception as e:  # noqa: BLE001 I think I can clean this up later but for now catching it all.
+                # Log any unexpected errors
+                logger.error(f'⚠️ Unexpected error in connection attempt: {e!s}')
+                self._connection = None  # Ensure connection is cleared
+
+                # Increment broker index to try next one
+                if len(self._cluster_params.brokers) > 1:
+                    self._current_broker_index = (self._current_broker_index + 1) % len(
+                        self._cluster_params.brokers
+                    )
+
+                # Brief pause before retry
+                time.sleep(1.0)
+
+    def _get_current_connection_params(self) -> pika.ConnectionParameters:
+        """Get connection parameters for the current broker index."""
+        broker = self._cluster_params.brokers[self._current_broker_index]
+
+        # Log current broker info
+        logger.info(f'Setting up connection parameters for broker: {broker.host}:{broker.port}')
+
+        # IMPORTANT: Force connection_attempts=1 to ensure we don't retry using pika's
+        # internal retry mechanism, which can get stuck when DNS issues occur
+        # We handle retries ourselves at the AMQP client level
+        return pika.ConnectionParameters(
+            host=broker.host,
+            port=broker.port,
+            virtual_host='/',
+            credentials=pika.PlainCredentials(
+                self._cluster_params.username, self._cluster_params.password
+            ),
+            connection_attempts=1,  # CRITICAL: Only try once per broker
+            heartbeat=10,  # Faster heartbeat for quicker failure detection
+            blocked_connection_timeout=5.0,  # Detect blocked connections faster
+            retry_delay=0.5,  # Minimal delay between retries
+        )
 
     def _on_connection_closed(self, connection: pika.SelectConnection, reason: Exception) -> None:
         """This method is called if the connection to RabbitMQ closes."""
+        logger.warning(
+            f'Connection closed on broker index {self._current_broker_index}, reason: {reason}'
+        )
+
+        # Store the broker that failed for later reference
+        failed_broker_index = self._current_broker_index
+        failed_broker = self._cluster_params.brokers[failed_broker_index]
+
+        # Clean up connection state for this specific connection only
+        # We might still have other connections active, so don't clear everything
+        if connection == self._connection:
+            self._channel_flags.unset_all()
+            self._channel_out = None
+            self._channel_in = None
+            self._connection = None
+
+        # Stop the IO loop if requested
         if self._should_disconnect:
             connection.ioloop.stop()
-        else:
-            logger.warning('Connection closed, reopening in 5 seconds: %s', reason)
-            connection.ioloop.call_later(5, connection.ioloop.stop)
-        self._channel_flags.unset_all()
-        self._channel_out = None
-        self._channel_in = None
+            return
+
+        # We need to switch to the next broker if we have multiple
+        if len(self._cluster_params.brokers) > 1:
+            # Increment broker index to try the next one
+            self._current_broker_index = (self._current_broker_index + 1) % len(
+                self._cluster_params.brokers
+            )
+            next_broker = self._cluster_params.brokers[self._current_broker_index]
+            logger.info(
+                f'Connection closed on {failed_broker.host}, SWITCHING to BROKER {next_broker.host}'
+            )
+
+            # Try a quick connectivity test to the next broker
+            import socket
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1.0)
+            result = sock.connect_ex((next_broker.host, next_broker.port))
+            sock.close()
+
+            if result == 0:
+                logger.info(
+                    f'Successfully verified TCP connectivity to {next_broker.host}:{next_broker.port}'
+                )
+            else:
+                logger.warning(
+                    f'TCP connection test to {next_broker.host}:{next_broker.port} failed (error: {result})'
+                )
+
+                # If this is our second broker and we know the first is down, continue with this one
+                # Otherwise, switch back if we still have a connection to the original broker
+                if self.is_connected() and self._current_broker_index != failed_broker_index:
+                    logger.info('Already connected to a working broker, keeping that connection')
+                    self._current_broker_index = failed_broker_index
+
+        # Always stop the IO loop - this is what triggers reconnection
+        connection.ioloop.stop()
 
     def _on_connection_open_error(
         self, connection: pika.SelectConnection, err: pika.exceptions.AMQPConnectionError
     ) -> None:
-        """This gets called if the connection to RabbitMQ can't be established.
+        """This gets called if the connection to RabbitMQ can't be established."""
+        current_broker = self._cluster_params.brokers[self._current_broker_index]
+        logger.error(f'CONNECTION ERROR to broker {current_broker.host}: {err!s}')
 
-        This function usually implies a misconfiguration in the application config.
-        """
+        # Increment retry count
         self._connection_retries += 1
-        logger.error(
-            f'On connect error received (probable broker config error), have tried {self._connection_retries} times'
-        )
-        logger.error(err)
-        if self._connection_retries >= _AMQP_MAX_RETRIES:
-            # This will allow us to break out of the while loop
-            # where we establish the connection, as ioloop.stop
-            # will now stop the thread for good
-            logger.error('Giving up AMQP reconnection attempt')
-            self._should_disconnect = True
-            self._unrecoverable = True
+
+        # Print error details to help debugging
+        connection_params = self._get_current_connection_params()
+        logger.info(f'Connection parameters: {connection_params}')
+
+        # Always try next node in cluster
+        if len(self._cluster_params.brokers) > 1:
+            # Move to the next broker
+            old_index = self._current_broker_index
+            self._current_broker_index = (self._current_broker_index + 1) % len(
+                self._cluster_params.brokers
+            )
+            next_broker = self._cluster_params.brokers[self._current_broker_index]
+
+            # Reset connection retries when switching to a new broker
+            self._connection_retries = 0
+
+            # Check if we're already connected before trying to switch
+            if self.is_connected():
+                logger.info(
+                    'Already connected to a working broker, staying with current connection'
+                )
+                # If we're connected, don't try to switch brokers
+                return
+
+            logger.warning(
+                f'SWITCHING from broker {old_index} to {self._current_broker_index} ({next_broker.host})'
+            )
+
+            # Try to immediately connect to verify the next broker
+            import socket
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1.0)
+            result = sock.connect_ex((next_broker.host, next_broker.port))
+            sock.close()
+
+            if result == 0:
+                logger.info(
+                    f'✓ Successfully verified TCP connectivity to {next_broker.host}:{next_broker.port}'
+                )
+            else:
+                logger.warning(
+                    f'✗ TCP connection test to {next_broker.host}:{next_broker.port} failed (error: {result})'
+                )
+        elif self._connection_retries >= _AMQP_MAX_RETRIES:
+            # Give up if we've tried too many times
+            logger.error(f'Giving up AMQP connection after {self._connection_retries} retries')
             self._channel_flags.set_all()
-            connection.ioloop.stop()
-        else:
-            logger.error('Reopening in 5 seconds')
-            connection.ioloop.call_later(5, connection.ioloop.stop)
+            self._unrecoverable = True
+
+        # Clean up and force reconnection
+        self._connection = None
+        connection.ioloop.stop()
 
     def _on_connection_open(self, connection: pika.SelectConnection) -> None:
-        logger.info('AMQP connection open')
+        """Called when connection to RabbitMQ is established."""
+        current_broker = self._cluster_params.brokers[self._current_broker_index]
+        logger.info(f'AMQP connection open to broker {current_broker.host}:{current_broker.port}')
+
+        # Reset retries and clear state on successful connection
         self._connection_retries = 0
         self._topics_to_consumer_tags.clear()
+
+        # Check connectivity to both brokers for diagnosis
+        for i, broker in enumerate(self._cluster_params.brokers):
+            can_connect = _check_broker_connectivity(broker.host, broker.port)
+            logger.info(f'Broker {i} ({broker.host}:{broker.port}) reachable: {can_connect}')
+        # Open the channels
         connection.channel(on_open_callback=self._on_input_channel_open)
         connection.channel(on_open_callback=self._on_output_channel_open)
 
@@ -322,6 +650,10 @@ class AMQPClient(BrokerClient):
             callback=lambda _frame: self._channel_flags.set_nth_flag(channel_num),
         )
         logger.info('AMQP: output channel ready')
+        # Resubscribe to all topics to ensure queues and bindings are re-established
+        for topic, _ in self._topics_to_handlers().items():
+            logger.info(f'Resubscribing to topic: {topic}')
+            self.subscribe(topic, True)
 
     # CONSUMER #
     def _on_input_channel_open(self, channel: Channel) -> None:
@@ -335,6 +667,10 @@ class AMQPClient(BrokerClient):
         channel.exchange_declare(
             exchange=_INTERSECT_MESSAGE_EXCHANGE, exchange_type='topic', durable=True, callback=cb_2
         )
+        # Resubscribe to all topics to ensure queues and bindings are re-established
+        for topic, _ in self._topics_to_handlers().items():
+            logger.info(f'Resubscribing to topic: {topic}')
+            self.subscribe(topic, True)
 
     def _on_exchange_declareok(self, _unused_frame: Frame, channel: Channel) -> None:
         """Create a queue on the broker (called from AMQP).

@@ -15,6 +15,7 @@ from intersect_sdk import (
     IntersectServiceConfig,
     intersect_message,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 from ..fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 
@@ -35,8 +36,8 @@ def test_minio_not_allowed_without_config(caplog: pytest.LogCaptureFixture):
             ControlPlaneConfig(
                 username='intersect_username',
                 password='intersect_password',
-                port=1883,
                 protocol='mqtt3.1.1',
+                brokers=[BrokerConfig(host='localhost', port=1883)],
             ),
         ],
     )

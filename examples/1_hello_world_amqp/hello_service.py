@@ -1,6 +1,7 @@
 import logging
 
 from intersect_sdk import (
+    ControlPlaneConfig,
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
     IntersectService,
@@ -9,6 +10,7 @@ from intersect_sdk import (
     intersect_message,
     intersect_status,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('pika').setLevel(logging.WARNING)
@@ -45,16 +47,19 @@ if __name__ == '__main__':
 
     In most cases, everything under from_config_file should come from a configuration file, command line arguments, or environment variables.
     """
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 5672,
-                'protocol': 'amqp0.9.1',
-            },
-        ],
-    }
+    broker_configs = [
+        {'host': 'localhost', 'port': 5672},
+    ]
+
+    brokers = [
+        ControlPlaneConfig(
+            protocol='amqp0.9.1',
+            username='intersect_username',
+            password='intersect_password',
+            brokers=[BrokerConfig(**broker) for broker in broker_configs],
+        )
+    ]
+
     config = IntersectServiceConfig(
         hierarchy=HierarchyConfig(
             organization='hello-organization',
@@ -63,7 +68,7 @@ if __name__ == '__main__':
             subsystem='hello-subsystem',
             service='hello-service',
         ),
-        **from_config_file,
+        brokers=brokers,
     )
 
     """
