@@ -31,6 +31,7 @@ from intersect_sdk._internal.messages.userspace import (
     create_userspace_message,
     deserialize_and_validate_userspace_message,
 )
+from intersect_sdk.config.shared import BrokerConfig
 from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG, DummyCapabilityImplementation
 
 # HELPERS #############################
@@ -54,8 +55,8 @@ def make_intersect_service() -> IntersectService:
                 ControlPlaneConfig(
                     username='intersect_username',
                     password='intersect_password',
-                    port=1883,
                     protocol='mqtt3.1.1',
+                    brokers=[BrokerConfig(host='localhost', port=1883)],
                 ),
             ],
             status_interval=30.0,
@@ -69,8 +70,8 @@ def make_message_interceptor() -> ControlPlaneManager:
             ControlPlaneConfig(
                 username='intersect_username',
                 password='intersect_password',
-                port=1883,
                 protocol='mqtt3.1.1',
+                brokers=[BrokerConfig(host='localhost', port=1883)],
             )
         ],
     )

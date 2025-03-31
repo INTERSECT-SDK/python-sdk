@@ -2,12 +2,14 @@ import logging
 
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
+    ControlPlaneConfig,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
     IntersectDirectMessageParams,
     default_intersect_lifecycle_loop,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 logging.basicConfig(level=logging.INFO)
 
@@ -63,16 +65,18 @@ if __name__ == '__main__':
 
     In most cases, everything under from_config_file should come from a configuration file, command line arguments, or environment variables.
     """
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 1883,
-                'protocol': 'mqtt3.1.1',
-            },
-        ],
-    }
+    broker_configs = [
+        {'host': 'localhost', 'port': 1883},
+    ]
+
+    brokers = [
+        ControlPlaneConfig(
+            protocol='mqtt3.1.1',
+            username='intersect_username',
+            password='intersect_password',
+            brokers=[BrokerConfig(**broker) for broker in broker_configs],
+        )
+    ]
     """
     step two: construct the initial messages you want to send. In this case we will only send a single starting message.
 
@@ -99,7 +103,7 @@ if __name__ == '__main__':
                 'hello-organization.hello-facility.hello-system.hello-subsystem.hello-service'
             ],
         ),
-        **from_config_file,
+        brokers=brokers,
     )
 
     """

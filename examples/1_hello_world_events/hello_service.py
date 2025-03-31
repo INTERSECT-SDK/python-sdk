@@ -1,6 +1,7 @@
 import logging
 
 from intersect_sdk import (
+    ControlPlaneConfig,
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
     IntersectEventDefinition,
@@ -10,6 +11,7 @@ from intersect_sdk import (
     intersect_message,
     intersect_status,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,16 +50,18 @@ if __name__ == '__main__':
 
     In most cases, everything under from_config_file should come from a configuration file, command line arguments, or environment variables.
     """
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 1883,
-                'protocol': 'mqtt3.1.1',
-            },
-        ],
-    }
+    broker_configs = [
+        {'host': 'localhost', 'port': 1883},
+    ]
+
+    brokers = [
+        ControlPlaneConfig(
+            protocol='mqtt3.1.1',
+            username='intersect_username',
+            password='intersect_password',
+            brokers=[BrokerConfig(**broker) for broker in broker_configs],
+        )
+    ]
     config = IntersectServiceConfig(
         hierarchy=HierarchyConfig(
             organization='hello-organization',
@@ -66,7 +70,7 @@ if __name__ == '__main__':
             subsystem='hello-subsystem',
             service='hello-service',
         ),
-        **from_config_file,
+        brokers=brokers,
     )
 
     """

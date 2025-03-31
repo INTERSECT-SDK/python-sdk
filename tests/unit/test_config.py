@@ -10,6 +10,7 @@ from intersect_sdk import (
     IntersectClientConfig,
     IntersectServiceConfig,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 # TESTS #####################
 
@@ -54,29 +55,27 @@ def test_missing_control_plane_config():
     with pytest.raises(ValidationError) as ex:
         TypeAdapter(ControlPlaneConfig).validate_python({})
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 3
+    assert len(errors) == 4
     assert {'type': 'missing', 'loc': ('username',)} in errors
     assert {'type': 'missing', 'loc': ('password',)} in errors
     assert {'type': 'missing', 'loc': ('protocol',)} in errors
+    assert {'type': 'missing', 'loc': ('brokers',)} in errors
 
 
 def test_invalid_control_plane_config():
     with pytest.raises(ValidationError) as ex:
         TypeAdapter(ControlPlaneConfig).validate_python(
             ControlPlaneConfig(
-                host='',
+                brokers=[BrokerConfig(host='', port=0)],
                 username='',
                 password='',
-                port=0,
                 protocol='mqtt',
             ).__dict__
         )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 5
+    assert len(errors) == 3
     assert {'type': 'string_too_short', 'loc': ('username',)} in errors
     assert {'type': 'string_too_short', 'loc': ('password',)} in errors
-    assert {'type': 'string_too_short', 'loc': ('host',)} in errors
-    assert {'type': 'greater_than', 'loc': ('port',)} in errors
     assert {'type': 'literal_error', 'loc': ('protocol',)} in errors
 
 
@@ -165,15 +164,13 @@ def test_valid_service_config():
             ControlPlaneConfig(
                 username='user',
                 password='secret',
-                host='http://hardknock.life',
-                port='1883',
+                brokers=[BrokerConfig(host='http://hardknock.life', port=1883)],
                 protocol='mqtt3.1.1',
             ),
             ControlPlaneConfig(
                 username='fine',
                 password='fine',
-                host='www.nowhere.gov',
-                port='5672',
+                brokers=[BrokerConfig(host='www.nowhere.gov', port=5672)],
                 protocol='amqp0.9.1',
             ),
         ],
@@ -190,5 +187,5 @@ def test_valid_service_config():
     assert config.hierarchy.subsystem is None
     assert config.hierarchy.hierarchy_string('/') == 'org/this-works/ello-14/-/serv'
     # make sure string values can be coerced into integers when specified
-    assert all(isinstance(b.port, int) for b in config.brokers)
+    assert all(isinstance(b.brokers[0].port, int) for b in config.brokers)
     assert all(isinstance(d.port, int) for d in config.data_stores.minio)

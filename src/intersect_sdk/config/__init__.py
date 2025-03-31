@@ -12,6 +12,7 @@ from .client import IntersectClientConfig
 from .service import IntersectServiceConfig
 from .shared import (
     HIERARCHY_REGEX,
+    BrokerConfig,
     ControlPlaneConfig,
     ControlProvider,
     DataStoreConfig,

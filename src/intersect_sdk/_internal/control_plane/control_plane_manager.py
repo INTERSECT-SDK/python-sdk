@@ -32,23 +32,35 @@ def create_control_provider(
         # only try to import the AMQP client if the user is using an AMQP broker
         try:
             from .brokers.amqp_client import AMQPClient
+            from .brokers.amqp_client import ClusterConnectionParameters as AMQPClusterParams
+
+            # Create AMQPClusterParameters
+            cluster_params = AMQPClusterParams(
+                brokers=config.brokers, username=config.username, password=config.password
+            )
 
             return AMQPClient(
-                host=config.host,
-                port=config.port or 5672,
-                username=config.username,
-                password=config.password,
+                # The AMQPClient constructor expects both regular parameters and cluster_params
                 topics_to_handlers=topic_handler_callback,
+                cluster_params=cluster_params,
             )
         except ImportError as e:
             msg = "Configuration includes AMQP broker, but AMQP dependencies were not installed. Install intersect with the 'amqp' optional dependency to use this backend. (i.e. `pip install intersect_sdk[amqp]`)"
             raise IntersectInvalidBrokerError(msg) from e
     # MQTT
-    return MQTTClient(
-        host=config.host,
-        port=config.port or 1883,
+    from .brokers.mqtt_client import ClusterConnectionParameters
+
+    # Extract hosts and ports from broker config objects
+
+    # Create ClusterConnectionParameters
+    cluster_params = ClusterConnectionParameters(
+        brokers=config.brokers,
         username=config.username,
         password=config.password,
+    )
+
+    return MQTTClient(
+        cluster_params=cluster_params,
         topics_to_handlers=topic_handler_callback,
     )
 

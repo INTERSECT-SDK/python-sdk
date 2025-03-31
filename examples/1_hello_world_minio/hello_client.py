@@ -2,6 +2,7 @@ import logging
 
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
+    ControlPlaneConfig,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
@@ -9,6 +10,7 @@ from intersect_sdk import (
     IntersectDirectMessageParams,
     default_intersect_lifecycle_loop,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 logging.basicConfig(level=logging.INFO)
 
@@ -43,6 +45,20 @@ if __name__ == '__main__':
 
     In most cases, everything under from_config_file should come from a configuration file, command line arguments, or environment variables.
     """
+
+    broker_configs = [
+        {'host': 'localhost', 'port': 1883},
+    ]
+
+    brokers = [
+        ControlPlaneConfig(
+            protocol='mqtt3.1.1',
+            username='intersect_username',
+            password='intersect_password',
+            brokers=[BrokerConfig(**broker) for broker in broker_configs],
+        )
+    ]
+
     from_config_file = {
         # NOTE: for this example, you will need a MINIO instance configured at this stage.
         'data_stores': {
@@ -53,15 +69,7 @@ if __name__ == '__main__':
                     'port': 9000,
                 },
             ],
-        },
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 1883,
-                'protocol': 'mqtt3.1.1',
-            },
-        ],
+        }
     }
     """
     step two: construct the initial messages you want to send. In this case we will only send a single starting message.
@@ -86,6 +94,7 @@ if __name__ == '__main__':
     ]
     config = IntersectClientConfig(
         initial_message_event_config=IntersectClientCallback(messages_to_send=initial_messages),
+        brokers=brokers,
         **from_config_file,
     )
 

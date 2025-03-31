@@ -4,12 +4,14 @@ import logging
 from abc import ABC, abstractmethod
 
 from intersect_sdk import (
+    ControlPlaneConfig,
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
     IntersectService,
     IntersectServiceConfig,
     default_intersect_lifecycle_loop,
 )
+from intersect_sdk.config.shared import BrokerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -27,16 +29,18 @@ def run_service(capability: P_ngBaseCapabilityImplementation) -> None:
 
     The interesting configuration mostly happens in the Client, look at that one for details.
     """
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 1883,
-                'protocol': 'mqtt3.1.1',
-            },
-        ],
-    }
+    broker_configs = [
+        {'host': 'localhost', 'port': 1883},
+    ]
+
+    brokers = [
+        ControlPlaneConfig(
+            protocol='mqtt3.1.1',
+            username='intersect_username',
+            password='intersect_password',
+            brokers=[BrokerConfig(**broker) for broker in broker_configs],
+        )
+    ]
     service_name = capability.__class__.__name__[:4].lower()
     config = IntersectServiceConfig(
         hierarchy=HierarchyConfig(
@@ -46,8 +50,8 @@ def run_service(capability: P_ngBaseCapabilityImplementation) -> None:
             subsystem='p-ng-subsystem',
             service=f'{service_name}-service',
         ),
+        brokers=brokers,
         status_interval=30.0,
-        **from_config_file,
     )
     service = IntersectService([capability], config)
     logger.info('Starting %s_service, use Ctrl+C to exit.', service_name)

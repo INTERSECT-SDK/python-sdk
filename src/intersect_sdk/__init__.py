@@ -47,6 +47,7 @@ __all__ = [
     'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE',
     'INTERSECT_JSON_VALUE',
     'INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE',
+    'BrokerConfig',
     'ControlPlaneConfig',
     'ControlProvider',
     'DataStoreConfig',
