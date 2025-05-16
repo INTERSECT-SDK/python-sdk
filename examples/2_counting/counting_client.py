@@ -1,6 +1,8 @@
 import json
 import logging
 import time
+import argparse, textwrap
+import json
 
 from intersect_sdk import (
     INTERSECT_JSON_VALUE,
@@ -134,17 +136,48 @@ class SampleOrchestrator:
         return IntersectClientCallback(messages_to_send=[message])
 
 
+def parse_arguments():
+    """
+    Setup and parse command-line arguments.
+    """
+
+    p = argparse.ArgumentParser(description="Counting Example",
+                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                epilog=textwrap.dedent('''\
+             Examples:
+
+                 # Starting Service
+                python3 counting_service.py -c mybroker.json
+
+                 # Starting a Client
+                python3 counting_client.py -c mybroker.json
+         '''))
+    p.add_argument(
+        "-c", "--config",
+        type=str,
+        help="Path to broker configuration file (JSON format)."
+    )
+    return p.parse_args()
+
+
 if __name__ == '__main__':
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 1883,
-                'protocol': 'mqtt3.1.1',
-            },
-        ],
-    }
+
+    args = parse_arguments()
+
+    if args.config:
+        with open(args.config, 'r') as f:
+            from_config_file = json.load(f)
+    else:
+        from_config_file = {
+            'brokers': [
+                {
+                    'username': 'intersect_username',
+                    'password': 'intersect_password',
+                    'port': 1883,
+                    'protocol': 'mqtt3.1.1',
+                },
+            ],
+        }
 
     # The counter will start after the initial message.
     # If the service is already active and counting, this may do nothing.
