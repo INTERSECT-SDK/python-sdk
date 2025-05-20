@@ -43,11 +43,11 @@ class IntersectEventDefinition(BaseModel):
 
     The type you provide must be parsable by Pydantic.
     """
-    content_type: IntersectMimeType = IntersectMimeType.JSON
+    content_type: IntersectMimeType = 'application/json'
     """
     The IntersectMimeType (aka Content-Type) of your event.
 
-    default: IntersectMimeType.JSON
+    default: 'application/json'
     """
     data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE
     """
@@ -81,9 +81,9 @@ def intersect_message(
     *,
     events: Optional[Dict[str, IntersectEventDefinition]] = None,  # noqa: UP006, UP007 (runtime type annotation)
     ignore_keys: Optional[Set[str]] = None,  # noqa: UP006, UP007 (runtime type annotation)
-    request_content_type: IntersectMimeType = IntersectMimeType.JSON,
+    request_content_type: IntersectMimeType = 'application/json',
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
-    response_content_type: IntersectMimeType = IntersectMimeType.JSON,
+    response_content_type: IntersectMimeType = 'application/json',
     strict_request_validation: bool = False,
 ) -> Callable[..., Any]:
     """Use this annotation to mark your capability method as an entrypoint to external requests.
@@ -134,8 +134,8 @@ def intersect_message(
         "service.shutdown()" to disconnect from INTERSECT entirely.
         In general, you should NOT define this on functions which are just query functions;
         only set this if you are mutating INSTRUMENT or APPLICATION state.
-      - request_content_type: how to deserialize incoming requests (default: JSON)
-      - response_content_type: how to serialize outgoing requests (default: JSON)
+      - request_content_type: how to deserialize incoming requests (default: application/json)
+      - response_content_type: how to serialize outgoing requests (default: application/json)
       - response_data_transfer_handler: are responses going out through the message, or through another mean
         (i.e. MINIO)?
       - strict_request_validation: if this is set to True, use pydantic strict validation for requests - otherwise, use lenient validation (default: False)
@@ -170,14 +170,10 @@ def intersect_message(
     return inner_decorator
 
 
-# TODO - consider forcing intersect_status endpoints to send Messages and JSON responses.
 @validate_call
 def intersect_status(
     __func: Callable[..., Any] | None = None,
     /,
-    *,
-    response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
-    response_content_type: IntersectMimeType = IntersectMimeType.JSON,
 ) -> Any:
     """Use this annotation to mark your capability method as a status retrieval function.
 
@@ -187,9 +183,11 @@ def intersect_status(
     the typing rules for @intersect_message().
 
     A status message MUST NOT send events out. It should be a simple query of the general service (no specifics).
+    A status message MUST send its response back in a value which can be serialized into JSON.
+    A status message MUST have a fairly small response size (no large data).
 
     Params:
-        - response_content_type: how to serialize outgoing requests (default: JSON)
+        - response_content_type: how to serialize outgoing requests (default: application/json)
         - response_data_transfer_handler: are responses going out through the message, or through another mean
           (i.e. MINIO)?
     """
@@ -207,9 +205,9 @@ def intersect_status(
             return func(*args, **kwargs)
 
         setattr(__intersect_sdk_wrapper, BASE_STATUS_ATTR, True)
-        setattr(__intersect_sdk_wrapper, REQUEST_CONTENT, IntersectMimeType.JSON)
-        setattr(__intersect_sdk_wrapper, RESPONSE_CONTENT, response_content_type)
-        setattr(__intersect_sdk_wrapper, RESPONSE_DATA, response_data_transfer_handler)
+        setattr(__intersect_sdk_wrapper, REQUEST_CONTENT, 'application/json')
+        setattr(__intersect_sdk_wrapper, RESPONSE_CONTENT, 'application/json')
+        setattr(__intersect_sdk_wrapper, RESPONSE_DATA, IntersectDataHandler.MESSAGE)
         setattr(__intersect_sdk_wrapper, STRICT_VALIDATION, False)
         setattr(__intersect_sdk_wrapper, SHUTDOWN_KEYS, set())
 

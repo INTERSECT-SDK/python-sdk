@@ -17,7 +17,6 @@ import pytest
 
 from intersect_sdk import (
     IntersectDataHandler,
-    IntersectMimeType,
     version_info,
     version_string,
 )
@@ -35,7 +34,7 @@ def message_generator(service_sdk_version: str) -> UserspaceMessage:
     return UserspaceMessage(
         messageId=uuid4(),
         operationId='no_message_being_sent',
-        contentType=IntersectMimeType.JSON,
+        contentType='application/json',
         payload='irrelevant',
         headers=UserspaceMessageHeader(
             source='source.test.test.test',

@@ -15,7 +15,6 @@ from intersect_sdk import (
     DataStoreConfigMap,
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
-    IntersectMimeType,
     IntersectService,
     IntersectServiceConfig,
     intersect_message,
@@ -108,7 +107,7 @@ def test_call_user_function_with_invalid_payload():
         create_userspace_message(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
+            content_type='application/json',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='ReturnTypeMismatchCapability.wrong_return_annotation',
             # calculate_fibonacci takes in a tuple of two integers but we'll just send it one

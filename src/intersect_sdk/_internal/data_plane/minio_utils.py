@@ -86,7 +86,7 @@ def send_minio_object(
     """
     bucket_name = _condense_minio_bucket_name(hierarchy)
     # mimetypes.guess_extension() is a nice-to-have for MINIO preview, but isn't essential.
-    object_id = str(uuid4()) + (mimetypes.guess_extension(content_type.value) or '')
+    object_id = str(uuid4()) + (mimetypes.guess_extension(content_type) or '')
     try:
         if not provider.bucket_exists(bucket_name):
             provider.make_bucket(bucket_name)
@@ -96,7 +96,7 @@ def send_minio_object(
             object_name=object_id,
             data=buff_data,
             length=buff_data.getbuffer().nbytes,
-            content_type=content_type.value,
+            content_type=content_type,
         )
         return MinioPayload(
             minio_url=provider._base_url._url.geturl(),  # noqa: SLF001 (only way to get URL from MINIO API)

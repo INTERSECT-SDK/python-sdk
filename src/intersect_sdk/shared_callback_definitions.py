@@ -49,11 +49,11 @@ class IntersectDirectMessageParams(BaseModel):
     If you want to just use the service's default value for a request (assuming it has a default value for a request), you may set this as None.
     """
 
-    content_type: IntersectMimeType = IntersectMimeType.JSON
+    content_type: IntersectMimeType = 'application/json'
     """
     The IntersectMimeType of your message. You'll want this to match with the ContentType of the function from the schema.
 
-    default: IntersectMimeType.JSON
+    default: application/json
     """
 
     data_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE

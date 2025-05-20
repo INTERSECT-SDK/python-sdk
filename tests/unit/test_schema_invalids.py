@@ -29,7 +29,6 @@ from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectEventDefinition,
-    IntersectMimeType,
     get_schema_from_capability_implementations,
     intersect_event,
     intersect_message,
@@ -197,7 +196,7 @@ def test_disallow_dynamic_list_subtyping(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyList])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'list subtyping may not be dynamic in INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_list_subtyping_complex(caplog: pytest.LogCaptureFixture):
@@ -227,7 +226,7 @@ def test_disallow_dynamic_set_subtyping(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnySet])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'set subtyping may not be dynamic in INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_frozenset_subtyping(caplog: pytest.LogCaptureFixture):
@@ -241,7 +240,7 @@ def test_disallow_dynamic_frozenset_subtyping(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyFrozenSet])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'frozenset subtyping may not be dynamic in INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_generator_subtyping(caplog: pytest.LogCaptureFixture):
@@ -288,7 +287,7 @@ def test_disallow_dynamic_dict_value_type(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyDictValue])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'dict or mapping: value type cannot be Any/object for INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_tuple_subtyping(caplog: pytest.LogCaptureFixture):
@@ -593,22 +592,18 @@ def test_disallow_same_event_different_content_types(caplog: pytest.LogCaptureFi
     class CapImp(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
 
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=int)})
+        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=bytes)})
         def function_2(self) -> None: ...
 
         @intersect_message(
-            events={
-                'mykey': IntersectEventDefinition(
-                    event_type=int, content_type=IntersectMimeType.STRING
-                )
-            }
+            events={'mykey': IntersectEventDefinition(event_type=bytes, content_type='image/png')}
         )
         def function_1(self, param: int) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([CapImp])
     assert (
-        "On capability 'CapImp', event key 'mykey' on function 'function_2' was previously defined differently. \ncontent_type mismatch: current=IntersectMimeType.JSON, previous=IntersectMimeType.STRING"
+        "On capability 'CapImp', event key 'mykey' on function 'function_2' was previously defined differently. \ncontent_type mismatch: current=application/json, previous=image/png"
         in caplog.text
     )
 

@@ -5,19 +5,12 @@ from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectEventDefinition,
-    IntersectMimeType,
+    get_schema_from_capability_implementations,
     intersect_event,
     intersect_message,
     intersect_status,
 )
-from intersect_sdk._internal.constants import (
-    REQUEST_CONTENT,
-    RESPONSE_CONTENT,
-    RESPONSE_DATA,
-    STRICT_VALIDATION,
-)
 from intersect_sdk._internal.schema import get_schema_and_functions_from_capability_implementations
-from intersect_sdk.schema import get_schema_from_capability_implementations
 from tests.fixtures.example_schema import (
     FAKE_HIERARCHY_CONFIG,
     DummyCapabilityImplementation,
@@ -102,33 +95,18 @@ def test_verify_attributes():
     )
     # test defaults
     assert (
-        getattr(function_map['DummyCapability.verify_float_dict'].method, RESPONSE_DATA)
+        function_map['DummyCapability.verify_float_dict'].response_data_transfer_handler
         == IntersectDataHandler.MESSAGE
     )
-    assert (
-        getattr(function_map['DummyCapability.verify_nested'].method, REQUEST_CONTENT)
-        == IntersectMimeType.JSON
-    )
-    assert (
-        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_CONTENT)
-        == IntersectMimeType.JSON
-    )
-    assert getattr(function_map['DummyCapability.verify_nested'].method, STRICT_VALIDATION) is False
+    assert function_map['DummyCapability.verify_nested'].request_content_type == 'application/json'
+    assert function_map['DummyCapability.verify_nested'].response_content_type == 'application/json'
+    assert function_map['DummyCapability.verify_nested'].strict_validation is False
 
     # test non-defaults
     assert (
-        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_DATA)
+        function_map['DummyCapability.verify_nested'].response_data_transfer_handler
         == IntersectDataHandler.MINIO
     )
-    assert (
-        getattr(function_map['DummyCapability.ip4_to_ip6'].method, RESPONSE_CONTENT)
-        == IntersectMimeType.STRING
-    )
-    assert (
-        getattr(function_map['DummyCapability.test_path'].method, REQUEST_CONTENT)
-        == IntersectMimeType.STRING
-    )
-    assert (
-        getattr(function_map['DummyCapability.calculate_weird_algorithm'].method, STRICT_VALIDATION)
-        is True
-    )
+    assert function_map['DummyCapability.ip4_to_ip6'].response_content_type == 'application/json'
+    assert function_map['DummyCapability.test_path'].request_content_type == 'application/json'
+    assert function_map['DummyCapability.calculate_weird_algorithm'].strict_validation is True

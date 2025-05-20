@@ -27,12 +27,6 @@ from pydantic import ConfigDict, ValidationError, validate_call
 from pydantic_core import PydanticSerializationError
 from typing_extensions import Self, final
 
-from ._internal.constants import (
-    RESPONSE_CONTENT,
-    RESPONSE_DATA,
-    SHUTDOWN_KEYS,
-    STRICT_VALIDATION,
-)
 from ._internal.control_plane.control_plane_manager import (
     GENERIC_MESSAGE_SERIALIZER,
     ControlPlaneManager,
@@ -61,7 +55,7 @@ from .client_callback_definitions import (
 )
 from .config.service import IntersectServiceConfig
 from .config.shared import HierarchyConfig
-from .core_definitions import IntersectDataHandler, IntersectMimeType
+from .core_definitions import IntersectDataHandler
 from .service_callback_definitions import (
     INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,  # noqa: TC001 (runtime-checked annotation)
 )
@@ -219,9 +213,6 @@ class IntersectService(IntersectEventObserver):
         INTERNAL USE ONLY
 
         Immutable mapping of operation IDs (advertised in schema, sent in message) to actual function implementations.
-
-        You can get user-defined properties from the method via getattr(_function_map.method, KEY), the keys get set
-        in the intersect_message decorator function (annotations.py).
         """
 
         self._event_map = MappingProxyType(event_map)
@@ -259,6 +250,8 @@ class IntersectService(IntersectEventObserver):
             else lambda: b'null'
         )
 
+        # if this fails, the user didn't configure their status function properly, most likely by not sending back valid JSON.
+        # The user's status function should be able to handle any errors.
         self._status_memo = self._status_retrieval_fn()
 
         self._external_request_thread: StoppableThread | None = None
@@ -500,9 +493,7 @@ class IntersectService(IntersectEventObserver):
         Note that this does NOT disconnect from INTERSECT, and will not block functions which
         have no markings.
         """
-        self._function_keys = set.union(
-            *(getattr(m, SHUTDOWN_KEYS) for m in (f.method for f in self._function_map.values()))
-        )
+        self._function_keys = set.union(*(f.shutdown_keys for f in self._function_map.values()))
         self._send_lifecycle_message(
             lifecycle_type=LifecycleType.FUNCTIONS_BLOCKED,
             payload=tuple(self._function_keys),
@@ -764,7 +755,7 @@ class IntersectService(IntersectEventObserver):
             err_msg = f'Tried to call non-existent operation {operation}'
             logger.warning(err_msg)
             return self._make_error_message(err_msg, message)
-        if self._function_keys & getattr(operation_meta.method, SHUTDOWN_KEYS):
+        if self._function_keys & operation_meta.shutdown_keys:
             err_msg = f"Function '{operation}' is currently not available for use."
             logger.error(err_msg)
             return self._make_error_message(err_msg, message)
@@ -790,8 +781,8 @@ class IntersectService(IntersectEventObserver):
                 target_capability, operation_method, operation_meta, request_params
             )
             # FIVE: SEND DATA TO APPROPRIATE DATA STORE
-            response_data_handler = getattr(operation_meta.method, RESPONSE_DATA)
-            response_content_type = getattr(operation_meta.method, RESPONSE_CONTENT)
+            response_data_handler = operation_meta.response_data_transfer_handler
+            response_content_type = operation_meta.response_content_type
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
                 response, response_content_type, response_data_handler
             )
@@ -918,13 +909,8 @@ class IntersectService(IntersectEventObserver):
         fn_cap  = capability implementing the user function
         fn_name = operation. These get represented in the schema as "channels".
         fn_meta = all information stored about the user's operation. This includes user-defined params and the request/response (de)serializers.
-        fn_params = the request argument.
-           If this value is empty or the bytes literal "null", and users have a request type, we will try to call the user's function with
-           their default value as the parameter, or "None" if there isn't a default value.
-           Values nested on a lower level should be handled automatically by Pydantic.
-           A note on this value: at this point, we still want the parameters to be a JSON string (not a Python object),
-           as if the object is first converted to Python and THEN validated, users will not have the option
-           to choose strict validation.
+        fn_params = the request argument, the actual domain logic.
+
 
         Returns:
             If the capability executed with no problems, a byte-string of the response will be returned.
@@ -933,56 +919,86 @@ class IntersectService(IntersectEventObserver):
         Raises:
           IntersectApplicationException - this catches both invalid message arguments, as well as if the capability itself throws an Exception.
             It's meant to be for control-flow, it doesn't represent a fatal error.
-          ValidationError - this is a Pydantic error which occurs if the input fails to validate against the user's model.
+          ValidationError - this is a Pydantic error which occurs if the endpoint expects JSON input, and the input fails to validate against the user's model.
             Note that this error is never raised outside this function if the USER's code causes this exception (by doing internal pydantic validation themselves),
             but only as related to the actual request parameters.
 
         NOTE: running this function should normally not cause application failure. Users can terminate their application inside their capability class,
         but in almost all circumstances, this should be discouraged (outside of the constructor).
         """
-        if fn_meta.request_adapter:
-            try:
-                if not fn_params or fn_params == b'null':
-                    # strict=True here does nothing, because ConfigDict property validate_default may not be set and we validate defaults when generating the schema
-                    default_value = fn_meta.request_adapter.get_default_value()
-                    try:
-                        request_obj = default_value.value  # type: ignore[union-attr]
-                    except AttributeError:
-                        request_obj = fn_meta.request_adapter.validate_python(
-                            None,
+        if fn_meta.request_content_type == 'application/json':
+            # begin Pydantic validation workflow
+            if fn_meta.request_adapter:
+                # user has a function parameter
+                try:
+                    if not fn_params or fn_params == b'null':
+                        # strict=True here does nothing, because ConfigDict property validate_default may not be set and we validate defaults when generating the schema
+                        default_value = fn_meta.request_adapter.get_default_value()
+                        try:
+                            request_obj = default_value.value  # type: ignore[union-attr]
+                        except AttributeError:
+                            request_obj = fn_meta.request_adapter.validate_python(
+                                None,
+                            )
+                    else:
+                        request_obj = fn_meta.request_adapter.validate_json(
+                            fn_params,
+                            strict=fn_meta.strict_validation,
                         )
-                else:
-                    request_obj = fn_meta.request_adapter.validate_json(
-                        fn_params,
-                        strict=getattr(fn_meta.method, STRICT_VALIDATION),
-                    )
-            except ValidationError as e:
-                err_msg = f'Bad arguments to application:\n{e}\n'
-                logger.warning(err_msg)
-                raise
+                except ValidationError as e:
+                    err_msg = f'Bad arguments to application:\n{e}\n'
+                    logger.warning(err_msg)
+                    raise
+                try:
+                    response = getattr(fn_cap, fn_name)(request_obj)
+                except (
+                    Exception
+                ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
+                    logger.warning(f'Capability raised exception:\n{e}\n')
+                    raise IntersectApplicationError from e
+            else:
+                # user does not have a function parameter
+                try:
+                    response = getattr(fn_cap, fn_name)()
+                except (
+                    Exception
+                ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
+                    logger.warning(f'Capability raised exception:\n{e}\n')
+                    raise IntersectApplicationError from e
+        else:
+            # handle requests for expected binary data
+            # note that users should not be specifying a default value here
             try:
                 response = getattr(fn_cap, fn_name)(request_obj)
-            except (
-                Exception
-            ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
-                logger.warning(f'Capability raised exception:\n{e}\n')
-                raise IntersectApplicationError from e
-        else:
-            try:
-                response = getattr(fn_cap, fn_name)()
+                if fn_meta.request_adapter is not None:
+                    response = getattr(fn_cap, fn_name)(fn_params)
+                else:
+                    response = getattr(fn_cap, fn_name)()
             except (
                 Exception
             ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
                 logger.warning(f'Capability raised exception:\n{e}\n')
                 raise IntersectApplicationError from e
 
-        try:
-            return fn_meta.response_adapter.dump_json(response, by_alias=True, warnings='error')
-        except PydanticSerializationError as e:
+        if fn_meta.response_adapter:
+            # JSON serialization workflow
+            try:
+                return fn_meta.response_adapter.dump_json(response, by_alias=True, warnings='error')
+            except PydanticSerializationError as e:
+                logger.error(
+                    f'IMPORTANT!!!! Your INTERSECT capability function did not return a value matching your response type. You MUST fix this for your message to be sent out! Full error:\n{e}\n'
+                )
+                raise IntersectApplicationError from e
+
+        # at this point we need to assume best-effort on the user's part, as we don't handle binary data ourselves
+        # make sure they have returned bytes in their return value
+        if not isinstance(response, bytes):
             logger.error(
-                f'IMPORTANT!!!! Your INTERSECT capability function did not return a value matching your response type. You MUST fix this for your message to be sent out! Full error:\n{e}\n'
+                'IMPORTANT: If your response_content_type is not application/json, you MUST return raw bytes from your function.'
             )
-            raise IntersectApplicationError from e
+            raise IntersectApplicationError
+
+        return response
 
     def _on_observe_event(self, event_name: str, event_value: Any, operation: str) -> None:
         """This is the service function which handles events from the capabilities (as opposed to handling messages).
@@ -1042,7 +1058,7 @@ class IntersectService(IntersectEventObserver):
         return create_userspace_message(
             source=original_message['headers']['destination'],
             destination=original_message['headers']['source'],
-            content_type=IntersectMimeType.STRING,
+            content_type='text/plain',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id=original_message['operationId'],
             payload=error_string,
@@ -1072,7 +1088,13 @@ class IntersectService(IntersectEventObserver):
         Returns:
           True if there was a status update, False if there wasn't
         """
-        next_status = self._status_retrieval_fn()
+        try:
+            next_status = self._status_retrieval_fn()
+        except Exception:  # noqa: BLE001 (should catch all exceptions at this point)
+            # At this point, the status retrieval function passed at least once, and we're busy sending/receiving messages.
+            # We will just send a status message like normal - the user's application is still "up".
+            logger.warning('Status function errored out or did not return serializable JSON')
+            next_status = b'**INTERSECT_SDK RECEIVED CORRUPT STATUS**'
         if next_status != self._status_memo:
             self._status_memo = next_status
             self._send_lifecycle_message(

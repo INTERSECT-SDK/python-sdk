@@ -3,7 +3,7 @@
 See shared_callback_definitions for additional typings which are also shared by service authors.
 """
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, TypeAlias, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Annotated, final
@@ -44,8 +44,15 @@ class IntersectClientCallback(BaseModel):
     model_config = ConfigDict(revalidate_instances='always')
 
 
+INTERSECT_RESPONSE_VALUE: TypeAlias = Union[INTERSECT_JSON_VALUE, bytes]
+"""
+This is the actual response value you will get back from a Service. The type will already be serialized into Python for you,
+but will not be serialized into a precise value.
+"""
+
+
 INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE = Callable[
-    [str, str, bool, INTERSECT_JSON_VALUE],
+    [str, str, bool, INTERSECT_RESPONSE_VALUE],
     Optional[IntersectClientCallback],
 ]
 """
@@ -59,7 +66,7 @@ Params
     2) The name of the operation that triggered the response from your ORIGINAL message - needed for your own control flow loops if sending multiple messages.
     3) A boolean - if True, there was an error; if False, there was not.
     4) The response, as a Python object - the type should be based on the corresponding Service's schema response.
-       The Python object will already be deserialized for you. If parameter 3 was "True", then this will be the error message, as a string.
+       The Python object will already be deserialized for you (unless you are expecting binary data, then it will be a base64). If parameter 3 was "True", then this will be the error message, as a string.
        If parameter 3 was "False", then this will be either an integer, boolean, float, string, None,
        a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
 
@@ -74,7 +81,7 @@ Raises
 """
 
 INTERSECT_CLIENT_EVENT_CALLBACK_TYPE = Callable[
-    [str, str, str, INTERSECT_JSON_VALUE],
+    [str, str, str, INTERSECT_RESPONSE_VALUE],
     Optional[IntersectClientCallback],
 ]
 """
@@ -88,7 +95,7 @@ Params
     2) The name of the operation from the service that fired the event.
     3) The name of the event.
     4) The response, as a Python object - the type should be based on the corresponding Service's event response.
-       The Python object will already be deserialized for you. This will be either an integer, boolean, float, string, None,
+       The Python object will already be deserialized for you (unless you are expecting binary data, then it will be base64). This will be either an integer, boolean, float, string, None,
        a List[T], or a Dict[str, T], where "T" represents any of the 7 aforementioned types.
 
 Returns

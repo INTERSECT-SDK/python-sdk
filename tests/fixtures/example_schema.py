@@ -44,7 +44,6 @@ from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectEventDefinition,
-    IntersectMimeType,
     intersect_event,
     intersect_message,
     intersect_status,
@@ -266,8 +265,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         self._status_example['last_function_called'] = fn_name
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
     )
     def calculate_fibonacci(self, request: Tuple[int, int]) -> List[int]:
@@ -287,8 +286,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return self._FIBONACCI_LST[left:right]
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
         strict_request_validation=True,
     )
@@ -309,8 +308,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return result
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
     )
     def union_response(self) -> Union[str, int, bool, Dict[str, Union[str, int, bool]]]:
@@ -333,8 +332,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         }
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
         strict_request_validation=True,
     )
@@ -420,7 +419,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         self.update_status('test_uuid')
         return uid.hex[12]
 
-    @intersect_message(request_content_type=IntersectMimeType.STRING)
+    @intersect_message(request_content_type='application/json')
     def test_path(
         self, path: Annotated[Path, Field(pattern=r'([\w-]+/)*([\w-]+)\.[\w]+')]
     ) -> Optional[str]:
@@ -454,7 +453,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return input_value / Decimal('3.14159265358979323846')
 
     @intersect_message(
-        response_content_type=IntersectMimeType.STRING,
+        response_content_type='application/json',
     )
     def ip4_to_ip6(self, ip4: IPv4Address) -> IPv6Address:
         """
