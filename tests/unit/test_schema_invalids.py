@@ -972,3 +972,56 @@ def test_multiple_status_functions_across_capabilities(caplog: pytest.LogCapture
     with pytest.raises(SystemExit):
         get_schema_helper([CapabilityName1, CapabilityName2])
     assert 'Only one capability may have an @intersect_status function' in caplog.text
+
+
+def test_input_param_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
+    # fails because request_content_type is not application/json, but request param is not bytes
+
+    class BinaryCapability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'binary'
+
+        @intersect_message(request_content_type='image/png')
+        def param_not_bytes(self, param: int) -> str: ...
+
+    with pytest.raises(SystemExit):
+        get_schema_helper([BinaryCapability])
+    assert (
+        "parameter 'param' type annotation 'int' on function 'param_not_bytes' must be 'bytes' if request_content_type is not 'application/json'"
+        in caplog.text
+    )
+
+
+def test_return_type_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
+    # fails because response_content_type is not application/json, but return type is not bytes
+
+    class BinaryCapability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'binary'
+
+        @intersect_message(response_content_type='image/png')
+        def return_not_bytes(self, param: int) -> int: ...
+
+    with pytest.raises(SystemExit):
+        get_schema_helper([BinaryCapability])
+    assert (
+        "return annotation 'int' on function 'return_not_bytes' must be 'bytes' if response_content_type is not 'application/json'"
+        in caplog.text
+    )
+
+
+def test_event_type_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
+    # fails because a binary (non-JSON) event content type must use "bytes" as its event type
+
+    class BinaryCapability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'binary'
+
+        @intersect_event(
+            events={'name': IntersectEventDefinition(event_type=int, content_type='image/png')}
+        )
+        def event_not_bytes(self) -> None: ...
+
+    with pytest.raises(SystemExit):
+        get_schema_helper([BinaryCapability])
+    assert (
+        "event key 'name' on function 'event_not_bytes' must have EventDefinition event_type be 'bytes' if content_type is not 'application/json'"
+        in caplog.text
+    )

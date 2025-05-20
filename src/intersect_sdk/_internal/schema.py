@@ -309,7 +309,7 @@ def _add_events(
             else:
                 if event_definition.event_type is not bytes:
                     die(
-                        f"On capability '{class_name}', event key '{event_key}' on function '{function_name}' must be 'bytes' if content_type is not 'application/json'"
+                        f"On capability '{class_name}', event key '{event_key}' on function '{function_name}' must have EventDefinition event_type be 'bytes' if content_type is not 'application/json'"
                     )
                 event_adapter = 0  # type: ignore[assignment]
                 event_schemas[event_key] = {
@@ -447,7 +447,7 @@ def _introspection_baseline(
             else:
                 if annotation is not bytes:
                     die(
-                        f"On capability '{class_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' must be 'bytes' if request_content_type is not 'application/json'"
+                        f"On capability '{class_name}', parameter '{parameter.name}' type annotation '{annotation.__name__}' on function '{name}' must be 'bytes' if request_content_type is not 'application/json'"
                     )
                 function_cache_request_adapter = 0  # type: ignore[assignment]
                 channels[name]['subscribe']['message']['payload'] = {}
@@ -476,7 +476,7 @@ def _introspection_baseline(
         else:
             if not isinstance(return_annotation, bytes):
                 die(
-                    f"On capability '{class_name}', return annotation '{return_annotation}' on function '{name}' must be 'bytes' if response_content_type is not 'application/json'"
+                    f"On capability '{class_name}', return annotation '{return_annotation.__name__}' on function '{name}' must be 'bytes' if response_content_type is not 'application/json'"
                 )
             function_cache_response_adapter = 0  # type: ignore[assignment]
             channels[name]['publish']['message']['payload'] = {}
