@@ -982,11 +982,7 @@
               "type": "string"
             },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler"
-                }
-              ],
+              "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler",
               "default": 0,
               "description": "Code signifying where data is stored."
             },
@@ -1039,11 +1035,7 @@
               "type": "string"
             },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler"
-                }
-              ],
+              "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler",
               "default": 0,
               "description": "Code signifying where data is stored."
             },

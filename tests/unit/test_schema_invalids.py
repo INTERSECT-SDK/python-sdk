@@ -197,7 +197,7 @@ def test_disallow_dynamic_list_subtyping(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyList])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'list subtyping may not be dynamic in INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_list_subtyping_complex(caplog: pytest.LogCaptureFixture):
@@ -227,7 +227,7 @@ def test_disallow_dynamic_set_subtyping(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnySet])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'set subtyping may not be dynamic in INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_frozenset_subtyping(caplog: pytest.LogCaptureFixture):
@@ -241,7 +241,7 @@ def test_disallow_dynamic_frozenset_subtyping(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyFrozenSet])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'frozenset subtyping may not be dynamic in INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_generator_subtyping(caplog: pytest.LogCaptureFixture):
@@ -288,7 +288,7 @@ def test_disallow_dynamic_dict_value_type(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyDictValue])
     assert "parameter 'param' type annotation" in caplog.text
-    assert 'dict or mapping: value type cannot be Any/object for INTERSECT' in caplog.text
+    assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
 def test_disallow_dynamic_tuple_subtyping(caplog: pytest.LogCaptureFixture):
