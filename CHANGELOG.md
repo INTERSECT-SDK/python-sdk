@@ -2,6 +2,12 @@
 
 We follow [Common Changelog](https://common-changelog.org/) formatting for this document.
 
+## [0.8.3] - 2025-05-27
+
+### Fixed
+
+- (AMQP): Services using `@intersect_message` endpoints + Clients should now be able to execute long-running tasks without causing disconnects. AMQP message consumers no longer block the AMQP I/O loop, but now handle messages in their own threads; this allows the AMQP I/O loop to continue sending heartbeat frames to the remote broker, preventing the broker from disconnecting the microservice. ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/a9f9d110da924ec423ac42e5c316475a7d8e1f3e)) (Lance Drane)
+
 ## [0.8.2] - 2025-02-21
 
 ### Changed
