@@ -1,6 +1,8 @@
 import logging
 import threading
 import time
+import argparse, textwrap
+import json
 
 from intersect_sdk import (
     HierarchyConfig,
@@ -52,18 +54,49 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
             self.counter *= 3
             self.intersect_sdk_emit_event('increment_counter', self.counter)
 
+def parse_arguments():
+    """
+    Setup and parse command-line arguments.
+    """
+
+    p = argparse.ArgumentParser(description="Counting Example",
+                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                epilog=textwrap.dedent('''\
+             Examples:
+
+                 # Starting Service
+                python3 counting_service.py -c mybroker.json
+
+                 # Starting a Client
+                python3 counting_client.py -c mybroker.json
+         '''))
+    p.add_argument(
+        "-c", "--config",
+        type=str,
+        help="Path to broker configuration file (JSON format)."
+    )
+    return p.parse_args()
+
 
 if __name__ == '__main__':
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 1883,
-                'protocol': 'mqtt3.1.1',
-            },
-        ],
-    }
+
+    args = parse_arguments()
+
+    if args.config:
+        with open(args.config, 'r') as f:
+            from_config_file = json.load(f)
+    else:
+        from_config_file = {
+            'brokers': [
+                {
+                    'username': 'intersect_username',
+                    'password': 'intersect_password',
+                    'port': 1883,
+                    'protocol': 'mqtt3.1.1',
+                },
+            ],
+        }
+
     config = IntersectServiceConfig(
         hierarchy=HierarchyConfig(
             organization='counting-organization',

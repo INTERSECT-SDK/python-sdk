@@ -3,6 +3,8 @@ import threading
 import time
 from dataclasses import dataclass
 from typing import Optional
+import argparse, textwrap
+import json
 
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated
@@ -162,17 +164,49 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
             time.sleep(1.0)
 
 
+def parse_arguments():
+    """
+    Setup and parse command-line arguments.
+    """
+
+    p = argparse.ArgumentParser(description="Counting Example",
+                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                epilog=textwrap.dedent('''\
+             Examples:
+
+                 # Starting Service
+                python3 counting_service.py -c mybroker.json
+
+                 # Starting a Client
+                python3 counting_client.py -c mybroker.json
+         '''))
+    p.add_argument(
+        "-c", "--config",
+        type=str,
+        help="Path to broker configuration file (JSON format)."
+    )
+    return p.parse_args()
+
 if __name__ == '__main__':
-    from_config_file = {
-        'brokers': [
-            {
-                'username': 'intersect_username',
-                'password': 'intersect_password',
-                'port': 1883,
-                'protocol': 'mqtt3.1.1',
-            },
-        ],
-    }
+
+    args = parse_arguments()
+
+    if args.config:
+        with open(args.config, 'r') as f:
+            from_config_file = json.load(f)
+    else:
+        # Hardcoded backup
+        from_config_file = {
+            'brokers': [
+                {
+                    'username': 'intersect_username',
+                    'password': 'intersect_password',
+                    'port': 1883,
+                    'protocol': 'mqtt3.1.1',
+                },
+            ],
+        }
+
     config = IntersectServiceConfig(
         hierarchy=HierarchyConfig(
             organization='counting-organization',

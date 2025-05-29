@@ -1,0 +1,11 @@
+{
+    "brokers": [
+        {
+            "username": "intersect_username",
+            "password": "intersect_password",
+            "port": 1883,
+            "host": "127.0.0.1",
+            "protocol": "mqtt3.1.1"
+        }
+    ]
+}
