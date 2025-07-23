@@ -81,6 +81,7 @@ class MQTTClient(BrokerClient):
         """Connect to the defined broker."""
         # Create a client to connect to RabbitMQ
         # TODO MQTT v5 implementations should set clean_start to NEVER here
+        self._should_disconnect = False
         self._connected_flag.clear()
         self._connection.connect(self.host, self.port, 60)
         self._connection.loop_start()
@@ -90,8 +91,9 @@ class MQTTClient(BrokerClient):
     def disconnect(self) -> None:
         """Disconnect from the broker."""
         self._should_disconnect = True
-        self._connection.disconnect()
-        self._connection.loop_stop()
+        if self._connection:
+            self._connection.disconnect()
+            self._connection.loop_stop()
 
     def is_connected(self) -> bool:
         """Check if there is an active connection to the broker.
