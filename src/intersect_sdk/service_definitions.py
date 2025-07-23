@@ -182,14 +182,11 @@ def intersect_status(
     Your status retrieval function may not have any parameters (other than "self"). Return annotation rules mirror
     the typing rules for @intersect_message().
 
+    A status retrieval function should ALWAYS return valid JSON. You should not be returning large globs of data, a few KB serialized should be sufficient.
+
     A status message MUST NOT send events out. It should be a simple query of the general service (no specifics).
     A status message MUST send its response back in a value which can be serialized into JSON.
     A status message MUST have a fairly small response size (no large data).
-
-    Params:
-        - response_content_type: how to serialize outgoing requests (default: application/json)
-        - response_data_transfer_handler: are responses going out through the message, or through another mean
-          (i.e. MINIO)?
     """
 
     def inner_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
