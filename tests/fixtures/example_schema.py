@@ -291,12 +291,12 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
         strict_request_validation=True,
     )
-    def calculate_weird_algorithm(self, token: Annotated[int, Ge(1), Le(1_000_000)]) -> List[int]:
+    def calculate_3n_plus_1(self, token: Annotated[int, Ge(1), Le(1_000_000)]) -> List[int]:
         """
-        Weird algorithm calculator. Takes in an integer, outputs an array of numbers
+        Calculates the famous "3n + 1" problem. Takes in an integer, outputs an array of numbers
         which follow the algorithm all the way to "1".
         """
-        self.update_status('calculate_weird_algorithm')
+        self.update_status('calculate_3n_plus_1')
         result = []
         while token != 1:
             result.append(token)
@@ -590,3 +590,20 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
     @intersect_event(events={'list_float': IntersectEventDefinition(event_type=List[float])})
     def list_float_event(self) -> None:
         self.intersect_sdk_emit_event('list_int', [random.random() for i in range(3)])
+
+    @intersect_message(request_content_type='image/png', response_content_type='image/png')
+    def binary_to_binary(self, in_image: bytes) -> bytes:
+        return in_image
+
+
+# quick script for generating a valid schema
+if __name__ == '__main__':
+    import json
+
+    from intersect_sdk import get_schema_from_capability_implementations
+
+    schema = get_schema_from_capability_implementations(
+        [DummyCapabilityImplementation], FAKE_HIERARCHY_CONFIG
+    )
+    # have user redirect stdout instead of forcing a file location
+    print(json.dumps(schema, indent=2))  # noqa: T201

@@ -25,7 +25,8 @@
                 },
                 "minItems": 1,
                 "type": "array",
-                "uniqueItems": true
+                "uniqueItems": true,
+                "title": "annotated_set"
               }
             },
             "description": "return numbers in set which are prime numbers in the range 1-100"
@@ -44,10 +45,80 @@
                 },
                 "minItems": 1,
                 "type": "array",
-                "uniqueItems": true
+                "uniqueItems": true,
+                "title": "positive_int_set"
               }
             },
             "description": "return numbers in set which are prime numbers in the range 1-100"
+          },
+          "events": []
+        },
+        "binary_to_binary": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "image/png",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string",
+                "format": "binary",
+                "contentMediaType": "image/png",
+                "title": "binary_to_binary"
+              }
+            }
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "image/png",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string",
+                "format": "binary",
+                "contentMediaType": "image/png",
+                "title": "binary_to_binary"
+              }
+            }
+          },
+          "events": []
+        },
+        "calculate_3n_plus_1": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "title": "calculate_3n_plus_1"
+              }
+            },
+            "description": "Calculates the famous \"3n + 1\" problem. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "maximum": 1000000,
+                "minimum": 1,
+                "type": "integer",
+                "title": "token"
+              }
+            },
+            "description": "Calculates the famous \"3n + 1\" problem. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
           },
           "events": []
         },
@@ -63,7 +134,8 @@
                 "items": {
                   "type": "integer"
                 },
-                "type": "array"
+                "type": "array",
+                "title": "calculate_fibonacci"
               }
             },
             "description": "calculates all fibonacci numbers between two numbers\n\ni.e. start = 4, end = 6:\nresponse = [5, 8, 13]"
@@ -86,44 +158,11 @@
                     "type": "integer"
                   }
                 ],
-                "type": "array"
+                "type": "array",
+                "title": "request"
               }
             },
             "description": "calculates all fibonacci numbers between two numbers\n\ni.e. start = 4, end = 6:\nresponse = [5, 8, 13]"
-          },
-          "events": []
-        },
-        "calculate_weird_algorithm": {
-          "publish": {
-            "message": {
-              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-              "contentType": "application/json",
-              "traits": {
-                "$ref": "#/components/messageTraits/commonHeaders"
-              },
-              "payload": {
-                "items": {
-                  "type": "integer"
-                },
-                "type": "array"
-              }
-            },
-            "description": "Weird algorithm calculator. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
-          },
-          "subscribe": {
-            "message": {
-              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-              "contentType": "application/json",
-              "traits": {
-                "$ref": "#/components/messageTraits/commonHeaders"
-              },
-              "payload": {
-                "maximum": 1000000,
-                "minimum": 1,
-                "type": "integer"
-              }
-            },
-            "description": "Weird algorithm calculator. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
           },
           "events": []
         },
@@ -149,7 +188,8 @@
                     }
                   ]
                 },
-                "type": "object"
+                "type": "object",
+                "title": "get_url_parts"
               }
             },
             "description": "example of automatic URL parsing and schema validation"
@@ -164,7 +204,8 @@
               "payload": {
                 "format": "uri",
                 "minLength": 1,
-                "type": "string"
+                "type": "string",
+                "title": "url"
               }
             },
             "description": "example of automatic URL parsing and schema validation"
@@ -181,7 +222,8 @@
               },
               "payload": {
                 "format": "ipv6",
-                "type": "string"
+                "type": "string",
+                "title": "ip4_to_ip6"
               }
             },
             "description": "example of IPaddress conversion\nreturn value will always start with '2002::' based on implementation\n\nPydantic also supports IP networks and interfaces, in addition to addresses"
@@ -195,7 +237,8 @@
               },
               "payload": {
                 "format": "ipv4",
-                "type": "string"
+                "type": "string",
+                "title": "ip4"
               }
             },
             "description": "example of IPaddress conversion\nreturn value will always start with '2002::' based on implementation\n\nPydantic also supports IP networks and interfaces, in addition to addresses"
@@ -211,7 +254,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "primitive_event_message"
               }
             }
           },
@@ -225,7 +269,8 @@
               "payload": {
                 "default": 1,
                 "minimum": 1,
-                "type": "integer"
+                "type": "integer",
+                "title": "emit_times"
               }
             }
           },
@@ -244,7 +289,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "primitive_event_message_random"
               }
             }
           },
@@ -272,7 +318,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "boolean"
+                "type": "boolean",
+                "title": "search_for_lucky_string_in_json"
               }
             },
             "description": "return true if our lucky string is in JSON, false otherwise"
@@ -301,7 +348,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_datetime"
               }
             },
             "description": "NOTE: If strict mode is ON, only JSON strings can be coerced into datetimes.\nIf strict mode is OFF, integers can also be coerced into datetimes."
@@ -315,7 +363,8 @@
               },
               "payload": {
                 "format": "date-time",
-                "type": "string"
+                "type": "string",
+                "title": "request"
               }
             },
             "description": "NOTE: If strict mode is ON, only JSON strings can be coerced into datetimes.\nIf strict mode is OFF, integers can also be coerced into datetimes."
@@ -331,7 +380,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_decimal"
               }
             },
             "description": "take in decimal input\nreturn decimal divided by PI (20 precision digits)"
@@ -351,7 +401,8 @@
                   {
                     "type": "string"
                   }
-                ]
+                ],
+                "title": "input_value"
               }
             },
             "description": "take in decimal input\nreturn decimal divided by PI (20 precision digits)"
@@ -370,7 +421,8 @@
                 "additionalProperties": {
                   "type": "integer"
                 },
-                "type": "object"
+                "type": "object",
+                "title": "test_dicts"
               }
             },
             "description": "NOTE: JSON always stores Dict/Mapping keys as strings.\nIf the string can't be coerced into the input value, it will throw a RUNTIME error."
@@ -386,7 +438,8 @@
                 "additionalProperties": {
                   "type": "integer"
                 },
-                "type": "object"
+                "type": "object",
+                "title": "request"
               }
             },
             "description": "NOTE: JSON always stores Dict/Mapping keys as strings.\nIf the string can't be coerced into the input value, it will throw a RUNTIME error."
@@ -402,7 +455,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_enum"
               }
             },
             "description": "Returns either 'first' or 'later' depending on the enum value."
@@ -434,7 +488,8 @@
                 "items": {
                   "type": "integer"
                 },
-                "type": "array"
+                "type": "array",
+                "title": "test_generator"
               }
             },
             "description": "TODO - Generators need more support than this.\n\nThis tests returning a generator function, which may be useful for streaming data.\nIn this example, yield all substring hashes of the request string.\n\nA couple of notes about the Generator type:\n  1) Given the typing is Generator[yield_type, send_type, return_type], only the yield_type matters\n  2) The schema will always look like \"{'items': {'type': <YIELD_TYPE>}, 'type': 'array'}\""
@@ -447,7 +502,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "request"
               }
             },
             "description": "TODO - Generators need more support than this.\n\nThis tests returning a generator function, which may be useful for streaming data.\nIn this example, yield all substring hashes of the request string.\n\nA couple of notes about the Generator type:\n  1) Given the typing is Generator[yield_type, send_type, return_type], only the yield_type matters\n  2) The schema will always look like \"{'items': {'type': <YIELD_TYPE>}, 'type': 'array'}\""
@@ -470,7 +526,8 @@
                   {
                     "type": "null"
                   }
-                ]
+                ],
+                "title": "test_path"
               }
             },
             "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
@@ -485,7 +542,8 @@
               "payload": {
                 "format": "path",
                 "pattern": "([\\w-]+/)*([\\w-]+)\\.[\\w]+",
-                "type": "string"
+                "type": "string",
+                "title": "path"
               }
             },
             "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
@@ -528,7 +586,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_uuid"
               }
             },
             "description": "Get the 13th digit of a UUID to determine UUID VERSION"
@@ -542,7 +601,8 @@
               },
               "payload": {
                 "format": "uuid",
-                "type": "string"
+                "type": "string",
+                "title": "uid"
               }
             },
             "description": "Get the 13th digit of a UUID to determine UUID VERSION"
@@ -565,7 +625,8 @@
                   {
                     "type": "string"
                   }
-                ]
+                ],
+                "title": "union_message_with_events"
               }
             }
           },
@@ -581,7 +642,8 @@
                   "str",
                   "int"
                 ],
-                "type": "string"
+                "type": "string",
+                "title": "param"
               }
             }
           },
@@ -624,7 +686,8 @@
                     },
                     "type": "object"
                   }
-                ]
+                ],
+                "title": "union_response"
               }
             },
             "description": "Spit out a random string, integer, boolean, or object response"
@@ -650,7 +713,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "integer"
+                "type": "integer",
+                "title": "valid_default_argument"
               }
             },
             "description": "verifies that you can call a function with a default parameter"
@@ -664,7 +728,8 @@
               },
               "payload": {
                 "default": 4,
-                "type": "integer"
+                "type": "integer",
+                "title": "param"
               }
             },
             "description": "verifies that you can call a function with a default parameter"
@@ -685,7 +750,8 @@
                     "type": "string"
                   }
                 },
-                "type": "object"
+                "type": "object",
+                "title": "verify_float_dict"
               }
             },
             "description": "verifies that dictionaries can have floats and integers as key types"
@@ -703,7 +769,8 @@
                     "type": "string"
                   }
                 },
-                "type": "object"
+                "type": "object",
+                "title": "param"
               }
             },
             "description": "verifies that dictionaries can have floats and integers as key types"
@@ -745,13 +812,16 @@
   },
   "events": {
     "int": {
-      "type": "integer"
+      "type": "integer",
+      "title": "int"
     },
     "str": {
-      "type": "string"
+      "type": "string",
+      "title": "str"
     },
     "float": {
-      "type": "number"
+      "type": "number",
+      "title": "float"
     },
     "union": {
       "anyOf": [
@@ -761,13 +831,15 @@
         {
           "type": "string"
         }
-      ]
+      ],
+      "title": "union"
     },
     "list_float": {
       "items": {
         "type": "number"
       },
-      "type": "array"
+      "type": "array",
+      "title": "list_float"
     }
   },
   "status": {

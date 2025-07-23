@@ -208,6 +208,15 @@ def _merge_schema_definitions(
     return schema
 
 
+def _ensure_title_in_schema(schema: dict[str, Any], title: str) -> None:
+    """Make sure that any schema without a $ref has a title, insert 'title' in to 'schema' if no title exists.
+
+    Any definition pointed to by a '$ref' (which usually signifies a class) should already have a title
+    """
+    if '$ref' not in schema and 'title' not in schema:
+        schema['title'] = title
+
+
 def _status_fn_schema(
     status_info: _FunctionAnalysisResult, schemas: dict[str, Any]
 ) -> tuple[
@@ -239,15 +248,17 @@ def _status_fn_schema(
         )
     try:
         status_adapter = TypeAdapter(status_signature.return_annotation)
-        return (
+        status_schema = _merge_schema_definitions(
+            status_adapter,
+            schemas,
+            status_signature.return_annotation,
+            'serialization',
+        )
+        _ensure_title_in_schema(status_schema, 'Status')
+        return (  # noqa: TRY300 (caught exception means we die)
             status_fn_name,
             status_fn,
-            _merge_schema_definitions(
-                status_adapter,
-                schemas,
-                status_signature.return_annotation,
-                'serialization',
-            ),
+            status_schema,
             status_adapter,
         )
     except PydanticUserError as e:
@@ -289,12 +300,14 @@ def _add_events(
             if event_definition.content_type == 'application/json':
                 try:
                     event_adapter: TypeAdapter[Any] = TypeAdapter(event_definition.event_type)
-                    event_schemas[event_key] = _merge_schema_definitions(
+                    event_schema = _merge_schema_definitions(
                         event_adapter,
                         schemas,
                         event_definition.event_type,
                         'serialization',
                     )
+                    _ensure_title_in_schema(event_schema, event_key)
+                    event_schemas[event_key] = event_schema
                     event_metadatas[event_key] = EventMetadata(
                         type=event_definition.event_type,
                         type_adapter=event_adapter,
@@ -314,7 +327,9 @@ def _add_events(
                 event_adapter = 0  # type: ignore[assignment]
                 event_schemas[event_key] = {
                     'type': 'string',
+                    'format': 'binary',
                     'contentMediaType': event_definition.content_type,
+                    'title': event_key,
                 }
                 event_metadatas[event_key] = EventMetadata(
                     type=event_definition.event_type,
@@ -434,12 +449,14 @@ def _introspection_baseline(
             if request_content == 'application/json':
                 try:
                     function_cache_request_adapter = TypeAdapter(annotation)
-                    channels[name]['subscribe']['message']['payload'] = _merge_schema_definitions(
+                    msg_request_schema = _merge_schema_definitions(
                         function_cache_request_adapter,
                         schemas,
                         annotation,
                         'validation',
                     )
+                    _ensure_title_in_schema(msg_request_schema, parameter.name)
+                    channels[name]['subscribe']['message']['payload'] = msg_request_schema
                 except PydanticUserError as e:
                     die(
                         f"On capability '{class_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
@@ -450,7 +467,12 @@ def _introspection_baseline(
                         f"On capability '{class_name}', parameter '{parameter.name}' type annotation '{annotation.__name__}' on function '{name}' must be 'bytes' if request_content_type is not 'application/json'"
                     )
                 function_cache_request_adapter = 0  # type: ignore[assignment]
-                channels[name]['subscribe']['message']['payload'] = {}
+                channels[name]['subscribe']['message']['payload'] = {
+                    'type': 'string',
+                    'format': 'binary',
+                    'contentMediaType': request_content,
+                    'title': name,
+                }
 
         else:
             function_cache_request_adapter = None
@@ -463,23 +485,30 @@ def _introspection_baseline(
         if response_content == 'application/json':
             try:
                 function_cache_response_adapter = TypeAdapter(return_annotation)
-                channels[name]['publish']['message']['payload'] = _merge_schema_definitions(
+                response_schema = _merge_schema_definitions(
                     function_cache_response_adapter,
                     schemas,
                     return_annotation,
                     'serialization',
                 )
+                _ensure_title_in_schema(response_schema, name)
+                channels[name]['publish']['message']['payload'] = response_schema
             except PydanticUserError as e:
                 die(
                     f"On capability '{class_name}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
                 )
         else:
-            if not isinstance(return_annotation, bytes):
+            if return_annotation is not bytes:
                 die(
                     f"On capability '{class_name}', return annotation '{return_annotation.__name__}' on function '{name}' must be 'bytes' if response_content_type is not 'application/json'"
                 )
             function_cache_response_adapter = 0  # type: ignore[assignment]
-            channels[name]['publish']['message']['payload'] = {}
+            channels[name]['publish']['message']['payload'] = {
+                'type': 'string',
+                'format': 'binary',
+                'contentMediaType': response_content,
+                'title': name,
+            }
 
         # final function mapping
         function_map[public_name] = FunctionMetadata(

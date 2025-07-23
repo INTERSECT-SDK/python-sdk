@@ -109,4 +109,4 @@ def test_verify_attributes():
     )
     assert function_map['DummyCapability.ip4_to_ip6'].response_content_type == 'application/json'
     assert function_map['DummyCapability.test_path'].request_content_type == 'application/json'
-    assert function_map['DummyCapability.calculate_weird_algorithm'].strict_validation is True
+    assert function_map['DummyCapability.calculate_3n_plus_1'].strict_validation is True
