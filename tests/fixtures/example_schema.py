@@ -42,6 +42,7 @@ from typing_extensions import Annotated, TypeAliasType, TypedDict
 from intersect_sdk import (
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
+    IntersectCapabilityError,
     IntersectDataHandler,
     IntersectEventDefinition,
     intersect_event,
@@ -594,6 +595,21 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
     @intersect_message(request_content_type='image/png', response_content_type='image/png')
     def binary_to_binary(self, in_image: bytes) -> bytes:
         return in_image
+
+    @intersect_message
+    def divide_by_zero_exceptions(self, param: int) -> float:
+        if param < 0:
+            # not explicitly raising an exception, not propagating the exception message
+            return 100 / (param + 1)
+        # explicitly raising an IntersectCapabilityException, will propagate the exception message
+        try:
+            return 100 / (param - 1)
+        except ZeroDivisionError as e:
+            raise IntersectCapabilityError(str(e)) from e
+
+    @intersect_message
+    def raise_exception_no_param(self) -> str:
+        raise IntersectCapabilityError('I should not exist in production!')  # noqa: EM101, TRY003
 
 
 # quick script for generating a valid schema

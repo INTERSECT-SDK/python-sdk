@@ -55,7 +55,7 @@ isort = { known-first-party = ['src'] }
 pydocstyle = { convention = 'google' }
 flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
 mccabe = { max-complexity = 20 }
-pylint = { max-args = 10, max-branches = 20, max-returns = 10, max-statements = 75 }
+pylint = { max-args = 10, max-branches = 20, max-returns = 15, max-statements = 75 }
 # pyflakes and the relevant pycodestyle rules are already configured
 extend-select = [
     'C90',   # mccabe complexity

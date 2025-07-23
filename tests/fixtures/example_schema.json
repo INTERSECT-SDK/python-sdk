@@ -166,6 +166,35 @@
           },
           "events": []
         },
+        "divide_by_zero_exceptions": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "number",
+                "title": "divide_by_zero_exceptions"
+              }
+            }
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "integer",
+                "title": "param"
+              }
+            }
+          },
+          "events": []
+        },
         "get_url_parts": {
           "publish": {
             "message": {
@@ -308,6 +337,31 @@
             "str",
             "float"
           ]
+        },
+        "raise_exception_no_param": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string",
+                "title": "raise_exception_no_param"
+              }
+            }
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              }
+            }
+          },
+          "events": []
         },
         "search_for_lucky_string_in_json": {
           "publish": {

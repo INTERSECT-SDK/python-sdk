@@ -78,7 +78,7 @@ def make_message_interceptor() -> ControlPlaneManager:
 # TESTS ################
 
 
-def test_control_plane_connections():
+def test_control_plane_connections() -> None:
     intersect_service = make_intersect_service()
     # make sure to wait a bit between each startup/shutdown call
     assert intersect_service.is_connected() is False
@@ -104,7 +104,7 @@ def test_control_plane_connections():
 
 
 # normal test that the user function can be called
-def test_call_user_function():
+def test_call_user_function() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]
@@ -139,7 +139,7 @@ def test_call_user_function():
 
 
 # call a @staticmethod user function, which should work as normal
-def test_call_static_user_function():
+def test_call_static_user_function() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]
@@ -173,7 +173,7 @@ def test_call_static_user_function():
     assert msg['payload'] == b'[114,215,330,101,216,115]'
 
 
-def test_call_user_function_with_default_and_empty_payload():
+def test_call_user_function_with_default_and_empty_payload() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]
@@ -208,7 +208,7 @@ def test_call_user_function_with_default_and_empty_payload():
 
 
 # call a user function with invalid parameters (so Pydantic will catch the error and pass it to the message interceptor)
-def test_call_user_function_with_invalid_payload():
+def test_call_user_function_with_invalid_payload() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]
@@ -246,7 +246,7 @@ def test_call_user_function_with_invalid_payload():
 
 
 # try to call an operation which doesn't exist - we'll get an error message back
-def test_call_nonexistent_user_function():
+def test_call_nonexistent_user_function() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]
@@ -282,8 +282,77 @@ def test_call_nonexistent_user_function():
     assert b'Tried to call non-existent operation' in msg['payload']
 
 
+# make sure that exceptions propagate appropriately, based on whether or not IntersectCapabilityException is explicitly thrown
+def test_exception_propagation() -> None:
+    intersect_service = make_intersect_service()
+    message_interceptor = make_message_interceptor()
+    msg = []
+
+    def userspace_msg_callback(payload: bytes) -> None:
+        msg.append(deserialize_and_validate_userspace_message(payload))
+
+    message_interceptor.add_subscription_channel(
+        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+    )
+    message_interceptor.connect()
+    intersect_service.startup()
+    time.sleep(1.0)
+    # divide by zero message which does NOT propagate
+    message_interceptor.publish_message(
+        intersect_service._service_channel_name,
+        create_userspace_message(
+            source='msg.msg.msg.msg.msg',
+            destination='test.test.test.test.test',
+            content_type='application/json',
+            data_handler=IntersectDataHandler.MESSAGE,
+            operation_id='DummyCapability.divide_by_zero_exceptions',
+            payload=b'-1',
+        ),
+        True,
+    )
+    # divide by zero message which DOES propagate
+    message_interceptor.publish_message(
+        intersect_service._service_channel_name,
+        create_userspace_message(
+            source='msg.msg.msg.msg.msg',
+            destination='test.test.test.test.test',
+            content_type='application/json',
+            data_handler=IntersectDataHandler.MESSAGE,
+            operation_id='DummyCapability.divide_by_zero_exceptions',
+            payload=b'1',
+        ),
+        True,
+    )
+    # sanity check for message propagation without param
+    message_interceptor.publish_message(
+        intersect_service._service_channel_name,
+        create_userspace_message(
+            source='msg.msg.msg.msg.msg',
+            destination='test.test.test.test.test',
+            content_type='application/json',
+            data_handler=IntersectDataHandler.MESSAGE,
+            operation_id='DummyCapability.raise_exception_no_param',
+            payload=b'null',
+        ),
+        True,
+    )
+    time.sleep(3.0)
+    intersect_service.shutdown()
+    message_interceptor.disconnect()
+
+    assert msg[0]['headers']['has_error'] is True
+    assert msg[0]['payload'] == b'Service domain logic threw exception.'
+    assert msg[1]['headers']['has_error'] is True
+    assert msg[1]['payload'] == b'Service domain logic threw explicit exception:\ndivision by zero'
+    assert msg[2]['headers']['has_error'] is True
+    assert (
+        msg[2]['payload']
+        == b'Service domain logic threw explicit exception:\nI should not exist in production!'
+    )
+
+
 # this function is just here to ensure the MINIO workflow is correct
-def test_call_minio_user_function():
+def test_call_minio_user_function() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]
@@ -327,7 +396,7 @@ def test_call_minio_user_function():
 # NOTE: this test deliberately takes over a minute to run, due to how POLLING works.
 #
 # NOTE: we are NOT listening for FUNCTIONS_ALLOWED or FUNCTIONS_BLOCKED messages here because that API is subject to change
-def test_lifecycle_messages():
+def test_lifecycle_messages() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     messages: List[LifecycleMessage] = []

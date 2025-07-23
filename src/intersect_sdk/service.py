@@ -56,6 +56,7 @@ from .client_callback_definitions import (
 from .config.service import IntersectServiceConfig
 from .config.shared import HierarchyConfig
 from .core_definitions import IntersectDataHandler
+from .exceptions import IntersectCapabilityError
 from .service_callback_definitions import (
     INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,  # noqa: TC001 (runtime-checked annotation)
 )
@@ -789,8 +790,12 @@ class IntersectService(IntersectEventObserver):
         except ValidationError as e:
             # client issue with request parameters
             return self._make_error_message(f'Bad arguments to application:\n{e}', message)
+        except IntersectCapabilityError as e:
+            return self._make_error_message(
+                f'Service domain logic threw explicit exception:\n{e}', message
+            )
         except IntersectApplicationError:
-            # domain-level exception; do not send specifics about the exception because it may leak internals
+            # domain-level exception not explicitly caught; do not send specifics about the exception because it may leak internals
             return self._make_error_message('Service domain logic threw exception.', message)
         except IntersectError:
             # XXX send a better error message? This is a service issue
@@ -951,6 +956,9 @@ class IntersectService(IntersectEventObserver):
                     raise
                 try:
                     response = getattr(fn_cap, fn_name)(request_obj)
+                except IntersectCapabilityError as e:
+                    logger.warning(f'Capability raised explicit exception:\n{e}\n')
+                    raise
                 except (
                     Exception
                 ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
@@ -960,6 +968,9 @@ class IntersectService(IntersectEventObserver):
                 # user does not have a function parameter
                 try:
                     response = getattr(fn_cap, fn_name)()
+                except IntersectCapabilityError as e:
+                    logger.warning(f'Capability raised explicit exception:\n{e}\n')
+                    raise
                 except (
                     Exception
                 ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
@@ -969,11 +980,13 @@ class IntersectService(IntersectEventObserver):
             # handle requests for expected binary data
             # note that users should not be specifying a default value here
             try:
-                response = getattr(fn_cap, fn_name)(request_obj)
                 if fn_meta.request_adapter is not None:
                     response = getattr(fn_cap, fn_name)(fn_params)
                 else:
                     response = getattr(fn_cap, fn_name)()
+            except IntersectCapabilityError as e:
+                logger.warning(f'Capability raised explicit exception:\n{e}\n')
+                raise
             except (
                 Exception
             ) as e:  # (need to catch all possible exceptions to gracefully handle the thread)
