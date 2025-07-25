@@ -20,7 +20,7 @@ import time
 from collections import defaultdict
 from threading import Lock
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 from uuid import UUID, uuid1, uuid3
 
 from pydantic import ConfigDict, ValidationError, validate_call
@@ -47,9 +47,10 @@ from ._internal.messages.userspace import (
 )
 from ._internal.schema import get_schema_and_functions_from_capability_implementations
 from ._internal.stoppable_thread import StoppableThread
-from ._internal.utils import die
+from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
 from .capability.base import IntersectBaseCapabilityImplementation
+from .capability.universal_capability.universal_capability import IntersectSdkCoreCapability
 from .client_callback_definitions import (
     INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,  # noqa: TC001 (runtime-checked-annotation)
 )
@@ -169,6 +170,11 @@ class IntersectService(IntersectEventObserver):
           capabilities: Your list of capability implementation classes
           config: The IntersectConfig class
         """
+        self.capabilities: list[IntersectBaseCapabilityImplementation] = [
+            IntersectSdkCoreCapability(),
+            *capabilities,
+        ]
+
         for cap in capabilities:
             if not isinstance(cap, IntersectBaseCapabilityImplementation):
                 die(
@@ -182,8 +188,6 @@ class IntersectService(IntersectEventObserver):
             # we generally start observing and don't stop, doesn't really matter if we startup or shutdown
             cap._intersect_sdk_register_observer(self)  # noqa: SLF001 (we don't want users calling or overriding it, but this is fine.)
 
-        self.capabilities = capabilities
-
         # this is called here in case a user created the object using "IntersectServiceConfig.model_construct()" to skip validation
         config = IntersectServiceConfig.model_validate(config)
 
@@ -191,19 +195,12 @@ class IntersectService(IntersectEventObserver):
             schema,
             function_map,
             event_map,
-            status_fn_capability_type,
-            status_fn_name,
-            status_type_adapter,
+            status_list,
         ) = get_schema_and_functions_from_capability_implementations(
             [c.__class__ for c in self.capabilities],
             service_name=config.hierarchy,
             excluded_data_handlers=config.data_stores.get_missing_data_store_types(),
         )
-        status_fn_capability = None
-        if status_fn_capability_type:
-            status_fn_capability = next(
-                c for c in self.capabilities if c.__class__ is status_fn_capability_type
-            )
         self._schema = schema
         """
         Stringified schema of the user's application. Gets sent in several status message requests.
@@ -223,6 +220,13 @@ class IntersectService(IntersectEventObserver):
         Immutable mapping of event names to actual function implementations.
         """
 
+        self._status_list = status_list
+        """
+        INTERNAL USE ONLY
+
+        Immutable listing of capabilities
+        """
+
         self._function_keys: set[str] = set()
         """
         INTERNAL USE ONLY
@@ -239,21 +243,6 @@ class IntersectService(IntersectEventObserver):
 
         self._status_thread: StoppableThread | None = None
         self._status_ticker_interval = config.status_interval
-        self._status_retrieval_fn: Callable[[], bytes] = (
-            (
-                lambda: status_type_adapter.dump_json(
-                    getattr(status_fn_capability, status_fn_name)(),
-                    by_alias=True,
-                    warnings='error',
-                )
-            )
-            if status_type_adapter and status_fn_name
-            else lambda: b'null'
-        )
-
-        # if this fails, the user didn't configure their status function properly, most likely by not sending back valid JSON.
-        # The user's status function should be able to handle any errors.
-        self._status_memo = self._status_retrieval_fn()
 
         self._external_request_thread: StoppableThread | None = None
         self._external_requests_lock = Lock()
@@ -344,9 +333,13 @@ class IntersectService(IntersectEventObserver):
             logger.error('Cannot start service due to unrecoverable error')
             return self
 
+        # status function should work by the time startup() is called
         self._send_lifecycle_message(
             lifecycle_type=LifecycleType.STARTUP,
-            payload={'schema': self._schema, 'status': self._status_memo},
+            payload={
+                'schema': self._schema,
+                'status': self._status_retrieval_fn(fail_harshly=True),
+            },
         )
 
         # Start the status thread if it doesn't already exist
@@ -800,8 +793,6 @@ class IntersectService(IntersectEventObserver):
         except IntersectError:
             # XXX send a better error message? This is a service issue
             return self._make_error_message('Could not send data to data handler', message)
-        finally:
-            self._check_for_status_update()
 
         # SIX: SEND MESSAGE
         return create_userspace_message(
@@ -912,7 +903,7 @@ class IntersectService(IntersectEventObserver):
 
         Params
         fn_cap  = capability implementing the user function
-        fn_name = operation. These get represented in the schema as "channels".
+        fn_name = operation. These get represented in the schema as "endpoints".
         fn_meta = all information stored about the user's operation. This includes user-defined params and the request/response (de)serializers.
         fn_params = the request argument, the actual domain logic.
 
@@ -1093,29 +1084,38 @@ class IntersectService(IntersectEventObserver):
             self._lifecycle_channel_name, msg, persist=False
         )
 
-    def _check_for_status_update(self) -> bool:
-        """Call the user's status retrieval function to see if it equals the cached value. If it does not, send out a status update function.
+    def _status_retrieval_fn(self, fail_harshly: bool) -> dict[str, Any]:
+        """Call all capability status functions configured.
 
-        This will also always update the last cached value.
+        We generally want to call this once during startup to verify that the user has a potentially valid status function.
 
-        Returns:
-          True if there was a status update, False if there wasn't
+        However, the status function can potentially fail later on during the runtime, in which case we will just log the error and continue.
+        During runtime, we'll mark the capability of the status as returning null, which indicates that the status was expected to return a value but did not.
         """
-        try:
-            next_status = self._status_retrieval_fn()
-        except Exception:  # noqa: BLE001 (should catch all exceptions at this point)
-            # At this point, the status retrieval function passed at least once, and we're busy sending/receiving messages.
-            # We will just send a status message like normal - the user's application is still "up".
-            logger.warning('Status function errored out or did not return serializable JSON')
-            next_status = b'**INTERSECT_SDK RECEIVED CORRUPT STATUS**'
-        if next_status != self._status_memo:
-            self._status_memo = next_status
-            self._send_lifecycle_message(
-                lifecycle_type=LifecycleType.STATUS_UPDATE,
-                payload={'schema': self._schema, 'status': next_status},
-            )
-            return True
-        return False
+        status_map = {}
+        for status in self._status_list:
+            try:
+                capability = next(
+                    c
+                    for c in self.capabilities
+                    if c.intersect_sdk_capability_name is status.capability_name
+                )
+                result = status.serializer.dump_python(
+                    getattr(capability, status.function_name)(),
+                    by_alias=True,
+                    warnings='error',
+                )
+                status_map[status.capability_name] = result
+            except Exception as e:  # noqa: BLE001 (should catch all exceptions at this point)
+                msg = f"Status function check for capability '{status.capability_name}' raised an exception, please make sure that the value it's returning matches the type of its return function and that you can reliably call it during service.startup() or default_intersect_lifecycle_loop(service). Exception:\n{e}"
+                if fail_harshly:
+                    # The status function should only be called when the application developer wants to be connected to the INTERSECT broker.
+                    # If we reach this point, the application should be given the opportunity to do a graceful shutdown, so send a SIGTERM instead of immediately dying
+                    logger.critical(msg)
+                    send_os_signal()
+                logger.error(msg)
+                status_map[status.capability_name] = None
+        return status_map
 
     def _status_ticker(self) -> None:
         """Periodically sends lifecycle polling messages showing the Service's state. Runs in a separate thread."""
@@ -1126,11 +1126,13 @@ class IntersectService(IntersectEventObserver):
             else:
                 self._status_thread.wait(self._status_ticker_interval)
             while not self._status_thread.stopped():
-                if not self._check_for_status_update():
-                    self._send_lifecycle_message(
-                        lifecycle_type=LifecycleType.POLLING,
-                        payload={'schema': self._schema, 'status': self._status_memo},
-                    )
+                self._send_lifecycle_message(
+                    lifecycle_type=LifecycleType.POLLING,
+                    payload={
+                        'schema': self._schema,
+                        'status': self._status_retrieval_fn(fail_harshly=False),
+                    },
+                )
                 self._status_thread.wait(self._status_ticker_interval)
 
     def _send_external_requests(self) -> None:

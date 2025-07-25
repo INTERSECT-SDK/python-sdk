@@ -35,6 +35,7 @@ from .logger import logger
 from .messages.event import EventMessageHeaders
 from .messages.userspace import UserspaceMessageHeader
 from .pydantic_schema_generator import GenerateTypedJsonSchema
+from .status_metadata import StatusMetadata
 from .utils import die
 
 if TYPE_CHECKING:
@@ -242,9 +243,9 @@ def _status_fn_schema(
         die(
             f"On capability '{class_name}', capability status function '{status_fn_name}' should have no parameters other than 'self' (unless a staticmethod), and should not use keyword or variable length arguments (i.e. '*', *args, **kwargs)."
         )
-    if status_signature.return_annotation is inspect.Signature.empty:
+    if status_signature.return_annotation in (inspect.Signature.empty, None):
         die(
-            f"On capability '{class_name}', capability status function '{status_fn_name}' should have a valid return annotation."
+            f"On capability '{class_name}', capability status function '{status_fn_name}' should have a valid return annotation and should not be null."
         )
     try:
         status_adapter = TypeAdapter(status_signature.return_annotation)
@@ -582,9 +583,7 @@ def get_schema_and_functions_from_capability_implementations(
     dict[str, Any],
     dict[str, FunctionMetadata],
     dict[str, EventMetadata],
-    type[IntersectBaseCapabilityImplementation] | None,
-    str | None,
-    TypeAdapter[Any] | None,
+    list[StatusMetadata],
 ]:
     """This function generates the core AsyncAPI schema, and the core mappings which are derived from the schema.
 
@@ -595,12 +594,9 @@ def get_schema_and_functions_from_capability_implementations(
 
     In-depth introspection is handled later on.
     """
-    status_function_cap: type[IntersectBaseCapabilityImplementation] | None = None
-    status_function_name: str | None = None
-    status_function_schema: dict[str, Any] | None = None
-    status_function_adapter: TypeAdapter[Any] | None = None
     shared_schemas: dict[Any, Any] = {}  # "shared" schemas which get put in $defs
     capability_schemas: dict[str, Any] = {}  # endpoint schemas
+    status_list: list[StatusMetadata] = []  # list of all active statuses
     function_map: dict[str, FunctionMetadata] = {}  # endpoint functionality
     events: dict[
         str, Any
@@ -630,19 +626,20 @@ def get_schema_and_functions_from_capability_implementations(
             cap_event_map,
         ) = _introspection_baseline(capability_type, excluded_data_handlers)
 
-        if cap_status_fn_name and cap_status_schema and cap_status_type_adapter:
-            if status_function_name is not None:
-                # TODO may want to change this later
-                die('Only one capability may have an @intersect_status function')
-            status_function_cap = capability_type
-            status_function_name = cap_status_fn_name
-            status_function_schema = cap_status_schema
-            status_function_adapter = cap_status_type_adapter
+        if cap_status_fn_name and cap_status_type_adapter:
+            status_list.append(
+                StatusMetadata(
+                    capability_name=cap_name,
+                    function_name=cap_status_fn_name,
+                    serializer=cap_status_type_adapter,
+                )
+            )
 
         shared_schemas.update(subschemas)
         # NOTE: we will still add the capability to the schema, even if there are no @intersect_message annotations
         capability_schemas[cap_name] = {
-            'channels': cap_functions,
+            'endpoints': cap_functions,
+            'status': cap_status_schema if cap_status_schema else {'type': 'null'},
         }
         # add documentation for the capabilities
         if capability_type.__doc__:
@@ -664,7 +661,6 @@ def get_schema_and_functions_from_capability_implementations(
         'defaultContentType': 'application/json',
         'capabilities': capability_schemas,
         'events': events,
-        'status': status_function_schema if status_function_schema else {'type': 'null'},
         'components': {
             'schemas': shared_schemas,
             'messageTraits': {
@@ -687,7 +683,5 @@ def get_schema_and_functions_from_capability_implementations(
         asyncapi_spec,
         function_map,
         event_map,
-        status_function_cap,
-        status_function_name,
-        status_function_adapter,
+        status_list,
     )

@@ -413,10 +413,9 @@ def test_lifecycle_messages() -> None:
     # sleep a moment to make sure message_interceptor catches the startup message
     time.sleep(1.0)
     intersect_service.startup()
-    # sleep a bit over 60 seconds to make sure we get the polling message
-    time.sleep(62.0)
-
-    # send a message to trigger a status update (just the way the example service's domain works, not intrinsic)
+    # startup message should include a "default state" for the status, make sure we get it before we publish our message
+    time.sleep(3.0)
+    # send a message to make sure the next status update will be different (just the way the example service's domain works, not intrinsic)
     message_interceptor.publish_message(
         intersect_service._service_channel_name,
         create_userspace_message(
@@ -430,13 +429,15 @@ def test_lifecycle_messages() -> None:
         ),
         True,
     )
-    time.sleep(3.0)
+    # sleep a bit over 60 seconds to make sure we get the polling message with the new status
+    time.sleep(62.0)
+
     intersect_service.shutdown('I want to shutdown')
     # sleep to get the shutdown message
     time.sleep(1.0)
     message_interceptor.disconnect()
 
-    assert len(messages) == 4
+    assert len(messages) == 3
 
     assert messages[0]['headers']['lifecycle_type'] == LifecycleType.STARTUP
     assert 'schema' in messages[0]['payload']
@@ -444,11 +445,19 @@ def test_lifecycle_messages() -> None:
     assert messages[1]['headers']['lifecycle_type'] == LifecycleType.POLLING
     assert 'schema' in messages[1]['payload']
 
-    assert messages[2]['headers']['lifecycle_type'] == LifecycleType.STATUS_UPDATE
-    assert 'schema' in messages[2]['payload']
+    assert messages[2]['headers']['lifecycle_type'] == LifecycleType.SHUTDOWN
+    assert 'I want to shutdown' in messages[2]['payload']
 
-    assert messages[3]['headers']['lifecycle_type'] == LifecycleType.SHUTDOWN
-    assert 'I want to shutdown' in messages[3]['payload']
+    # make sure both the universal capability and the test capability show up in the first two messages
+    for i in range(2):
+        assert list(messages[i]['payload']['status'].keys()) == ['intersect_sdk', 'DummyCapability']
 
-    assert messages[0]['payload']['status'] == messages[1]['payload']['status']
-    assert messages[0]['payload']['status'] != messages[2]['payload']['status']
+    # check the status values of the DummyCapability (the INTERSECT-SDK capability's status values are too variable)
+    assert messages[0]['payload']['status']['DummyCapability'] == {
+        'functions_called': 0,
+        'last_function_called': '',
+    }
+    assert messages[1]['payload']['status']['DummyCapability'] == {
+        'functions_called': 1,
+        'last_function_called': 'verify_float_dict',
+    }

@@ -41,18 +41,11 @@ class LifecycleType(IntEnum):
 
     Includes the schema and the current status in the payload ({'schema': schema_str, 'status': current_status})
     """
-    STATUS_UPDATE = 3
-    """
-    Message sent out to explicitly indicate there was a status update.
-    Status updates are checked each time a user function is called and during the polling interval.
-
-    Includes the schema and the new status in the payload ({'schema': schema_str, 'status': current_status})
-    """
-    FUNCTIONS_ALLOWED = 4
+    FUNCTIONS_ALLOWED = 3
     """
     Send out a list of functions now allowed in the payload
     """
-    FUNCTIONS_BLOCKED = 5
+    FUNCTIONS_BLOCKED = 4
     """
     Send out a list of functions now blocked in the payload
     """

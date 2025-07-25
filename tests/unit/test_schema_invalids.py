@@ -541,7 +541,10 @@ def test_disallow_missing_return_annotation_status(caplog: pytest.LogCaptureFixt
 
     with pytest.raises(SystemExit):
         get_schema_helper([MissingReturnAnnotationOnStatus])
-    assert "'missing_return_annotation' should have a valid return annotation." in caplog.text
+    assert (
+        "capability status function 'missing_return_annotation' should have a valid return annotation and should not be null."
+        in caplog.text
+    )
 
 
 def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixture):
@@ -945,33 +948,6 @@ def test_duplicate_capability_names(caplog: pytest.LogCaptureFixture):
         get_schema_helper([DupCapabilityName1, DupCapabilityName2])
     assert 'Invalid intersect_sdk_capability_name on capability' in caplog.text
     assert '"dup" is a duplicate and has already appeared in another capability.' in caplog.text
-
-
-# XXX this should probably pass at some point in the future, move it to a valid test file if so
-def test_multiple_status_functions_across_capabilities(caplog: pytest.LogCaptureFixture):
-    # fails because there can only be one @intersect_status function between ALL capabilities
-
-    class CapabilityName1(IntersectBaseCapabilityImplementation):
-        intersect_sdk_capability_name = '1'
-
-        @intersect_message()
-        def valid_function_1(self, param: str) -> str: ...
-
-        @intersect_status
-        def status_function_1(self) -> str: ...
-
-    class CapabilityName2(IntersectBaseCapabilityImplementation):
-        intersect_sdk_capability_name = '2'
-
-        @intersect_message()
-        def valid_function_2(self, param: str) -> str: ...
-
-        @intersect_status
-        def status_function_2(self) -> str: ...
-
-    with pytest.raises(SystemExit):
-        get_schema_helper([CapabilityName1, CapabilityName2])
-    assert 'Only one capability may have an @intersect_status function' in caplog.text
 
 
 def test_input_param_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
