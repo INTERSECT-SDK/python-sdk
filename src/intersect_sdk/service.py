@@ -175,7 +175,7 @@ class IntersectService(IntersectEventObserver):
             *capabilities,
         ]
 
-        for cap in capabilities:
+        for cap in self.capabilities:
             if not isinstance(cap, IntersectBaseCapabilityImplementation):
                 die(
                     f'IntersectService parameter must inherit from intersect_sdk.IntersectBaseCapabilityImplementation instead of "{cap.__class__.__name__}" .'
