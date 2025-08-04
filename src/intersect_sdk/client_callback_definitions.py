@@ -3,13 +3,17 @@
 See shared_callback_definitions for additional typings which are also shared by service authors.
 """
 
-from typing import Callable, List, Optional, TypeAlias, Union
+from collections.abc import Callable
+from typing import TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Annotated, final
+from pydantic import BaseModel, ConfigDict
+from typing_extensions import final
 
-from .constants import SYSTEM_OF_SYSTEM_REGEX
-from .shared_callback_definitions import INTERSECT_JSON_VALUE, IntersectDirectMessageParams
+from .shared_callback_definitions import (
+    INTERSECT_JSON_VALUE,
+    IntersectDirectMessageParams,
+    IntersectEventMessageParams,
+)
 
 
 @final
@@ -19,21 +23,17 @@ class IntersectClientCallback(BaseModel):
     If you do not return a value of this type (or None), this will be treated as an Exception and will break the pub-sub loop.
     """
 
-    messages_to_send: List[IntersectDirectMessageParams] = []  # noqa: FA100 (runtime annotation)
+    messages_to_send: list[IntersectDirectMessageParams] = []
     """
     Messages to send as a result of an event or a response from a Service.
     """
-    services_to_start_listening_for_events: List[  # noqa: FA100 (runtime annotation)
-        Annotated[str, Field(pattern=SYSTEM_OF_SYSTEM_REGEX)]
-    ] = []
+    services_to_start_listening_for_events: list[IntersectEventMessageParams] = []
     """
     Start listening to events from these services as a result of an event or a response from a Service.
 
     For each event in the list - if you are already listening to the event, the action will be a no-op.
     """
-    services_to_stop_listening_for_events: List[  # noqa: FA100 (runtime annotation)
-        Annotated[str, Field(pattern=SYSTEM_OF_SYSTEM_REGEX)]
-    ] = []
+    services_to_stop_listening_for_events: list[IntersectEventMessageParams] = []
     """
     Stop listening to events from these services as a result of an event or a response from a Service.
 
@@ -44,7 +44,7 @@ class IntersectClientCallback(BaseModel):
     model_config = ConfigDict(revalidate_instances='always')
 
 
-INTERSECT_RESPONSE_VALUE: TypeAlias = Union[INTERSECT_JSON_VALUE, bytes]
+INTERSECT_RESPONSE_VALUE: TypeAlias = INTERSECT_JSON_VALUE | bytes
 """
 This is the actual response value you will get back from a Service. The type will already be serialized into Python for you,
 but will not be serialized into a precise value.
@@ -53,7 +53,7 @@ but will not be serialized into a precise value.
 
 INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE = Callable[
     [str, str, bool, INTERSECT_RESPONSE_VALUE],
-    Optional[IntersectClientCallback],
+    IntersectClientCallback | None,
 ]
 """
 This is a callable function type which should be defined by the user.
@@ -82,7 +82,7 @@ Raises
 
 INTERSECT_CLIENT_EVENT_CALLBACK_TYPE = Callable[
     [str, str, str, INTERSECT_RESPONSE_VALUE],
-    Optional[IntersectClientCallback],
+    IntersectClientCallback | None,
 ]
 """
 This is a callable function type which should be defined by the user.
@@ -92,7 +92,7 @@ Note: DO NOT handle serialization/deserialization yourself, the SDK will take ca
 Params
   The SDK will send the function four arguments:
     1) The message source (the SOS representation of the Service) - this is mostly useful for your own control flow loops you write in the function
-    2) The name of the operation from the service that fired the event.
+    2) The name of the capability from the service that fired the event.
     3) The name of the event.
     4) The response, as a Python object - the type should be based on the corresponding Service's event response.
        The Python object will already be deserialized for you (unless you are expecting binary data, then it will be base64). This will be either an integer, boolean, float, string, None,

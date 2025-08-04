@@ -1,6 +1,7 @@
 """First Service for example. Sends a message to service two and emits an event for the client."""
 
 import logging
+from typing import ClassVar
 
 from intersect_sdk import (
     HierarchyConfig,
@@ -10,7 +11,6 @@ from intersect_sdk import (
     IntersectService,
     IntersectServiceConfig,
     default_intersect_lifecycle_loop,
-    intersect_event,
     intersect_message,
     intersect_status,
 )
@@ -23,6 +23,9 @@ class ExampleServiceOneCapabilityImplementation(IntersectBaseCapabilityImplement
     """Service 1 Capability."""
 
     intersect_sdk_capability_name = 'ServiceOne'
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'response_event': IntersectEventDefinition(event_type=str),
+    }
 
     @intersect_status()
     def status(self) -> str:
@@ -41,12 +44,11 @@ class ExampleServiceOneCapabilityImplementation(IntersectBaseCapabilityImplement
         # Send intersect message to another service
         self.intersect_sdk_call_service(msg_to_send, self.service_2_handler)
 
-    @intersect_event(events={'response_event': IntersectEventDefinition(event_type=str)})
     def service_2_handler(self, _source: str, _operation: str, _has_error: bool, msg: str) -> None:
         """Handles first response from service 2, emits the response as an event for the client, and sends a hardcoded message to service 2."""
         self.intersect_sdk_emit_event('response_event', f'Received Response from Service 2: {msg}')
 
-        # verify that we can call the service multiple
+        # verify that we can call the service multiple times
         msg_to_send = IntersectDirectMessageParams(
             destination='example-organization.example-facility.example-system.example-subsystem.service-two',
             operation='ServiceTwo.test_service',
@@ -54,7 +56,6 @@ class ExampleServiceOneCapabilityImplementation(IntersectBaseCapabilityImplement
         )
         self.intersect_sdk_call_service(msg_to_send, self.additional_service_handler)
 
-    @intersect_event(events={'response_event': IntersectEventDefinition(event_type=str)})
     def additional_service_handler(
         self, _source: str, _operation: str, _has_error: bool, msg: str
     ) -> None:

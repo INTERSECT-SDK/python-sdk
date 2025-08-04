@@ -20,7 +20,7 @@ import time
 from collections import defaultdict
 from threading import Lock
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID, uuid1, uuid3
 
 from pydantic import ConfigDict, ValidationError, validate_call
@@ -52,24 +52,23 @@ from ._internal.version_resolver import resolve_user_version
 from .capability.base import IntersectBaseCapabilityImplementation
 from .capability.universal_capability.universal_capability import IntersectSdkCoreCapability
 from .client_callback_definitions import (
-    INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,  # noqa: TC001 (runtime-checked-annotation)
+    INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
 )
 from .config.service import IntersectServiceConfig
 from .config.shared import HierarchyConfig
 from .core_definitions import IntersectDataHandler
 from .exceptions import IntersectCapabilityError
 from .service_callback_definitions import (
-    INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,  # noqa: TC001 (runtime-checked annotation)
+    INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
 )
 from .shared_callback_definitions import (
-    INTERSECT_JSON_VALUE,  # noqa: TC001 (runtime-checked annotation)
-    IntersectDirectMessageParams,  # noqa: TC001 (runtime-checked annotation)
+    INTERSECT_JSON_VALUE,
+    IntersectDirectMessageParams,
 )
 from .version import version_string
 
 if TYPE_CHECKING:
     from ._internal.function_metadata import FunctionMetadata
-    from .config.shared import HierarchyConfig
 
 
 @final
@@ -259,7 +258,7 @@ class IntersectService(IntersectEventObserver):
 
         {
           "org.fac.sys1.subsys.service": {
-            "event_name_1": [
+            "CAP_NAME.event_name_1": [
               # user_function_1,
               # user_function_2
             ]
@@ -286,7 +285,8 @@ class IntersectService(IntersectEventObserver):
         self._data_plane_manager = DataPlaneManager(self._hierarchy, config.data_stores)
         # we PUBLISH messages on this channel
         self._lifecycle_channel_name = f'{config.hierarchy.hierarchy_string("/")}/lifecycle'
-        # we PUBLISH event messages on this channel
+        # we PUBLISH event messages on channels DERIVED from this
+        # `${HIERACRCHY_STRING}/events/${CAPABILITY_NAME}/${EVENT_NAME}`
         self._events_channel_name = f'{config.hierarchy.hierarchy_string("/")}/events'
         # we SUBSCRIBE to messages on this channel to receive requests
         self._service_channel_name = f'{config.hierarchy.hierarchy_string("/")}/request'
@@ -304,7 +304,7 @@ class IntersectService(IntersectEventObserver):
             self._client_channel_name, {self._handle_client_message_raw}, persist=True
         )
 
-    def _get_capability(self, target: str) -> Any | None:
+    def _get_capability(self, target: str) -> IntersectBaseCapabilityImplementation | None:
         for cap in self.capabilities:
             if cap.intersect_sdk_capability_name == target:
                 return cap
@@ -539,6 +539,7 @@ class IntersectService(IntersectEventObserver):
     def register_event(
         self,
         service: HierarchyConfig,
+        capability_name: str,
         event_name: str,
         response_handler: INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
     ) -> None:
@@ -546,14 +547,15 @@ class IntersectService(IntersectEventObserver):
 
         Params:
           - service: HierarchyConfig of the service we want to talk to
+          - capability_name: name of capability which will fire off the event
           - event_name: name of event to subscribe to
           - response_handler: callback for how to handle the reception of an event
         """
         hierarchy = service.hierarchy_string('.')
-        self._svc2svc_events[hierarchy][event_name].add(response_handler)
+        self._svc2svc_events[hierarchy][f'{capability_name}.{event_name}'].add(response_handler)
 
         self._control_plane_manager.add_subscription_channel(
-            f'{service.hierarchy_string("/")}/events',
+            f'{service.hierarchy_string("/")}/events/{capability_name}/{event_name}',
             {self._svc2svc_event_callback},
             persist=True,
         )
@@ -583,10 +585,11 @@ class IntersectService(IntersectEventObserver):
             )
             return
         source = message['headers']['source']
+        capability_name = message['headers']['capability_name']
         event_name = message['headers']['event_name']
-        for user_callback in self._svc2svc_events[source][event_name]:
+        for user_callback in self._svc2svc_events[source][f'{capability_name}.{event_name}']:
             try:
-                user_callback(source, message['operationId'], event_name, payload)
+                user_callback(source, message['headers']['capability_name'], event_name, payload)
             except Exception as e:  # noqa: BLE001 (need to catch any possible user exception)
                 logger.warning(
                     '!!! INTERSECT: event callback function "%s" produced uncaught exception when handling event "%s" from "%s"',
@@ -600,7 +603,7 @@ class IntersectService(IntersectEventObserver):
     def create_external_request(
         self,
         request: IntersectDirectMessageParams,
-        response_handler: Union[INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE, None] = None,  # noqa: UP007 (runtime checked annotation)
+        response_handler: INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None = None,
         timeout: float = 300.0,
     ) -> UUID:
         """Create an external request that we'll send to a different Service.
@@ -631,7 +634,7 @@ class IntersectService(IntersectEventObserver):
         self._external_requests_lock.release_lock()
         return request_uuid
 
-    def _get_external_request(self, req_id: UUID) -> IntersectService._ExternalRequest | None:
+    def _get_external_request(self, req_id: UUID) -> _ExternalRequest | None:
         req_id_str = str(req_id)
         if req_id_str in self._external_requests:
             req: IntersectService._ExternalRequest = self._external_requests[req_id_str]
@@ -1004,7 +1007,7 @@ class IntersectService(IntersectEventObserver):
 
         return response
 
-    def _on_observe_event(self, event_name: str, event_value: Any, operation: str) -> None:
+    def _on_observe_event(self, event_name: str, event_value: Any, capability_name: str) -> None:
         """This is the service function which handles events from the capabilities (as opposed to handling messages).
 
         This function needs to:
@@ -1015,10 +1018,10 @@ class IntersectService(IntersectEventObserver):
 
         Note that if validation fails, we simply log the error out and return. We do not broadcast an error message.
         """
-        event_meta = self._event_map.get(event_name)
-        if event_meta is None or operation not in event_meta.operations:
+        event_meta = self._event_map.get(capability_name, {}).get(event_name)
+        if event_meta is None:
             logger.error(
-                f"Event name '{event_name}' was not registered on operation '{operation}', so event will not be emitted.\nEvent value: {event_value}"
+                f"Event name '{event_name}' was not registered on capability '{capability_name}', so event will not be emitted.\nEvent value: {event_value}"
             )
             return
         try:
@@ -1027,7 +1030,7 @@ class IntersectService(IntersectEventObserver):
             )
         except PydanticSerializationError as e:
             logger.error(
-                f"Value emitted for event name '{event_name}' from operation '{operation}' does not match schema.\nEvent value: {event_value}\nPydantic error: {e}"
+                f"Value emitted for event name '{event_name}' from capability '{capability_name}' does not match schema.\nEvent value: {event_value}\nPydantic error: {e}"
             )
             return
         try:
@@ -1040,13 +1043,14 @@ class IntersectService(IntersectEventObserver):
 
         msg = create_event_message(
             source=self._hierarchy.hierarchy_string('.'),
-            operation_id=operation,
+            capability_name=capability_name,
             content_type=event_meta.content_type,
             data_handler=event_meta.data_transfer_handler,
             event_name=event_name,
             payload=response_payload,
         )
-        self._control_plane_manager.publish_message(self._events_channel_name, msg, persist=True)
+        full_events_channel_name = f'{self._events_channel_name}/{capability_name}/{event_name}'
+        self._control_plane_manager.publish_message(full_events_channel_name, msg, persist=True)
 
     def _make_error_message(
         self, error_string: str, original_message: UserspaceMessage
@@ -1095,11 +1099,7 @@ class IntersectService(IntersectEventObserver):
         status_map = {}
         for status in self._status_list:
             try:
-                capability = next(
-                    c
-                    for c in self.capabilities
-                    if c.intersect_sdk_capability_name is status.capability_name
-                )
+                capability = self._get_capability(status.capability_name)
                 result = status.serializer.dump_python(
                     getattr(capability, status.function_name)(),
                     by_alias=True,

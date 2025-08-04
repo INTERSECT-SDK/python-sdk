@@ -10,6 +10,7 @@
   "capabilities": {
     "intersect_sdk": {
       "endpoints": {},
+      "events": {},
       "status": {
         "$ref": "#/components/schemas/IntersectCoreStatus"
       },
@@ -17,16 +18,16 @@
     },
     "CountingExample": {
       "endpoints": {},
+      "events": {
+        "increment_counter": {
+          "type": "integer",
+          "title": "increment_counter"
+        }
+      },
       "status": {
         "type": "null"
       },
       "description": "This example is meant to showcase a simple event emitter.\n\nThis service does not have any endpoints, but simply fires off a single event every three seconds."
-    }
-  },
-  "events": {
-    "increment_counter": {
-      "type": "integer",
-      "title": "increment_counter"
     }
   },
   "components": {
@@ -113,13 +114,13 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Destination",
               "type": "string"
             },
@@ -172,7 +173,7 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
@@ -193,6 +194,10 @@
               "default": 0,
               "description": "Code signifying where data is stored."
             },
+            "capability_name": {
+              "title": "Capability Name",
+              "type": "string"
+            },
             "event_name": {
               "title": "Event Name",
               "type": "string"
@@ -202,6 +207,7 @@
             "source",
             "created_at",
             "sdk_version",
+            "capability_name",
             "event_name"
           ],
           "title": "EventMessageHeaders",

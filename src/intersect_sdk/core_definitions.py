@@ -1,9 +1,9 @@
 """Core enumerations and structures used throughout INTERSECT, for both client and service."""
 
 from enum import IntEnum
+from typing import Annotated
 
 from pydantic import Field
-from typing_extensions import Annotated
 
 
 class IntersectDataHandler(IntEnum):

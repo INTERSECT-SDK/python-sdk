@@ -16,14 +16,12 @@ Clients should be CONSUMING from their userspace channel, but should only get me
 from services they explicitly messaged.
 """
 
-from __future__ import annotations
-
 import datetime
 import uuid
-from typing import Any, Union
+from typing import Annotated, Any, Union
 
 from pydantic import AwareDatetime, Field, TypeAdapter
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...core_definitions import (
@@ -31,7 +29,7 @@ from ...core_definitions import (
     IntersectMimeType,
 )
 from ...version import version_string
-from ..data_plane.minio_utils import MinioPayload  # noqa: TC001 (this is runtime checked)
+from ..data_plane.minio_utils import MinioPayload
 
 
 class UserspaceMessageHeader(TypedDict):

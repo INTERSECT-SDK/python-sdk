@@ -4,25 +4,25 @@ from __future__ import annotations
 
 import inspect
 import re
+from collections.abc import Callable, Mapping
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
-    Callable,
-    Mapping,
     NamedTuple,
     get_origin,
 )
 
-from pydantic import PydanticUserError, TypeAdapter
+from pydantic import Field, PydanticUserError, TypeAdapter
 from typing_extensions import TypeAliasType
 
+from ..constants import CAPABILITY_REGEX
+from ..service_definitions import IntersectEventDefinition
 from ..version import version_string
 from .constants import (
-    BASE_EVENT_ATTR,
     BASE_RESPONSE_ATTR,
     BASE_STATUS_ATTR,
-    EVENT_ATTR_KEY,
     REQUEST_CONTENT,
     RESPONSE_CONTENT,
     RESPONSE_DATA,
@@ -44,7 +44,6 @@ if TYPE_CHECKING:
     from ..capability.base import IntersectBaseCapabilityImplementation
     from ..config.shared import HierarchyConfig
     from ..core_definitions import IntersectDataHandler
-    from ..service_definitions import IntersectEventDefinition
 
 ASYNCAPI_VERSION = '2.6.0'
 
@@ -59,19 +58,39 @@ For networking types, https://docs.pydantic.dev/latest/api/networks/
 For a complete reference, https://docs.pydantic.dev/latest/concepts/conversion_table
 """
 
-CAPABILITY_NAME_PATTERN = r'[\w-]+'
-"""Regular expression we use to check valid capability names. Since capability namespacing only occurs in services, we can be more lax than for how we name services/systems/etc. """
+
+def _is_annotation_type(annotation: Any, the_type: type) -> bool:
+    """Checks to see if 'annotation' is one of the following.
+
+    - the_type
+    - Annotated[the_type]
+    """
+    return annotation is the_type or (
+        get_origin(annotation) is Annotated and annotation.__origin__ is the_type
+    )
+
+
+def _create_binary_schema(
+    title: str, the_type: type, content_type: str, mode: JsonSchemaMode
+) -> dict[str, Any]:
+    """Create a JSON schema for data which is entirely binary, try to extract metadata from user's type."""
+    # at this point, the typing can safely be deduced as "bytes", so we do not need to use the special format
+    schema = TypeAdapter(the_type).json_schema(mode=mode)
+    if 'title' not in schema:
+        schema['title'] = title
+    schema['contentMediaType'] = content_type
+
+    return schema
 
 
 class _FunctionAnalysisResult(NamedTuple):
     """private class generated from static analysis of function."""
 
-    class_name: str
     method_name: str
     method: Callable[[Any], Any]
     """raw method is for inspecting attributes"""
     min_args: int
-    """this usually just means number of implicit arguments to a function. Note that for events we currently don't use this.
+    """this usually just means number of implicit arguments to a function.
 
     the maximum number of args can always be derived from this, so don't bother storing it
     """
@@ -81,7 +100,6 @@ def _function_static_analysis(
     capability: type[IntersectBaseCapabilityImplementation],
     name: str,
     method: Any,
-    check_method_type: bool = True,
 ) -> _FunctionAnalysisResult:
     """This performs generic, simple static analysis, which can be used across annotations."""
     if not callable(method):
@@ -89,21 +107,17 @@ def _function_static_analysis(
             f'On class attribute "{name}", INTERSECT annotation should only be used on callable functions, and should be applied first (put it at the bottom)'
         )
     min_args = 0xFF  # max args Python allows, excepting varargs
-    if check_method_type:
-        static_attr = inspect.getattr_static(capability, name)
-        if isinstance(static_attr, classmethod):
-            die(
-                f'On class attribute "{name}", INTERSECT annotations cannot be used with @classmethod'
-            )
-        min_args = int(not isinstance(static_attr, staticmethod))
-    return _FunctionAnalysisResult(capability.__name__, name, method, min_args)
+    static_attr = inspect.getattr_static(capability, name)
+    if isinstance(static_attr, classmethod):
+        die(f'On class attribute "{name}", INTERSECT annotations cannot be used with @classmethod')
+    min_args = int(not isinstance(static_attr, staticmethod))
+    return _FunctionAnalysisResult(name, method, min_args)
 
 
 def _get_functions(
     capability: type[IntersectBaseCapabilityImplementation],
 ) -> tuple[
     _FunctionAnalysisResult | None,
-    list[_FunctionAnalysisResult],
     list[_FunctionAnalysisResult],
 ]:
     """Inspect all functions, and check that annotated functions are not classmethods (which are always a mistake) and are callable.
@@ -120,20 +134,10 @@ def _get_functions(
     """
     intersect_status = None
     intersect_messages = []
-    intersect_events = []
 
     for name in dir(capability):
         method = getattr(capability, name)
-        if hasattr(method, BASE_EVENT_ATTR):
-            intersect_events.append(
-                _function_static_analysis(
-                    capability,
-                    name,
-                    method,
-                    False,
-                )
-            )
-        elif hasattr(method, BASE_RESPONSE_ATTR):
+        if hasattr(method, BASE_RESPONSE_ATTR):
             intersect_messages.append(_function_static_analysis(capability, name, method))
         elif hasattr(method, BASE_STATUS_ATTR):
             if intersect_status is not None:
@@ -146,11 +150,7 @@ def _get_functions(
         logger.warning(
             f"Class '{capability.__name__}' has no function annotated with the @intersect_status() decorator. No status information will be provided when sending status messages."
         )
-    if not intersect_messages and not intersect_events and not intersect_status:
-        die(
-            f"No intersect annotations detected on class '{capability.__name__}'. Please annotate at least one entrypoint with '@intersect_message()', or one event-emitting function with '@intersect_event()', or create an '@intersect_status' function."
-        )
-    return intersect_status, intersect_messages, intersect_events
+    return intersect_status, intersect_messages
 
 
 def _merge_schema_definitions(
@@ -219,7 +219,9 @@ def _ensure_title_in_schema(schema: dict[str, Any], title: str) -> None:
 
 
 def _status_fn_schema(
-    status_info: _FunctionAnalysisResult, schemas: dict[str, Any]
+    class_name: str,
+    status_info: _FunctionAnalysisResult,
+    schemas: dict[str, Any],
 ) -> tuple[
     str,
     Callable[[Any], Any],
@@ -234,7 +236,7 @@ def _status_fn_schema(
     - The status function's schema
     - The TypeAdapter to use for serializing outgoing responses
     """
-    class_name, status_fn_name, status_fn, min_params = status_info
+    status_fn_name, status_fn, min_params = status_info
     status_signature = inspect.signature(status_fn)
     method_params = tuple(status_signature.parameters.values())
     if len(method_params) != min_params or any(
@@ -270,7 +272,6 @@ def _status_fn_schema(
 
 def _add_events(
     class_name: str,
-    function_name: str,
     schemas: dict[str, Any],
     event_schemas: dict[str, Any],
     event_metadatas: dict[str, EventMetadata],
@@ -290,13 +291,12 @@ def _add_events(
                     for d in differences_from_cache
                 )
                 die(
-                    f"On capability '{class_name}', event key '{event_key}' on function '{function_name}' was previously defined differently. \n{diff_str}\n"
+                    f"On capability '{class_name}', event key '{event_key}' was previously defined differently. \n{diff_str}\n"
                 )
-            metadata_value.operations.add(function_name)
         else:
             if event_definition.data_handler in excluded_data_handlers:
                 die(
-                    f"On capability '{class_name}', function '{function_name}' should not set data_handler as {event_definition.data_handler} unless an instance is configured in IntersectConfig.data_stores ."
+                    f"On capability '{class_name}', event key '{event_key}'  should not set data_handler as {event_definition.data_handler} unless an instance is configured in IntersectConfig.data_stores ."
                 )
             if event_definition.content_type == 'application/json':
                 try:
@@ -312,30 +312,29 @@ def _add_events(
                     event_metadatas[event_key] = EventMetadata(
                         type=event_definition.event_type,
                         type_adapter=event_adapter,
-                        operations={function_name},
                         content_type=event_definition.content_type,
                         data_transfer_handler=event_definition.data_handler,
                     )
                 except PydanticUserError as e:
                     die(
-                        f"On capability '{class_name}', event key '{event_key}' on function '{function_name}' has an invalid value in the events mapping.\n{e}"
+                        f"On capability '{class_name}', event key '{event_key}' has an invalid value in the events mapping.\n{e}"
                     )
             else:
-                if event_definition.event_type is not bytes:
+                if not _is_annotation_type(event_definition.event_type, bytes):
                     die(
-                        f"On capability '{class_name}', event key '{event_key}' on function '{function_name}' must have EventDefinition event_type be 'bytes' if content_type is not 'application/json'"
+                        f"On capability '{class_name}', event key '{event_key}' must have EventDefinition event_type be 'bytes' if content_type is not 'application/json'"
                     )
+
                 event_adapter = 0  # type: ignore[assignment]
-                event_schemas[event_key] = {
-                    'type': 'string',
-                    'format': 'binary',
-                    'contentMediaType': event_definition.content_type,
-                    'title': event_key,
-                }
+                event_schemas[event_key] = _create_binary_schema(
+                    event_key,
+                    event_definition.event_type,
+                    event_definition.content_type,
+                    'serialization',
+                )
                 event_metadatas[event_key] = EventMetadata(
                     type=event_definition.event_type,
                     type_adapter=event_adapter,
-                    operations={function_name},
                     content_type=event_definition.content_type,
                     data_transfer_handler=event_definition.data_handler,
                 )
@@ -343,6 +342,7 @@ def _add_events(
 
 def _introspection_baseline(
     capability: type[IntersectBaseCapabilityImplementation],
+    event_validator: TypeAdapter[dict[str, IntersectEventDefinition]],
     excluded_data_handlers: set[IntersectDataHandler],
 ) -> tuple[
     dict[Any, Any],  # $defs for schemas (common)
@@ -360,9 +360,12 @@ def _introspection_baseline(
 
     - Capabilities should implement functions which represent entrypoints
     - Each entrypoint should be annotated with @intersect_message() (this sets a hidden attribute)
-    - Entrypoint functions should either have no parameters, or they should
-      describe all their parameters in one BaseModel-derived class.
-      (NOTE: maybe allow for some other input formats?)
+    - Entrypoint functions should either have no parameters, or they should have only one parameter which is Pydantic-compatible (i.e. BaseModel)
+    - Capabilities may also implement a status function
+    - the status function should have no parameters, and should return a Pydantic-compatible parameter
+    - the status function also needs to return something which is small enough to fit in memory and isn't binary data; it should be inexpensive to call it
+    - Capabilities may also implement events, which represent the capabilities announcing information without being prompted externally
+    - a capability can have many event, but we need to ensure that the
     """
     # global schema variables
     schemas: dict[Any, Any] = {}
@@ -372,12 +375,19 @@ def _introspection_baseline(
     function_map = {}
     event_metadatas: dict[str, EventMetadata] = {}
 
-    # capability_name should have already been checked before calling this function
-    cap_name = capability.intersect_sdk_capability_name
-    status_func, response_funcs, event_funcs = _get_functions(capability)
+    class_name = capability.__name__
 
-    # parse functions
-    for class_name, name, method, min_params in response_funcs:
+    # capability_name should have already been checked for uniqueness before calling this function
+    cap_name = capability.intersect_sdk_capability_name
+    event_functions = event_validator.validate_python(capability.intersect_sdk_events)
+    status_func, response_funcs = _get_functions(capability)
+    if not status_func and not response_funcs and not event_functions:
+        die(
+            f"No intersect annotations detected on class '{class_name}'. Please annotate at least one entrypoint with '@intersect_message()', or configure at least one event on the 'intersect_sdk_events' class variable, or create an '@intersect_status' function."
+        )
+
+    # parse @intersect_messages
+    for name, method, min_params in response_funcs:
         public_name = f'{cap_name}.{name}'
 
         # TODO - I'm placing this here for now because we'll eventually want to capture data plane and broker configs in the schema.
@@ -463,17 +473,14 @@ def _introspection_baseline(
                         f"On capability '{class_name}', parameter '{parameter.name}' type annotation '{annotation}' on function '{name}' is invalid\n{e}"
                     )
             else:
-                if annotation is not bytes:
+                if not _is_annotation_type(annotation, bytes):
                     die(
                         f"On capability '{class_name}', parameter '{parameter.name}' type annotation '{annotation.__name__}' on function '{name}' must be 'bytes' if request_content_type is not 'application/json'"
                     )
                 function_cache_request_adapter = 0  # type: ignore[assignment]
-                channels[name]['subscribe']['message']['payload'] = {
-                    'type': 'string',
-                    'format': 'binary',
-                    'contentMediaType': request_content,
-                    'title': name,
-                }
+                channels[name]['subscribe']['message']['payload'] = _create_binary_schema(
+                    name, annotation, request_content, 'validation'
+                )
 
         else:
             function_cache_request_adapter = None
@@ -499,17 +506,14 @@ def _introspection_baseline(
                     f"On capability '{class_name}', return annotation '{return_annotation}' on function '{name}' is invalid.\n{e}"
                 )
         else:
-            if return_annotation is not bytes:
+            if not _is_annotation_type(return_annotation, bytes):
                 die(
                     f"On capability '{class_name}', return annotation '{return_annotation.__name__}' on function '{name}' must be 'bytes' if response_content_type is not 'application/json'"
                 )
             function_cache_response_adapter = 0  # type: ignore[assignment]
-            channels[name]['publish']['message']['payload'] = {
-                'type': 'string',
-                'format': 'binary',
-                'contentMediaType': response_content,
-                'title': name,
-            }
+            channels[name]['publish']['message']['payload'] = _create_binary_schema(
+                name, return_annotation, response_content, 'serialization'
+            )
 
         # final function mapping
         function_map[public_name] = FunctionMetadata(
@@ -523,33 +527,20 @@ def _introspection_baseline(
             getattr(method, SHUTDOWN_KEYS),
         )
 
-        # this block handles events associated with intersect_messages (implies command pattern)
-        function_events: dict[str, IntersectEventDefinition] = getattr(method, EVENT_ATTR_KEY)
-        _add_events(
-            class_name,
-            name,
-            schemas,
-            event_schemas,
-            event_metadatas,
-            function_events,
-            excluded_data_handlers,
-        )
-        channels[name]['events'] = list(function_events.keys())
-
-    # parse global schemas
-    for class_name, name, method, _ in event_funcs:
-        _add_events(
-            class_name,
-            name,
-            schemas,
-            event_schemas,
-            event_metadatas,
-            getattr(method, EVENT_ATTR_KEY),
-            excluded_data_handlers,
-        )
+    # parse events
+    _add_events(
+        class_name,
+        schemas,
+        event_schemas,
+        event_metadatas,
+        event_functions,
+        excluded_data_handlers,
+    )
 
     status_fn_name, status_fn, status_fn_schema, status_fn_type_adapter = (
-        _status_fn_schema(status_func, schemas) if status_func else (None, None, None, None)
+        _status_fn_schema(class_name, status_func, schemas)
+        if status_func
+        else (None, None, None, None)
     )
     # this conditional allows for the status function to also be called like a message
     if status_fn_type_adapter and status_fn and status_fn_name:
@@ -582,7 +573,7 @@ def get_schema_and_functions_from_capability_implementations(
 ) -> tuple[
     dict[str, Any],
     dict[str, FunctionMetadata],
-    dict[str, EventMetadata],
+    dict[str, dict[str, EventMetadata]],
     list[StatusMetadata],
 ]:
     """This function generates the core AsyncAPI schema, and the core mappings which are derived from the schema.
@@ -598,16 +589,25 @@ def get_schema_and_functions_from_capability_implementations(
     capability_schemas: dict[str, Any] = {}  # endpoint schemas
     status_list: list[StatusMetadata] = []  # list of all active statuses
     function_map: dict[str, FunctionMetadata] = {}  # endpoint functionality
-    events: dict[
-        str, Any
-    ] = {}  # event schemas - TODO event names are currently "global" across capabilities, may want to change this?
-    event_map: dict[str, EventMetadata] = {}  # event functionality
+    event_map: dict[
+        str, dict[str, EventMetadata]
+    ] = {}  # event functionality: capability -> event -> EventMetadata
+
+    # NOTE: we allow for capabilities between 1 and 255 characters in length, however we don't capture this in regex.
+    # The Rust regex engine cannot use range {} characters, see https://docs.rs/regex/latest/regex/#untrusted-patterns
+    event_validator = TypeAdapter(
+        dict[
+            Annotated[str, Field(pattern=CAPABILITY_REGEX, max_length=255)],
+            IntersectEventDefinition,
+        ]
+    )
+
     for capability_type in capabilities:
         cap_name = capability_type.intersect_sdk_capability_name
         if (
             not cap_name
             or not isinstance(cap_name, str)
-            or not re.fullmatch(CAPABILITY_NAME_PATTERN, cap_name)
+            or not re.fullmatch(CAPABILITY_REGEX, cap_name)
         ):
             die(
                 f'Invalid intersect_sdk_capability_name on capability {capability_type.__name__} - must be a non-empty string with only alphanumeric characters and hyphens (you must explicitly set this, and do so on the class and not an instance).'
@@ -620,11 +620,11 @@ def get_schema_and_functions_from_capability_implementations(
         (
             subschemas,
             (cap_status_fn_name, cap_status_schema, cap_status_type_adapter),
-            cap_functions,
+            cap_endpoint_schemas,
             cap_function_map,
-            cap_events,
+            cap_event_schemas,
             cap_event_map,
-        ) = _introspection_baseline(capability_type, excluded_data_handlers)
+        ) = _introspection_baseline(capability_type, event_validator, excluded_data_handlers)
 
         if cap_status_fn_name and cap_status_type_adapter:
             status_list.append(
@@ -638,15 +638,15 @@ def get_schema_and_functions_from_capability_implementations(
         shared_schemas.update(subschemas)
         # NOTE: we will still add the capability to the schema, even if there are no @intersect_message annotations
         capability_schemas[cap_name] = {
-            'endpoints': cap_functions,
+            'endpoints': cap_endpoint_schemas,
+            'events': cap_event_schemas,
             'status': cap_status_schema if cap_status_schema else {'type': 'null'},
         }
         # add documentation for the capabilities
         if capability_type.__doc__:
             capability_schemas[cap_name]['description'] = inspect.cleandoc(capability_type.__doc__)
         function_map.update(cap_function_map)
-        events.update(cap_events)
-        event_map.update(cap_event_map)
+        event_map[cap_name] = cap_event_map
 
     asyncapi_spec = {
         'asyncapi': ASYNCAPI_VERSION,
@@ -660,7 +660,6 @@ def get_schema_and_functions_from_capability_implementations(
         # can be changed per channel
         'defaultContentType': 'application/json',
         'capabilities': capability_schemas,
-        'events': events,
         'components': {
             'schemas': shared_schemas,
             'messageTraits': {

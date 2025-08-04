@@ -6,6 +6,7 @@ from intersect_sdk import (
     IntersectClientCallback,
     IntersectClientConfig,
     IntersectDirectMessageParams,
+    IntersectEventMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -37,7 +38,7 @@ def simple_client_callback(
 
 
 def simple_event_callback(
-    _source: str, _operation: str, _event_name: str, payload: INTERSECT_RESPONSE_VALUE
+    _source: str, _capability_name: str, _event_name: str, payload: INTERSECT_RESPONSE_VALUE
 ) -> None:
     """This simply prints the event from the service to your console.
 
@@ -45,11 +46,9 @@ def simple_event_callback(
 
     Params:
       _source: the source of the response message. In this case it will always be from the hello_service.
-      _operation: the name of the function we called in the original message. In this case it will always be "say_hello_to_name".
+      _capability_name: the name of the capability we called in the original message. In this case it will always be "HelloExample".
       _event_name: the name of the event. In this case it will always be "hello_event".
-      payload: Value of the response from the Service. The typing of the payload varies, based on the operation called and whether or not
-        _has_error was set to "True". In this case, since we do not have an error, we can defer to the operation's response type. This response type is
-        "str", so the type will be "str". The value will always be "Hello, hello_client!".
+      payload: Value of the response from the Service. The typing of the payload varies, based on the values of the first three parameters.
 
         Note that the payload will always be a deserialized Python object, but the types are fairly limited: str, bool, float, int, None, List[T], and Dict[str, T]
         are the only types the payload can have. "T" in this case can be any of the 7 types just mentioned.
@@ -92,12 +91,17 @@ if __name__ == '__main__':
             payload='hello_client',
         )
     ]
+    events = [
+        IntersectEventMessageParams(
+            hierarchy='hello-organization.hello-facility.hello-system.hello-subsystem.hello-service',
+            capability_name='HelloExample',
+            event_name='hello_event',
+        )
+    ]
     config = IntersectClientConfig(
         initial_message_event_config=IntersectClientCallback(
             messages_to_send=initial_messages,
-            services_to_start_listening_for_events=[
-                'hello-organization.hello-facility.hello-system.hello-subsystem.hello-service'
-            ],
+            services_to_start_listening_for_events=events,
         ),
         **from_config_file,
     )

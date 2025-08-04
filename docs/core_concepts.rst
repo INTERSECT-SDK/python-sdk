@@ -38,15 +38,26 @@ Arguments to the ``@intersect_message()`` decorator can be used to specify speci
 CapabilityImplementation - Events
 ---------------------------------
 
-You can emit events globally as part of an ``@intersect_message()`` annotated function by configuring the ``events`` argument to the decorator as a dictionary/mapping of event names (as strings) to IntersectEventDefinitions.
-An IntersectEventDefinition consists of an event_type, which is the typing of the event you'll emit.
+You can emit events globally, with or without input from other INTERSECT messages.
 
-You can also emit events without having to react to an external request by annotating a function with ``@intersect_event()`` and providing the ``events`` argument to the decorator.
+To do this, you must create a mapping of keys to ``IntersectEventDefinition`` as your BaseCapability's ``intersect_sdk_events`` class variable.
+An IntersectEventDefinition consists of an ``event_type``, which is the typing of the event you'll emit.
 
-You can emit an event by calling ``self.intersect_sdk_emit_event(event_name, event)`` . The typing of ``event`` must match the typing in the decorator configuration.
-Calling this function will only be effective if called from either an ``@intersect_message`` or ``@intersect_event`` decorated function, or an inner function called from a decorated function.
+You can emit an event by calling ``self.intersect_sdk_emit_event(event_name, event)`` . The typing of ``event`` must match the typing of ``IntersectEventDefinition(event_type)``.
 
-You can specify the same event name on multiple functions, but it must always contain the same IntersectEventDefinition configuration.
+A simple example of how to configure this:
+
+```python
+class YourCapability(IntersectBaseCapabilityImplementation):
+    # You should configure it on the class itself. Do NOT configure it on the instance.
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'my_integer_event': IntersectEventDefinition(event_type=int),
+        'my_str_event': IntersectEventDefinition(event_type=str),
+        'my_float_event': IntersectEventDefinition(event_type=float),
+    }
+```
+
+Now this capability can call ``self.intersect_sdk_emit_event('my_integer_event', value)`` as long as "value" is actually an integer.
 
 Client
 ------

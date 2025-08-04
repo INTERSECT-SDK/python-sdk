@@ -16,15 +16,15 @@ authors = [
 ]
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
-requires-python = ">=3.8.10,<4.0"
+requires-python = ">=3.10,<4.0"
 keywords = ["intersect"]
 dynamic = ["version"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "pydantic>=2.7.0",
@@ -32,7 +32,6 @@ dependencies = [
     "paho-mqtt>=1.6.1,<2.0.0",
     "minio>=7.2.3",
     "jsonschema[format-nongpl]>=4.21.1",               # extras necessary for enforcing formats
-    "eval-type-backport>=0.1.3;python_version<'3.10'", # make pydantic work with newer syntax and older python
     #"brotli>=1.1.0", # TODO - add this dependency when we add compression
     "psutil>=7.0.0",
 ]
@@ -91,7 +90,7 @@ extend-select = [
     'SLF',   # flake8-self
     'SLOT',  # flake8-slots
     'SIM',   # flake8-simplify
-    'TCH',   # flake8-type-checking
+    'TC',   # flake8-type-checking
     'ARG',   # flake8-unused-arguments
     'PTH',   # flake8-use-pathlib
     'PGH',   # pygrep-hooks
@@ -99,6 +98,7 @@ extend-select = [
     'TRY',   # tryceratops
     'FLY',   # flynt
     'RUF',   # RUFF additional rules
+    'INT',   # flake8-gettext
 ]
 # If you're seeking to disable a rule, first consider whether the rule is overbearing, or if it should only be turned off for your usecase.
 ignore = [
@@ -109,8 +109,15 @@ ignore = [
     'PLR2004', # allow "magic numbers"
 ]
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "intersect_sdk.IntersectBaseCapabilityImplementation"]
+runtime-evaluated-decorators = ["pydantic.dataclasses.dataclass","pydantic.validate_call"]
+
 [tool.ruff.lint.extend-per-file-ignores]
-'__init__.py' = ['F401'] # __init__.py commonly has unused imports
+'__init__.py' = [
+    'F401', # __init__.py commonly has unused imports
+    'TC004', # do lazy imports when importing from the base module
+]
 'docs/*' = [
     'D',      # the documentation folder does not need documentation
     'INP001', # docs are not a namespace package
@@ -122,7 +129,6 @@ ignore = [
     'D100',   # documenting modules in examples is unhelpful
     'D104',   # documenting packages in examples is unhelpful
     'TRY002', # examples can raise their own exception
-    'FA100',  # examples are tested on Python 3.8, and future annotations cause problems with Pydantic
 ]
 'tests/*' = [
     'S101',   # allow assert statements in tests
@@ -132,8 +138,8 @@ ignore = [
     'ANN',    # tests in general don't need types, unless they are runtime types.
     'ARG',    # allow unused parameters in tests
     'D',      # ignore documentation in tests
-    'FA100',  # tests frequently use runtime typing annotations
-]
+    'RUF012', # permit "mutable" class attributes to not be annotated with typing.ClassVar (these shouldn't be mutated anyways...)
+ ]
 
 # see https://mypy.readthedocs.io/en/stable/config_file.html for a complete reference
 [tool.mypy]
@@ -170,7 +176,7 @@ exclude_also = [
 [tool.pdm.dev-dependencies]
 lint = [
     "pre-commit>=3.3.1",
-    "ruff==0.9.4",
+    "ruff==0.12.7",
     "mypy>=1.10.0",
     "types-paho-mqtt>=1.6.0.20240106",
     "codespell>=2.3.0",

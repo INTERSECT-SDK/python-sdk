@@ -5,6 +5,7 @@ from intersect_sdk import (
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
+    IntersectEventMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -26,7 +27,11 @@ class SampleOrchestrator:
         self.events_encountered = 0
 
     def event_callback(
-        self, _source: str, _operation: str, _event_name: str, payload: INTERSECT_RESPONSE_VALUE
+        self,
+        _source: str,
+        _capability_name: str,
+        _event_name: str,
+        payload: INTERSECT_RESPONSE_VALUE,
     ) -> None:
         """Handles events from the Counting Service.
 
@@ -37,8 +42,7 @@ class SampleOrchestrator:
 
         Params:
           - _source: the source of the event (in this instance, it will always be the counting service)
-          - _operation: the name of the operation from the service which emitted the event. Sometimes this comes from a message.
-              In this case it will always be 'increment_counter_function', since that's the function the event was configured on.
+          - _capability_name: the name of the capability from the service which emitted the event. In this case it will always be 'CountingExample'.
           - _event_name: the name of the event. In this case it will always be 'increment_counter'.
           - payload: the actual value of the emitted event. In this case it will always be an integer (3, 27, 81, 243, ...)
         """
@@ -65,11 +69,16 @@ if __name__ == '__main__':
     }
 
     # start listening to events from the counting service
+    events = [
+        IntersectEventMessageParams(
+            hierarchy='counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
+            capability_name='CountingExample',
+            event_name='increment_counter',
+        )
+    ]
     config = IntersectClientConfig(
         initial_message_event_config=IntersectClientCallback(
-            services_to_start_listening_for_events=[
-                'counting-organization.counting-facility.counting-system.counting-subsystem.counting-service',
-            ]
+            services_to_start_listening_for_events=events,
         ),
         **from_config_file,
     )

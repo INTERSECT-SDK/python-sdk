@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+from typing import ClassVar
 
 from intersect_sdk import (
     HierarchyConfig,
@@ -9,7 +10,6 @@ from intersect_sdk import (
     IntersectService,
     IntersectServiceConfig,
     default_intersect_lifecycle_loop,
-    intersect_event,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +23,9 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
     """
 
     intersect_sdk_capability_name = 'CountingExample'
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'increment_counter': IntersectEventDefinition(event_type=int),
+    }
 
     def after_service_startup(self) -> None:
         """This is a 'post-initialization' method.
@@ -37,14 +40,13 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
         )
         self.counter_thread.start()
 
-    @intersect_event(events={'increment_counter': IntersectEventDefinition(event_type=int)})
     def increment_counter_function(self) -> None:
         """This is the event thread which continually emits count events.
 
         Every 3 seconds, we fire off a new 'increment_counter' event; each time, we are firing off a value 3 times greater than before.
 
-        We have to configure our event on the @intersect_event decorator. Since 'increment_counter' is emitting an integer value,
-        we need to specify the emission type on the decorator. Failure to register the event and its type will mean that the event won't
+        We have to configure our event on the intersect_sdk_events class variable. Since 'increment_counter' is emitting an integer value,
+        we need to specify the emission type on the class variable. Failure to register the event and its type will mean that the event won't
         be emitted.
         """
         while True:

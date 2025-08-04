@@ -12,7 +12,7 @@ from __future__ import annotations
 import functools
 import threading
 from hashlib import sha384
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import pika
 import pika.delivery_mode
@@ -24,6 +24,8 @@ from ...multi_flag_thread_event import MultiFlagThreadEvent
 from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pika.channel import Channel
     from pika.frame import Frame
     from pika.spec import Basic, BasicProperties

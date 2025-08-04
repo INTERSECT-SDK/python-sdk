@@ -15,10 +15,6 @@ class EventMetadata(NamedTuple):
     NOTE: both this class and all properties in it should remain immutable after creation
     """
 
-    operations: set[str]
-    """
-    A hash set of operations which advertise this event
-    """
     type: type
     """
     The actual type of the event

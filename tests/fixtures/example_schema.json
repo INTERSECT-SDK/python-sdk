@@ -10,6 +10,7 @@
   "capabilities": {
     "intersect_sdk": {
       "endpoints": {},
+      "events": {},
       "status": {
         "$ref": "#/components/schemas/IntersectCoreStatus"
       },
@@ -57,8 +58,7 @@
               }
             },
             "description": "return numbers in set which are prime numbers in the range 1-100"
-          },
-          "events": []
+          }
         },
         "binary_to_binary": {
           "publish": {
@@ -69,10 +69,10 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string",
                 "format": "binary",
-                "contentMediaType": "image/png",
-                "title": "binary_to_binary"
+                "type": "string",
+                "title": "binary_to_binary",
+                "contentMediaType": "image/png"
               }
             }
           },
@@ -84,14 +84,14 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string",
                 "format": "binary",
-                "contentMediaType": "image/png",
-                "title": "binary_to_binary"
+                "maxLength": 1048576,
+                "type": "string",
+                "title": "binary_to_binary",
+                "contentMediaType": "image/png"
               }
             }
-          },
-          "events": []
+          }
         },
         "calculate_3n_plus_1": {
           "publish": {
@@ -126,8 +126,7 @@
               }
             },
             "description": "Calculates the famous \"3n + 1\" problem. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
-          },
-          "events": []
+          }
         },
         "calculate_fibonacci": {
           "publish": {
@@ -170,8 +169,7 @@
               }
             },
             "description": "calculates all fibonacci numbers between two numbers\n\ni.e. start = 4, end = 6:\nresponse = [5, 8, 13]"
-          },
-          "events": []
+          }
         },
         "divide_by_zero_exceptions": {
           "publish": {
@@ -199,8 +197,7 @@
                 "title": "param"
               }
             }
-          },
-          "events": []
+          }
         },
         "get_url_parts": {
           "publish": {
@@ -228,7 +225,7 @@
                 "title": "get_url_parts"
               }
             },
-            "description": "example of automatic URL parsing and schema validation"
+            "description": "example of automatic URL parsing and schema validation\n\n(the return type should realistically be a TypedDict, not a dict)"
           },
           "subscribe": {
             "message": {
@@ -244,9 +241,8 @@
                 "title": "url"
               }
             },
-            "description": "example of automatic URL parsing and schema validation"
-          },
-          "events": []
+            "description": "example of automatic URL parsing and schema validation\n\n(the return type should realistically be a TypedDict, not a dict)"
+          }
         },
         "ip4_to_ip6": {
           "publish": {
@@ -278,8 +274,7 @@
               }
             },
             "description": "example of IPaddress conversion\nreturn value will always start with '2002::' based on implementation\n\nPydantic also supports IP networks and interfaces, in addition to addresses"
-          },
-          "events": []
+          }
         },
         "primitive_event_message": {
           "publish": {
@@ -309,12 +304,7 @@
                 "title": "emit_times"
               }
             }
-          },
-          "events": [
-            "int",
-            "str",
-            "float"
-          ]
+          }
         },
         "primitive_event_message_random": {
           "publish": {
@@ -338,12 +328,7 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               }
             }
-          },
-          "events": [
-            "int",
-            "str",
-            "float"
-          ]
+          }
         },
         "raise_exception_no_param": {
           "publish": {
@@ -367,8 +352,7 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               }
             }
-          },
-          "events": []
+          }
         },
         "search_for_lucky_string_in_json": {
           "publish": {
@@ -397,8 +381,7 @@
               }
             },
             "description": "return true if our lucky string is in JSON, false otherwise"
-          },
-          "events": []
+          }
         },
         "test_datetime": {
           "publish": {
@@ -429,8 +412,7 @@
               }
             },
             "description": "NOTE: If strict mode is ON, only JSON strings can be coerced into datetimes.\nIf strict mode is OFF, integers can also be coerced into datetimes."
-          },
-          "events": []
+          }
         },
         "test_decimal": {
           "publish": {
@@ -467,8 +449,7 @@
               }
             },
             "description": "take in decimal input\nreturn decimal divided by PI (20 precision digits)"
-          },
-          "events": []
+          }
         },
         "test_dicts": {
           "publish": {
@@ -504,8 +485,7 @@
               }
             },
             "description": "NOTE: JSON always stores Dict/Mapping keys as strings.\nIf the string can't be coerced into the input value, it will throw a RUNTIME error."
-          },
-          "events": []
+          }
         },
         "test_enum": {
           "publish": {
@@ -534,8 +514,7 @@
               }
             },
             "description": "Returns either 'first' or 'later' depending on the enum value."
-          },
-          "events": []
+          }
         },
         "test_generator": {
           "publish": {
@@ -568,8 +547,7 @@
               }
             },
             "description": "TODO - Generators need more support than this.\n\nThis tests returning a generator function, which may be useful for streaming data.\nIn this example, yield all substring hashes of the request string.\n\nA couple of notes about the Generator type:\n  1) Given the typing is Generator[yield_type, send_type, return_type], only the yield_type matters\n  2) The schema will always look like \"{'items': {'type': <YIELD_TYPE>}, 'type': 'array'}\""
-          },
-          "events": []
+          }
         },
         "test_path": {
           "publish": {
@@ -608,8 +586,7 @@
               }
             },
             "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
-          },
-          "events": []
+          }
         },
         "test_special_python_types": {
           "publish": {
@@ -635,8 +612,7 @@
                 "$ref": "#/components/schemas/MyTypedDict"
               }
             }
-          },
-          "events": []
+          }
         },
         "test_uuid": {
           "publish": {
@@ -667,8 +643,7 @@
               }
             },
             "description": "Get the 13th digit of a UUID to determine UUID VERSION"
-          },
-          "events": []
+          }
         },
         "union_message_with_events": {
           "publish": {
@@ -707,10 +682,7 @@
                 "title": "param"
               }
             }
-          },
-          "events": [
-            "union"
-          ]
+          }
         },
         "union_response": {
           "publish": {
@@ -762,8 +734,7 @@
               }
             },
             "description": "Spit out a random string, integer, boolean, or object response"
-          },
-          "events": []
+          }
         },
         "valid_default_argument": {
           "publish": {
@@ -794,8 +765,7 @@
               }
             },
             "description": "verifies that you can call a function with a default parameter"
-          },
-          "events": []
+          }
         },
         "verify_float_dict": {
           "publish": {
@@ -835,8 +805,7 @@
               }
             },
             "description": "verifies that dictionaries can have floats and integers as key types"
-          },
-          "events": []
+          }
         },
         "verify_nested": {
           "publish": {
@@ -864,46 +833,45 @@
               }
             },
             "description": "verifies that nested values are parsed correctly"
+          }
+        }
+      },
+      "events": {
+        "union": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "union"
+        },
+        "int": {
+          "type": "integer",
+          "title": "int"
+        },
+        "str": {
+          "type": "string",
+          "title": "str"
+        },
+        "float": {
+          "type": "number",
+          "title": "float"
+        },
+        "list_float": {
+          "items": {
+            "type": "number"
           },
-          "events": []
+          "type": "array",
+          "title": "list_float"
         }
       },
       "status": {
         "$ref": "#/components/schemas/DummyStatus"
       },
       "description": "This is an example of the overarching capability class a user creates that we want to inject into the service.\n\nWhen defining entrypoints to your capability, use the @intersect_message() annotation. Your class will need\nat least one function with this annotation. These functions REQUIRE type annotations to function properly.\nSee the @intersect_message() annotation for more information.\n\nYou can potentially extend from multiple preexisting Capabilities in this class - each Capability may have\nseveral abstract functions which would need to be implemented by the user.\n\nBeyond this, you may define your capability class however you like, including through its constructor."
-    }
-  },
-  "events": {
-    "int": {
-      "type": "integer",
-      "title": "int"
-    },
-    "str": {
-      "type": "string",
-      "title": "str"
-    },
-    "float": {
-      "type": "number",
-      "title": "float"
-    },
-    "union": {
-      "anyOf": [
-        {
-          "type": "integer"
-        },
-        {
-          "type": "string"
-        }
-      ],
-      "title": "union"
-    },
-    "list_float": {
-      "items": {
-        "type": "number"
-      },
-      "type": "array",
-      "title": "list_float"
     }
   },
   "components": {
@@ -1155,13 +1123,13 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Destination",
               "type": "string"
             },
@@ -1214,7 +1182,7 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
@@ -1235,6 +1203,10 @@
               "default": 0,
               "description": "Code signifying where data is stored."
             },
+            "capability_name": {
+              "title": "Capability Name",
+              "type": "string"
+            },
             "event_name": {
               "title": "Event Name",
               "type": "string"
@@ -1244,6 +1216,7 @@
             "source",
             "created_at",
             "sdk_version",
+            "capability_name",
             "event_name"
           ],
           "title": "EventMessageHeaders",

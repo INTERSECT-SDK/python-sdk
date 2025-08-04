@@ -1,22 +1,21 @@
 """Callback definitions shared between Services, Capabilities, and Clients."""
 
-from typing import Any, Dict, List, Union
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Annotated, TypeAlias
 
-from .constants import SYSTEM_OF_SYSTEM_REGEX
+from .constants import CAPABILITY_REGEX, SYSTEM_OF_SYSTEM_REGEX
 from .core_definitions import IntersectDataHandler, IntersectMimeType
 
-INTERSECT_JSON_VALUE: TypeAlias = Union[
-    List['INTERSECT_JSON_VALUE'],
-    Dict[str, 'INTERSECT_JSON_VALUE'],
-    str,
-    bool,
-    int,
-    float,
-    None,
-]
+INTERSECT_JSON_VALUE: TypeAlias = (
+    list['INTERSECT_JSON_VALUE']
+    | dict[str, 'INTERSECT_JSON_VALUE']
+    | str
+    | bool
+    | int
+    | float
+    | None
+)
 """
 This is a simple type representation of JSON as a Python object. INTERSECT will automatically deserialize service payloads into one of these types.
 
@@ -65,3 +64,16 @@ class IntersectDirectMessageParams(BaseModel):
 
     # pydantic config
     model_config = ConfigDict(revalidate_instances='always')
+
+
+class IntersectEventMessageParams(BaseModel):
+    """Public facing properties of events the Client/Service wants to listen to."""
+
+    hierarchy: Annotated[str, Field(pattern=SYSTEM_OF_SYSTEM_REGEX)]
+    """The full hierarchy (org.facility.system.subsystem.service) that we want to listen to."""
+
+    capability_name: Annotated[str, Field(pattern=CAPABILITY_REGEX)]
+    """Name of the capability you want to listen to events from"""
+
+    event_name: str
+    """Name of the event the capability emits that you're listening for"""

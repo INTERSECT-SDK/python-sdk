@@ -3,7 +3,7 @@
 Please see shared_callback_definitions for definitions which are also used by Clients.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from .shared_callback_definitions import INTERSECT_JSON_VALUE
 

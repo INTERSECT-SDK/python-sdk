@@ -5,6 +5,7 @@ from intersect_sdk import (
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
+    IntersectEventMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -13,8 +14,17 @@ logging.getLogger('pika').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-PING_SERVICE = 'p-ng-organization.p-ng-facility.p-ng-system.p-ng-subsystem.ping-service'
-PONG_SERVICE = 'p-ng-organization.p-ng-facility.p-ng-system.p-ng-subsystem.pong-service'
+
+def get_event_message_params(png: str) -> IntersectEventMessageParams:
+    """Generate the event information we'll handle based on the value of 'png'.
+
+    We always want to pass in a new object; don't mutate a persistent object.
+    """
+    return IntersectEventMessageParams(
+        hierarchy=f'p-ng-organization.p-ng-facility.p-ng-system.p-ng-subsystem.{png}-service',
+        capability_name=png,
+        event_name=png,
+    )
 
 
 class SampleOrchestrator:
@@ -30,7 +40,11 @@ class SampleOrchestrator:
         self.events_encountered = 0
 
     def event_callback(
-        self, _source: str, _operation: str, event_name: str, payload: INTERSECT_RESPONSE_VALUE
+        self,
+        _source: str,
+        _capability_name: str,
+        event_name: str,
+        payload: INTERSECT_RESPONSE_VALUE,
     ) -> IntersectClientCallback:
         """Handles events from two Services at once.
 
@@ -47,15 +61,15 @@ class SampleOrchestrator:
         if self.events_encountered == self.MAX_EVENTS_TO_PROCESS:
             raise Exception
 
-        # we would normally also check the source here. With certain services, checking the operation can also be helpful.
+        # In this case, we can check any of the source, the capability_name, or the event_name. For maximum robustness, you should check all three values.
         if event_name == 'ping':
             return IntersectClientCallback(
-                services_to_start_listening_for_events=[PONG_SERVICE],
-                services_to_stop_listening_for_events=[PING_SERVICE],
+                services_to_start_listening_for_events=[get_event_message_params('pong')],
+                services_to_stop_listening_for_events=[get_event_message_params('ping')],
             )
         return IntersectClientCallback(
-            services_to_start_listening_for_events=[PING_SERVICE],
-            services_to_stop_listening_for_events=[PONG_SERVICE],
+            services_to_start_listening_for_events=[get_event_message_params('ping')],
+            services_to_stop_listening_for_events=[get_event_message_params('pong')],
         )
 
 
@@ -75,7 +89,7 @@ if __name__ == '__main__':
     config = IntersectClientConfig(
         initial_message_event_config=IntersectClientCallback(
             services_to_start_listening_for_events=[
-                PING_SERVICE,
+                get_event_message_params('ping'),
             ]
         ),
         **from_config_file,

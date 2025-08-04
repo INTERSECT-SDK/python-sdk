@@ -9,10 +9,10 @@ Clients/orchestrators are expected to consume these events themselves.
 
 import datetime
 import uuid
-from typing import Any, Union
+from typing import Annotated, Any
 
 from pydantic import AwareDatetime, Field, TypeAdapter
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...core_definitions import IntersectDataHandler, IntersectMimeType
@@ -78,9 +78,14 @@ class EventMessageHeaders(TypedDict):
     usage, the payload would indicate the URI to where the data is stored on MinIO.
     """
 
+    capability_name: str
+    """
+    The name of the capability which emitted the event originally.
+    """
+
     event_name: str
     """
-    The name of an event. You can reasonably determine the structure of the message payload by parsing:
+    The name of the event. You can reasonably determine the structure of the message payload by parsing:
 
     1) the source of this message header
     2) this "name" property
@@ -94,17 +99,12 @@ class EventMessage(TypedDict):
     ID of the message. (NOTE: this is defined here to conform to the AsyncAPI spec)
     """
 
-    operationId: str
-    """
-    The name of the operation that was called when an event was emitted. These would map to the names of user functions.
-    """
-
     headers: EventMessageHeaders
     """
     the headers of the message
     """
 
-    payload: Union[bytes, MinioPayload]  # noqa: FA100 (Pydantic uses runtime annotations)
+    payload: bytes | MinioPayload
     """
     main payload of the message. Needs to match the schema format, including the content type.
 
@@ -124,22 +124,22 @@ class EventMessage(TypedDict):
 
 def create_event_message(
     source: str,
-    operation_id: str,
+    capability_name: str,
+    event_name: str,
     content_type: IntersectMimeType,
     data_handler: IntersectDataHandler,
-    event_name: str,
     payload: Any,
 ) -> EventMessage:
     """Payloads depend on the data handler."""
     return EventMessage(
         messageId=uuid.uuid4(),
-        operationId=operation_id,
         contentType=content_type,
         payload=payload,
         headers=EventMessageHeaders(
             source=source,
             created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             sdk_version=version_string,
+            capability_name=capability_name,
             event_name=event_name,
             data_handler=data_handler,
         ),

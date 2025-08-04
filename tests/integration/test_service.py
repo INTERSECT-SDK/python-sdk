@@ -8,7 +8,6 @@ instead, initialize an array with one value in it, then change the value inside 
 """
 
 import time
-from typing import List
 
 from intersect_sdk import (
     ControlPlaneConfig,
@@ -399,7 +398,7 @@ def test_call_minio_user_function() -> None:
 def test_lifecycle_messages() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
-    messages: List[LifecycleMessage] = []
+    messages: list[LifecycleMessage] = []
 
     def lifecycle_msg_callback(payload: bytes) -> None:
         messages.append(deserialize_and_validate_lifecycle_message(payload))

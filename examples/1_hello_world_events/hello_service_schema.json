@@ -10,6 +10,7 @@
   "capabilities": {
     "intersect_sdk": {
       "endpoints": {},
+      "events": {},
       "status": {
         "$ref": "#/components/schemas/IntersectCoreStatus"
       },
@@ -45,10 +46,13 @@
               }
             },
             "description": "Takes in a string parameter and says 'Hello' to the parameter! This ALSO emits a separate event, broadcast globally."
-          },
-          "events": [
-            "hello_event"
-          ]
+          }
+        }
+      },
+      "events": {
+        "hello_event": {
+          "type": "string",
+          "title": "hello_event"
         }
       },
       "status": {
@@ -56,12 +60,6 @@
         "title": "Status"
       },
       "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload.\n\nThe operation we are calling also emits its own event."
-    }
-  },
-  "events": {
-    "hello_event": {
-      "type": "string",
-      "title": "hello_event"
     }
   },
   "components": {
@@ -148,13 +146,13 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Destination",
               "type": "string"
             },
@@ -207,7 +205,7 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
@@ -228,6 +226,10 @@
               "default": 0,
               "description": "Code signifying where data is stored."
             },
+            "capability_name": {
+              "title": "Capability Name",
+              "type": "string"
+            },
             "event_name": {
               "title": "Event Name",
               "type": "string"
@@ -237,6 +239,7 @@
             "source",
             "created_at",
             "sdk_version",
+            "capability_name",
             "event_name"
           ],
           "title": "EventMessageHeaders",

@@ -6,7 +6,6 @@ from intersect_sdk import (
     IntersectDataHandler,
     IntersectEventDefinition,
     get_schema_from_capability_implementations,
-    intersect_event,
     intersect_message,
     intersect_status,
 )
@@ -26,7 +25,7 @@ def get_fixture_path(fixture: str):
 # MINIMAL ANNOTATION TESTS ######################
 
 
-def test_minimal_intersect_annotations():
+def test_minimal_intersect_annotations() -> None:
     class CapWithMessage(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'CapWithMessage'
 
@@ -36,8 +35,8 @@ def test_minimal_intersect_annotations():
 
     class CapWithEvent(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'CapWithEvent'
+        intersect_sdk_events = {'event': IntersectEventDefinition(event_type=str)}
 
-        @intersect_event(events={'event': IntersectEventDefinition(event_type=str)})
         def event_function(self):
             self.intersect_sdk_emit_event('event', 'emitted_value')
 

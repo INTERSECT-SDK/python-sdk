@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import TypeAdapter
 
 from ..exceptions import IntersectInvalidBrokerError
 from ..logger import logger
-from .brokers.mqtt_client import MQTTClient
 from .topic_handler import TopicHandler
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ...config.shared import ControlPlaneConfig
     from .brokers.broker_client import BrokerClient
 
@@ -31,7 +32,9 @@ def create_control_provider(
     if config.protocol == 'amqp0.9.1':
         # only try to import the AMQP client if the user is using an AMQP broker
         try:
-            from .brokers.amqp_client import AMQPClient
+            from .brokers.amqp_client import (  # noqa: PLC0415 (lazy load all AMQP modules)
+                AMQPClient,
+            )
 
             return AMQPClient(
                 host=config.host,
@@ -43,7 +46,10 @@ def create_control_provider(
         except ImportError as e:
             msg = "Configuration includes AMQP broker, but AMQP dependencies were not installed. Install intersect with the 'amqp' optional dependency to use this backend. (i.e. `pip install intersect_sdk[amqp]`)"
             raise IntersectInvalidBrokerError(msg) from e
+
     # MQTT
+    from .brokers.mqtt_client import MQTTClient  # noqa: PLC0415 (lazy load MQTT modules)
+
     return MQTTClient(
         host=config.host,
         port=config.port or 1883,

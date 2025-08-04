@@ -10,10 +10,10 @@ Services should NEVER be CONSUMING messages on the lifecycle channel.
 import datetime
 import uuid
 from enum import IntEnum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import AwareDatetime, Field, TypeAdapter
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...version import version_string

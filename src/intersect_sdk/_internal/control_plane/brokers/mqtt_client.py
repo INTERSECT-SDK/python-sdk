@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 import uuid
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import paho.mqtt.client as paho_client
 from retrying import retry
@@ -11,6 +11,8 @@ from ...logger import logger
 from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..topic_handler import TopicHandler
 
 

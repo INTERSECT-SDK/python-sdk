@@ -140,7 +140,7 @@ class IntersectClient:
                     service
                 ) in config.initial_message_event_config.services_to_start_listening_for_events:
                     self._control_plane_manager.add_subscription_channel(
-                        f'{service.replace(".", "/")}/events',
+                        f'{service.hierarchy.replace(".", "/")}/events/{service.capability_name}/{service.event_name}',
                         {self._handle_event_message_raw},
                         persist=False,
                     )
@@ -357,7 +357,7 @@ class IntersectClient:
             # Leave it to the user to determine how they want to handle an error.
             event_function_return = self._event_callback(
                 message['headers']['source'],
-                message['operationId'],
+                message['headers']['capability_name'],
                 message['headers']['event_name'],
                 request_params,
             )  # type: ignore[misc]
@@ -390,13 +390,13 @@ class IntersectClient:
         if self._event_callback:
             for add_event in validated_result.services_to_start_listening_for_events:
                 self._control_plane_manager.add_subscription_channel(
-                    f'{add_event.replace(".", "/")}/events',
+                    f'{add_event.hierarchy.replace(".", "/")}/events/{add_event.capability_name}/{add_event.event_name}',
                     {self._handle_event_message_raw},
                     persist=False,
                 )
             for remove_event in validated_result.services_to_stop_listening_for_events:
                 self._control_plane_manager.remove_subscription_channel(
-                    f'{remove_event.replace(".", "/")}/events'
+                    f'{remove_event.hierarchy.replace(".", "/")}/events/{remove_event.capability_name}/{remove_event.event_name}'
                 )
 
         # sending userspace messages without the callback is okay, we just won't get the response

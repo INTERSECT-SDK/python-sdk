@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 from intersect_sdk import (
     HierarchyConfig,
@@ -29,13 +30,16 @@ class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation
     """
 
     intersect_sdk_capability_name = 'HelloExample'
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'hello_event': IntersectEventDefinition(event_type=str)
+    }
 
     @intersect_status()
     def status(self) -> str:
         """Basic status function which returns a hard-coded string."""
         return 'Up'
 
-    @intersect_message(events={'hello_event': IntersectEventDefinition(event_type=str)})
+    @intersect_message
     def say_hello_to_name(self, name: str) -> str:
         """Takes in a string parameter and says 'Hello' to the parameter! This ALSO emits a separate event, broadcast globally."""
         self.intersect_sdk_emit_event('hello_event', f'{name} requested a salutation!')

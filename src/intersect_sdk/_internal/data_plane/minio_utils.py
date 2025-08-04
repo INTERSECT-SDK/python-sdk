@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import mimetypes
 from hashlib import sha224
 from io import BytesIO
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from minio import Minio
@@ -9,11 +12,13 @@ from typing_extensions import TypedDict
 from urllib3.exceptions import MaxRetryError
 from urllib3.util import parse_url
 
-from ...config.shared import DataStoreConfig, HierarchyConfig
-from ...core_definitions import IntersectMimeType
 from ..exceptions import IntersectError
 from ..logger import logger
 from ..utils import die
+
+if TYPE_CHECKING:
+    from ...config.shared import DataStoreConfig, HierarchyConfig
+    from ...core_definitions import IntersectMimeType
 
 
 class MinioPayload(TypedDict):
