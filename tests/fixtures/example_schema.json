@@ -846,26 +846,31 @@
               "type": "string"
             }
           ],
-          "title": "union"
+          "title": "union",
+          "description": "Generic example of how to do a union event"
         },
         "int": {
           "type": "integer",
-          "title": "int"
+          "title": "int",
+          "description": "Generic integer event"
         },
         "str": {
           "type": "string",
-          "title": "str"
+          "title": "str",
+          "description": "Generic string event"
         },
         "float": {
           "type": "number",
-          "title": "float"
+          "title": "float",
+          "description": "Generic float event"
         },
         "list_float": {
           "items": {
             "type": "number"
           },
           "type": "array",
-          "title": "list_float"
+          "title": "list_float",
+          "description": "generic list of floats event"
         }
       },
       "status": {

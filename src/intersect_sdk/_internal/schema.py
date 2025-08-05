@@ -308,6 +308,8 @@ def _add_events(
                         'serialization',
                     )
                     _ensure_title_in_schema(event_schema, event_key)
+                    if event_definition.event_documentation:
+                        event_schema['description'] = event_definition.event_documentation
                     event_schemas[event_key] = event_schema
                     event_metadatas[event_key] = EventMetadata(
                         type=event_definition.event_type,
