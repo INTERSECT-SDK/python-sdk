@@ -308,9 +308,16 @@ def _add_events(
                         'serialization',
                     )
                     _ensure_title_in_schema(event_schema, event_key)
+                    event_schemas[event_key] = {
+                        'schemaFormat': f'application/vnd.aai.asyncapi+json;version={ASYNCAPI_VERSION}',
+                        'contentType': event_definition.content_type,
+                        'payload': event_schema,
+                        'traits': {'$ref': '#/components/messageTraits/commonHeaders'},
+                    }
                     if event_definition.event_documentation:
-                        event_schema['description'] = event_definition.event_documentation
-                    event_schemas[event_key] = event_schema
+                        event_schemas[event_key]['description'] = (
+                            event_definition.event_documentation
+                        )
                     event_metadatas[event_key] = EventMetadata(
                         type=event_definition.event_type,
                         type_adapter=event_adapter,

@@ -227,7 +227,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
             event_type=(int | str), event_documentation='Generic example of how to do a union event'
         ),
         'int': IntersectEventDefinition(
-            event_type=int, event_documentation='Generic integer event'
+            event_type=Annotated[int, Field(description='Generic integer event')]
         ),
         'str': IntersectEventDefinition(event_type=str, event_documentation='Generic string event'),
         'float': IntersectEventDefinition(
