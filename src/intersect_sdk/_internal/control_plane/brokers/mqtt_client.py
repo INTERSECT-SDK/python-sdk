@@ -60,7 +60,11 @@ class MQTTClient(BrokerClient):
 
         # Create a client to connect to RabbitMQ
         # TODO clean_session param is ONLY for MQTT v3 here
-        self._connection = paho_client.Client(client_id=self.uid, clean_session=False)
+        self._connection = paho_client.Client(
+            callback_api_version=paho_client.CallbackAPIVersion.VERSION2,
+            client_id=self.uid,
+            clean_session=False,
+        )
         self._connection.username_pw_set(username=username, password=password)
 
         # Whether the connection is currently active
@@ -141,13 +145,16 @@ class MQTTClient(BrokerClient):
         self._connection.unsubscribe(topic)
 
     def _on_message(
-        self, _client: paho_client.Client, _userdata: Any, message: paho_client.MQTTMessage
+        self,
+        client: paho_client.Client,  # noqa: ARG002
+        userdata: Any,  # noqa: ARG002
+        message: paho_client.MQTTMessage,
     ) -> None:
         """Handle a message from the MQTT server.
 
         Args:
-          _client: the Paho client
-          _userdata: MQTT user data
+          client: the Paho client
+          userdata: MQTT user data
           message: MQTT message
         """
         topic_handler = self._topics_to_handlers().get(message.topic)
@@ -155,22 +162,36 @@ class MQTTClient(BrokerClient):
             for cb in topic_handler.callbacks:
                 cb(message.payload)
 
-    def _handle_disconnect(self, client: paho_client.Client, _userdata: Any, _rc: int) -> None:
+    def _handle_disconnect(
+        self,
+        client: paho_client.Client,
+        userdata: Any,  # noqa: ARG002
+        flags: dict[str, Any],  # noqa: ARG002
+        reason_code: int,  # noqa: ARG002
+        properties: None,  # noqa: ARG002
+    ) -> None:
         """Handle a disconnection from the MQTT server.
 
         This callback usually implies a temporary connection fault, so we'll try to handle it.
 
         Args:
             client: The Paho client.
-            _userdata: MQTT user data.
-            rc: MQTT return code as an integer.
+            userdata: MQTT user data.
+            flags: List of MQTT connection flags.
+            reason_code: MQTT return code as an integer.
+            properties: MQTT user properties.
         """
         self._connected = False
         if not self._should_disconnect:
             client.reconnect()
 
     def _handle_connect(
-        self, _client: paho_client.Client, userdata: Any, flags: dict[str, Any], rc: int
+        self,
+        client: paho_client.Client,  # noqa: ARG002
+        userdata: Any,
+        flags: dict[str, Any],
+        reason_code: int,
+        properties: None,  # noqa: ARG002
     ) -> None:
         """Set the connection status in response to the result of a Paho connection attempt.
 
@@ -181,10 +202,11 @@ class MQTTClient(BrokerClient):
             client: The Paho MQTT client.
             userdata: The MQTT userdata.
             flags: List of MQTT connection flags.
-            rc: The MQTT return code as an int.
+            reason_code: The MQTT return code as an int.
+            properties: MQTT user properties
         """
         # Return code 0 means connection was successful
-        if rc == 0:
+        if reason_code == 0:
             self._connected = True
             self._connection_retries = 0
             self._should_disconnect = False

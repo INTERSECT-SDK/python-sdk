@@ -5,7 +5,7 @@
 groups = ["default", "docs", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:916a86ab60eecae7220d3d096acf85f21f0877e71a0f1137d21d1869c029b7db"
+content_hash = "sha256:f5d72fb0d773b1d8d6358078349d9a3118af75bc06d1e6b2cb675113064da8d6"
 
 [[metadata.targets]]
 requires_python = "~=3.10"
@@ -766,11 +766,13 @@ files = [
 
 [[package]]
 name = "paho-mqtt"
-version = "1.6.1"
+version = "2.1.0"
+requires_python = ">=3.7"
 summary = "MQTT version 5.0/3.1.1 client class"
 groups = ["default"]
 files = [
-    {file = "paho-mqtt-1.6.1.tar.gz", hash = "sha256:2a8291c81623aec00372b5a85558a372c747cbca8e9934dfe218638b8eefc26f"},
+    {file = "paho_mqtt-2.1.0-py3-none-any.whl", hash = "sha256:6db9ba9b34ed5bc6b6e3812718c7e06e2fd7444540df2455d2c51bd58808feee"},
+    {file = "paho_mqtt-2.1.0.tar.gz", hash = "sha256:12d6e7511d4137555a3f6ea167ae846af2c7357b10bc6fa4f7c3968fc1723834"},
 ]
 
 [[package]]
