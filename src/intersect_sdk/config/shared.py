@@ -22,7 +22,7 @@ systems we want to be compatible with. The rules:
 The following commit tracks several issues with MINIO: https://code.ornl.gov/intersect/additive-manufacturing/ros-intersect-adapter/-/commit/fa71b791be0ccf1a5884910b5be3b5239cf9896f
 """
 
-ControlProvider = Literal['mqtt3.1.1', 'amqp0.9.1']
+ControlProvider = Literal['mqtt3.1.1', 'mqtt5.0', 'amqp0.9.1']
 """The type of broker we connect to."""
 
 

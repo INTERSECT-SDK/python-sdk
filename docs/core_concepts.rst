@@ -47,15 +47,16 @@ You can emit an event by calling ``self.intersect_sdk_emit_event(event_name, eve
 
 A simple example of how to configure this:
 
-```python
-class YourCapability(IntersectBaseCapabilityImplementation):
-    # You should configure it on the class itself. Do NOT configure it on the instance.
-    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
-        'my_integer_event': IntersectEventDefinition(event_type=int),
-        'my_str_event': IntersectEventDefinition(event_type=str),
-        'my_float_event': IntersectEventDefinition(event_type=float),
-    }
-```
+.. code-block:: python
+
+    class YourCapability(IntersectBaseCapabilityImplementation):
+        # You should configure it on the class itself. Do NOT configure it on the instance.
+        intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+            'my_integer_event': IntersectEventDefinition(event_type=int),
+            'my_str_event': IntersectEventDefinition(event_type=str),
+            'my_float_event': IntersectEventDefinition(event_type=float),
+        }
+
 
 Now this capability can call ``self.intersect_sdk_emit_event('my_integer_event', value)`` as long as "value" is actually an integer.
 

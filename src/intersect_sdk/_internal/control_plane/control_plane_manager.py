@@ -56,6 +56,7 @@ def create_control_provider(
         username=config.username,
         password=config.password,
         topics_to_handlers=topic_handler_callback,
+        v5=config.protocol == 'mqtt5.0',
     )
 
 

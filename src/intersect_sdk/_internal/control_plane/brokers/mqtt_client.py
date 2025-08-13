@@ -5,6 +5,7 @@ import uuid
 from typing import TYPE_CHECKING, Any
 
 import paho.mqtt.client as paho_client
+from paho.mqtt.enums import CallbackAPIVersion
 from retrying import retry
 
 from ...logger import logger
@@ -12,6 +13,10 @@ from .broker_client import BrokerClient
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from paho.mqtt.client import DisconnectFlags
+    from paho.mqtt.properties import Properties
+    from paho.mqtt.reasoncodes import ReasonCode
 
     from ..topic_handler import TopicHandler
 
@@ -42,6 +47,7 @@ class MQTTClient(BrokerClient):
         password: str,
         topics_to_handlers: Callable[[], dict[str, TopicHandler]],
         uid: str | None = None,
+        v5: bool = False,
     ) -> None:
         """The default constructor.
 
@@ -52,6 +58,7 @@ class MQTTClient(BrokerClient):
             password: password credentials for MQTT broker
             topics_to_handlers: callback function which gets the topic to handler map from the channel manager
             uid: A string representing the unique id to identify the client.
+            v5: if true - protocol is MQTTv5; if false - protocol is MQTTv3.1.1
         """
         # Unique id for the MQTT broker to associate this client with
         self.uid = uid if uid else str(uuid.uuid4())
@@ -59,13 +66,14 @@ class MQTTClient(BrokerClient):
         self.port = port
 
         # Create a client to connect to RabbitMQ
-        # TODO clean_session param is ONLY for MQTT v3 here
         self._connection = paho_client.Client(
-            callback_api_version=paho_client.CallbackAPIVersion.VERSION2,
+            callback_api_version=CallbackAPIVersion.VERSION2,
+            protocol=paho_client.MQTTv5 if v5 else paho_client.MQTTv311,
             client_id=self.uid,
-            clean_session=False,
+            clean_session=False if not v5 else None,
         )
         self._connection.username_pw_set(username=username, password=password)
+        self._v5 = v5
 
         # Whether the connection is currently active
         self._connected = False
@@ -77,6 +85,10 @@ class MQTTClient(BrokerClient):
         # ConnectionManager callable state
         self._topics_to_handlers = topics_to_handlers
 
+        # MQTT v3.1.1 automatically downgrades a QOS which is too high (good), but MQTT v5 will terminate the connection (bad)
+        # see https://github.com/rabbitmq/rabbitmq-server/discussions/11842
+        self._max_supported_qos = 2
+
         # MQTT callback functions
         self._connection.on_connect = self._handle_connect
         self._connection.on_disconnect = self._handle_disconnect
@@ -86,10 +98,14 @@ class MQTTClient(BrokerClient):
     def connect(self) -> None:
         """Connect to the defined broker."""
         # Create a client to connect to RabbitMQ
-        # TODO MQTT v5 implementations should set clean_start to NEVER here
         self._should_disconnect = False
         self._connected_flag.clear()
-        self._connection.connect(self.host, self.port, 60)
+        self._connection.connect(
+            self.host,
+            self.port,
+            60,
+            clean_start=False if self._v5 else 3,
+        )
         self._connection.loop_start()
         while not self.is_connected() and not self._connected_flag.is_set():
             self._connected_flag.wait(1.0)
@@ -124,7 +140,7 @@ class MQTTClient(BrokerClient):
               if it should be removed immediately (False)
         """
         # NOTE: RabbitMQ only works with QOS of 1 and 0, and seems to convert QOS2 to QOS1
-        self._connection.publish(topic, payload, qos=2 if persist else 0)
+        self._connection.publish(topic, payload, qos=self._max_supported_qos if persist else 0)
 
     def subscribe(self, topic: str, persist: bool) -> None:
         """Subscribe to a topic over the pre-existing connection (via connect()).
@@ -134,7 +150,7 @@ class MQTTClient(BrokerClient):
             persist: Determine if the associated message queue of the topic is long-lived (True) or not (False)
         """
         # NOTE: RabbitMQ only works with QOS of 1 and 0, and seems to convert QOS2 to QOS1
-        self._connection.subscribe(topic, qos=2 if persist else 0)
+        self._connection.subscribe(topic, qos=2 if persist else 0, properties=None)
 
     def unsubscribe(self, topic: str) -> None:
         """Unsubscribe from a topic over the pre-existing connection.
@@ -165,10 +181,10 @@ class MQTTClient(BrokerClient):
     def _handle_disconnect(
         self,
         client: paho_client.Client,
-        userdata: Any,  # noqa: ARG002
-        flags: dict[str, Any],  # noqa: ARG002
-        reason_code: int,  # noqa: ARG002
-        properties: None,  # noqa: ARG002
+        userdata: Any,
+        flags: DisconnectFlags,
+        reason_code: ReasonCode,
+        properties: Properties | None,
     ) -> None:
         """Handle a disconnection from the MQTT server.
 
@@ -178,9 +194,17 @@ class MQTTClient(BrokerClient):
             client: The Paho client.
             userdata: MQTT user data.
             flags: List of MQTT connection flags.
-            reason_code: MQTT return code as an integer.
+            reason_code: MQTT return code.
             properties: MQTT user properties.
         """
+        logger.debug(
+            'mqtt disconnected log - uid=%s reason_code=%s flags=%s userdata=%s properties=%s',
+            self.uid,
+            reason_code,
+            flags,
+            userdata,
+            properties,
+        )
         self._connected = False
         if not self._should_disconnect:
             client.reconnect()
@@ -190,8 +214,8 @@ class MQTTClient(BrokerClient):
         client: paho_client.Client,  # noqa: ARG002
         userdata: Any,
         flags: dict[str, Any],
-        reason_code: int,
-        properties: None,  # noqa: ARG002
+        reason_code: ReasonCode,
+        properties: Properties | None,
     ) -> None:
         """Set the connection status in response to the result of a Paho connection attempt.
 
@@ -202,14 +226,26 @@ class MQTTClient(BrokerClient):
             client: The Paho MQTT client.
             userdata: The MQTT userdata.
             flags: List of MQTT connection flags.
-            reason_code: The MQTT return code as an int.
+            reason_code: The MQTT return code.
             properties: MQTT user properties
         """
-        # Return code 0 means connection was successful
-        if reason_code == 0:
+        if str(reason_code) == 'Success':
+            logger.debug(
+                'MQTT connected log - reason-code=%s properties=%s userdata=%s flags=%s',
+                reason_code,
+                properties,
+                userdata,
+                flags,
+            )
             self._connected = True
             self._connection_retries = 0
             self._should_disconnect = False
+
+            # mimic "automatic QoS downgrade" of MQTTv3 for MQTTv5
+            if properties and hasattr(properties, 'MaximumQoS'):
+                logger.info('MQTT: Maximum supported QoS is %s', properties.MaximumQoS)
+                self._max_supported_qos = properties.MaximumQoS
+
             self._connected_flag.set()
             for topic, topic_handler in self._topics_to_handlers().items():
                 self.subscribe(topic, topic_handler.topic_persist)
@@ -217,11 +253,13 @@ class MQTTClient(BrokerClient):
             # This will generally suggest a misconfiguration
             self._connected = False
             self._connection_retries += 1
+            logger.error('Bad connection (reason: %s)', reason_code)
             logger.error(
-                f'On connect error received (probable broker config error), have tried {self._connection_retries} times'
+                'On connect error received (probable broker config error), have tried %s times',
+                self._connection_retries,
             )
-            logger.error(f'Connection error userdata: {userdata}')
-            logger.error(f'Connection error flags: {flags}')
+            logger.error('Connection error userdata: %s', userdata)
+            logger.error('Connection error flags: %s', flags)
             if self._connection_retries >= _MQTT_MAX_RETRIES:
                 logger.error('Giving up MQTT reconnection attempt')
                 self._connected_flag.set()
