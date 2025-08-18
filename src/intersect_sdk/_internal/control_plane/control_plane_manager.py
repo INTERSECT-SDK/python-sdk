@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
-
-from pydantic import TypeAdapter
+from typing import TYPE_CHECKING, Literal
 
 from ..exceptions import IntersectInvalidBrokerError
 from ..logger import logger
@@ -13,16 +11,7 @@ if TYPE_CHECKING:
 
     from ...config.shared import ControlPlaneConfig
     from .brokers.broker_client import BrokerClient
-
-GENERIC_MESSAGE_SERIALIZER: TypeAdapter[Any] = TypeAdapter(Any)
-
-
-def serialize_message(message: Any) -> bytes:
-    """Serialize a message to bytes, in preparation for publishing it on a message broker.
-
-    Works as a generic serializer/deserializer
-    """
-    return GENERIC_MESSAGE_SERIALIZER.dump_json(message, warnings=False)
+    from .definitions import MessageCallback
 
 
 def create_control_provider(
@@ -56,7 +45,6 @@ def create_control_provider(
         username=config.username,
         password=config.password,
         topics_to_handlers=topic_handler_callback,
-        v5=config.protocol == 'mqtt5.0',
     )
 
 
@@ -85,7 +73,7 @@ class ControlPlaneManager:
         self._topics_to_handlers: dict[str, TopicHandler] = {}
 
     def add_subscription_channel(
-        self, channel: str, callbacks: set[Callable[[bytes], None]], persist: bool
+        self, channel: str, callbacks: set[MessageCallback], persist: bool
     ) -> None:
         """Start listening for messages on a channel on all configured brokers.
 
@@ -156,13 +144,20 @@ class ControlPlaneManager:
         for provider in self._control_providers:
             provider.disconnect()
 
-    def publish_message(self, channel: str, msg: Any, persist: bool) -> None:
+    def publish_message(
+        self,
+        channel: str,
+        payload: bytes,
+        content_type: str,
+        headers: dict[str, str],
+        persist: bool,
+    ) -> None:
         """Publish message on channel for all brokers."""
         if self.is_connected():
-            serialized_message = serialize_message(msg)
             for provider in self._control_providers:
-                provider.publish(channel, serialized_message, persist)
+                provider.publish(channel, payload, content_type, headers, persist)
         else:
+            # TODO may want more robust error handling here
             logger.error('Cannot send message, providers are not connected')
 
     def is_connected(self) -> bool:

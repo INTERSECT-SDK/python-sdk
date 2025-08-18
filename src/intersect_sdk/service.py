@@ -28,22 +28,22 @@ from pydantic_core import PydanticSerializationError
 from typing_extensions import Self, final
 
 from ._internal.control_plane.control_plane_manager import (
-    GENERIC_MESSAGE_SERIALIZER,
     ControlPlaneManager,
 )
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectApplicationError, IntersectError
+from ._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
 from ._internal.interfaces import IntersectEventObserver
 from ._internal.logger import logger
 from ._internal.messages.event import (
-    create_event_message,
-    deserialize_and_validate_event_message,
+    create_event_message_headers,
+    validate_event_message_headers,
 )
-from ._internal.messages.lifecycle import LifecycleType, create_lifecycle_message
+from ._internal.messages.lifecycle import LifecycleType, create_lifecycle_message_headers
 from ._internal.messages.userspace import (
-    UserspaceMessage,
-    create_userspace_message,
-    deserialize_and_validate_userspace_message,
+    UserspaceMessageHeaders,
+    create_userspace_message_headers,
+    validate_userspace_message_headers,
 )
 from ._internal.schema import get_schema_and_functions_from_capability_implementations
 from ._internal.stoppable_thread import StoppableThread
@@ -62,7 +62,8 @@ from .service_callback_definitions import (
     INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
 )
 from .shared_callback_definitions import (
-    INTERSECT_JSON_VALUE,
+    INTERSECT_JSON_VALUE,  # noqa: F401 (importing this here fixes an import error for the usage of the callback_types in the @validate_call wrappers)
+    INTERSECT_RESPONSE_VALUE,
     IntersectDirectMessageParams,
 )
 from .version import version_string
@@ -153,7 +154,7 @@ class IntersectService(IntersectEventObserver):
             self.request_name = req_name
             self.request = request
             self.has_error = False
-            self.response_payload: INTERSECT_JSON_VALUE = None
+            self.response_payload: INTERSECT_RESPONSE_VALUE = None
             """Value we get back as response"""
             self.response_fn = response_handler
             """User callback function"""
@@ -298,10 +299,10 @@ class IntersectService(IntersectEventObserver):
         )
         # our userspace queue should be able to survive shutdown
         self._control_plane_manager.add_subscription_channel(
-            self._service_channel_name, {self._handle_service_message_raw}, persist=True
+            self._service_channel_name, {self._handle_service_message}, persist=True
         )
         self._control_plane_manager.add_subscription_channel(
-            self._client_channel_name, {self._handle_client_message_raw}, persist=True
+            self._client_channel_name, {self._handle_client_message}, persist=True
         )
 
     def _get_capability(self, target: str) -> IntersectBaseCapabilityImplementation | None:
@@ -334,12 +335,15 @@ class IntersectService(IntersectEventObserver):
             return self
 
         # status function should work by the time startup() is called
-        self._send_lifecycle_message(
-            lifecycle_type=LifecycleType.STARTUP,
-            payload={
+        lifecycle_payload = GENERIC_MESSAGE_SERIALIZER.dump_json(
+            {
                 'schema': self._schema,
                 'status': self._status_retrieval_fn(fail_harshly=True),
-            },
+            }
+        )
+        self._send_lifecycle_message(
+            lifecycle_type='LCT_STARTUP',
+            payload=lifecycle_payload,
         )
 
         # Start the status thread if it doesn't already exist
@@ -405,7 +409,10 @@ class IntersectService(IntersectEventObserver):
             self._status_thread = None
 
         try:
-            self._send_lifecycle_message(lifecycle_type=LifecycleType.SHUTDOWN, payload=reason)
+            self._send_lifecycle_message(
+                lifecycle_type='LCT_SHUTDOWN',
+                payload=GENERIC_MESSAGE_SERIALIZER.dump_json(reason) if reason else b'null',
+            )
         except Exception as e:  # noqa: BLE001  (this could fail on numerous protocols)
             logger.error(
                 'Could not send shutdown message, INTERSECT Core will eventually assume this Service has shutdown.'
@@ -445,9 +452,10 @@ class IntersectService(IntersectEventObserver):
           keys: keys of functions you want to block
         """
         self._function_keys |= keys
+        payload = GENERIC_MESSAGE_SERIALIZER.dump_json(tuple(keys))
         self._send_lifecycle_message(
-            lifecycle_type=LifecycleType.FUNCTIONS_BLOCKED,
-            payload=tuple(keys),
+            lifecycle_type='LCT_FUNCTIONS_BLOCKED',
+            payload=payload,
         )
         return self
 
@@ -462,9 +470,10 @@ class IntersectService(IntersectEventObserver):
           keys: keys of functions you want to block
         """
         self._function_keys -= keys
+        payload = GENERIC_MESSAGE_SERIALIZER.dump_json(tuple(keys))
         self._send_lifecycle_message(
-            lifecycle_type=LifecycleType.FUNCTIONS_ALLOWED,
-            payload=tuple(keys),
+            lifecycle_type='LCT_FUNCTIONS_ALLOWED',
+            payload=payload,
         )
         return self
 
@@ -473,10 +482,10 @@ class IntersectService(IntersectEventObserver):
 
         If you want to only allow certain functions, use "service.allow_keys()"
         """
-        payload = tuple(self._function_keys)
+        payload = GENERIC_MESSAGE_SERIALIZER.dump_json(tuple(self._function_keys))
         self._function_keys.clear()
         self._send_lifecycle_message(
-            lifecycle_type=LifecycleType.FUNCTIONS_ALLOWED,
+            lifecycle_type='LCT_FUNCTIONS_ALLOWED',
             payload=payload,
         )
         return self
@@ -488,9 +497,10 @@ class IntersectService(IntersectEventObserver):
         have no markings.
         """
         self._function_keys = set.union(*(f.shutdown_keys for f in self._function_map.values()))
+        payload = GENERIC_MESSAGE_SERIALIZER.dump_json(tuple(self._function_keys))
         self._send_lifecycle_message(
-            lifecycle_type=LifecycleType.FUNCTIONS_BLOCKED,
-            payload=tuple(self._function_keys),
+            lifecycle_type='LCT_FUNCTIONS_BLOCKED',
+            payload=payload,
         )
         return self
 
@@ -560,36 +570,40 @@ class IntersectService(IntersectEventObserver):
             persist=True,
         )
 
-    def _svc2svc_event_callback(self, raw: bytes) -> None:
+    def _svc2svc_event_callback(
+        self, payload: bytes, content_type: str, raw_headers: dict[str, str]
+    ) -> None:
         """Callback received when this service gets an event from another service.
 
         Deserializes and validates an EventMessage, will call a userspace function accordingly.
         """
         try:
-            message = deserialize_and_validate_event_message(raw)
+            headers = validate_event_message_headers(raw_headers)
         except ValidationError as e:
             logger.warning(
                 "Invalid message received from another service's events channel, ignoring. Full message:\n{}",
                 e,
             )
             return
-        logger.debug('Received event message:\n{}', message)
+        logger.debug('Received event message:\n{}', headers)
         try:
-            payload = GENERIC_MESSAGE_SERIALIZER.validate_json(
-                self._data_plane_manager.incoming_message_data_handler(message)
+            request_params = self._data_plane_manager.incoming_message_data_handler(
+                payload, headers.data_handler
             )
+            if content_type == 'application/json':
+                request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(request_params)
         except ValidationError as e:
             logger.warning(
                 'Invalid payload message received as an event, ignoring. Full message: {}',
                 e,
             )
             return
-        source = message['headers']['source']
-        capability_name = message['headers']['capability_name']
-        event_name = message['headers']['event_name']
+        source = headers.source
+        capability_name = headers.capability_name
+        event_name = headers.event_name
         for user_callback in self._svc2svc_events[source][f'{capability_name}.{event_name}']:
             try:
-                user_callback(source, message['headers']['capability_name'], event_name, payload)
+                user_callback(source, capability_name, event_name, request_params)
             except Exception as e:  # noqa: BLE001 (need to catch any possible user exception)
                 logger.warning(
                     '!!! INTERSECT: event callback function "%s" produced uncaught exception when handling event "%s" from "%s"',
@@ -699,7 +713,9 @@ class IntersectService(IntersectEventObserver):
                     )
             extreq.request_state = 'finalized'
 
-    def _handle_service_message_raw(self, raw: bytes) -> None:
+    def _handle_service_message(
+        self, payload: bytes, content_type: str, raw_headers: dict[str, str]
+    ) -> None:
         """Main broker callback function.
 
         Deserializes and validates a userspace message from a broker.
@@ -707,70 +723,94 @@ class IntersectService(IntersectEventObserver):
         This function is also responsible for publishing all response messages from the broker
         """
         try:
-            message = deserialize_and_validate_userspace_message(raw)
-            logger.debug(f'Received userspace message:\n{message}')
-            response_msg = self._handle_service_message(message)
-            if response_msg:
+            headers = validate_userspace_message_headers(raw_headers)
+            logger.debug(f'Received userspace message:\n{headers}')
+            response = self._handle_service_message_inner(payload, content_type, headers)
+            if response:
+                response_payload, response_content_type, response_headers = response
                 logger.debug(
                     'Send %s message:\n%s',
-                    'error' if response_msg['headers']['has_error'] else 'userspace',
-                    response_msg,
+                    'error' if response_headers['has_error'] else 'userspace',
+                    response_headers,
                 )
-                response_channel = f'{message["headers"]["source"].replace(".", "/")}/response'
+                response_channel = f'{headers.source.replace(".", "/")}/response'
                 # Persistent userspace messages may be useful for orchestration.
                 # Persistence will not hurt anything.
                 self._control_plane_manager.publish_message(
-                    response_channel, response_msg, persist=True
+                    response_channel,
+                    response_payload,
+                    response_content_type,
+                    response_headers,
+                    persist=True,
                 )
         except ValidationError as e:
             logger.warning(
                 f'Invalid message received on userspace message channel, ignoring. Full message:\n{e}'
             )
 
-    def _handle_service_message(self, message: UserspaceMessage) -> UserspaceMessage | None:
+    def _handle_service_message_inner(
+        self, payload: bytes, content_type: str, headers: UserspaceMessageHeaders
+    ) -> tuple[bytes, str, dict[str, str]] | None:
         """Main logic for handling a userspace message, minus all broker logic.
 
         Params
-          message: UserspaceMessage from a client
+          payload: raw data from client
+          content_type: content type of the message
+          headers: validated headers
         Returns
-          The response message we want to send to the client, or None if we don't want to send anything.
+          None if we don't want to send anything.
+          Otherwise, return a tuple of the raw data we'll send back, the content type of the data, and the headers.
+
         """
         # ONE: HANDLE CORE COMPAT ISSUES
         # is this first branch necessary? May not be in the future
-        if self._hierarchy.hierarchy_string('.') != message['headers']['destination']:
+        if self._hierarchy.hierarchy_string('.') != headers.destination:
             return None
-        if not resolve_user_version(message):
-            return self._make_error_message(
-                f'SDK version incompatibility. Service version: {version_string} . Sender version: {message["headers"]["sdk_version"]}',
-                message,
+        if not resolve_user_version(headers.sdk_version, headers.source, headers.data_handler):
+            return (
+                f'SDK version incompatibility. Service version: {version_string} . Sender version: {headers.sdk_version}'.encode(),
+                'text/plain',
+                self._make_error_message_headers(headers),
             )
 
-        # TWO: OPERATION EXISTS AND IS AVAILABLE
-        operation = message['operationId']
+        # TWO: OPERATION EXISTS, CONTENT TYPE MATCHES, AND OPERATION IS AVAILABLE
+        operation = headers.operation_id
         operation_meta = self._function_map.get(operation)
         if operation_meta is None:
             err_msg = f'Tried to call non-existent operation {operation}'
-            logger.warning(err_msg)
-            return self._make_error_message(err_msg, message)
+            logger.debug(err_msg)
+            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
+
+        if operation_meta.request_content_type != content_type:
+            err_msg = f'For operation {operation}, request content type {content_type} differs from actual content type {operation_meta.request_content_type}'
+            logger.debug(err_msg)
+            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
+
         if self._function_keys & operation_meta.shutdown_keys:
             err_msg = f"Function '{operation}' is currently not available for use."
             logger.error(err_msg)
-            return self._make_error_message(err_msg, message)
+            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
 
         operation_capability, operation_method = operation.split('.')
         target_capability = self._get_capability(operation_capability)
         if target_capability is None:
             err_msg = f"Could not locate service capability providing '{operation_capability}' for operation {operation}."
             logger.error(err_msg)
-            return self._make_error_message(err_msg, message)
+            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
 
         # THREE: GET DATA FROM APPROPRIATE DATA STORE
         try:
-            request_params = self._data_plane_manager.incoming_message_data_handler(message)
+            request_params = self._data_plane_manager.incoming_message_data_handler(
+                payload, headers.data_handler
+            )
         except IntersectError:
             # could theoretically be either a service or client issue
             # XXX send a better error message?
-            return self._make_error_message('Could not get data from data handler', message)
+            return (
+                b'Could not get data from data handler',
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
 
         try:
             # FOUR: CALL USER FUNCTION AND GET MESSAGE
@@ -785,52 +825,67 @@ class IntersectService(IntersectEventObserver):
             )
         except ValidationError as e:
             # client issue with request parameters
-            return self._make_error_message(f'Bad arguments to application:\n{e}', message)
+            return (
+                f'Bad arguments to application:\n{e}'.encode(),
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
         except IntersectCapabilityError as e:
-            return self._make_error_message(
-                f'Service domain logic threw explicit exception:\n{e}', message
+            return (
+                f'Service domain logic threw explicit exception:\n{e}'.encode(),
+                'text/plain',
+                self._make_error_message_headers(headers),
             )
         except IntersectApplicationError:
             # domain-level exception not explicitly caught; do not send specifics about the exception because it may leak internals
-            return self._make_error_message('Service domain logic threw exception.', message)
+            return (
+                b'Service domain logic threw exception.',
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
         except IntersectError:
             # XXX send a better error message? This is a service issue
-            return self._make_error_message('Could not send data to data handler', message)
+            return (
+                b'Could not send data to data handler',
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
 
         # SIX: SEND MESSAGE
-        return create_userspace_message(
-            source=message['headers']['destination'],
-            destination=message['headers']['source'],
-            content_type=response_content_type,
+        response_headers = create_userspace_message_headers(
+            source=headers.destination,
+            destination=headers.source,
             data_handler=response_data_handler,
-            operation_id=message['operationId'],
-            payload=response_payload,
-            message_id=message['messageId'],  # associate response with request
+            operation_id=headers.operation_id,
+            message_id=headers.message_id,  # associate response with request
         )
+        return (response_payload, response_content_type, response_headers)
 
-    def _handle_client_message_raw(self, raw: bytes) -> None:
+    def _handle_client_message(
+        self, payload: bytes, content_type: str, raw_headers: dict[str, str]
+    ) -> None:
         """Broker callback, deserialize and validate a userspace message from a broker.
 
         These are 'response' messages from this service calling another service.
         """
         try:
-            message = deserialize_and_validate_userspace_message(raw)
-            logger.debug(f'Received userspace message:\n{message}')
-            self._handle_client_message(message)
+            headers = validate_userspace_message_headers(raw_headers)
+            logger.debug(f'Received userspace message:\n{headers}')
         except ValidationError as e:
             logger.warning(
                 f'Invalid message received on client message channel, ignoring. Full message:\n{e}'
             )
+            return
 
-    def _handle_client_message(self, message: UserspaceMessage) -> None:
-        """Handle a deserialized service-2-service message."""
-        extreq = self._get_external_request(message['messageId'])
+        extreq = self._get_external_request(headers.message_id)
         if extreq is not None:
             error_msg: str | None = None
             try:
-                msg_payload = GENERIC_MESSAGE_SERIALIZER.validate_json(
-                    self._data_plane_manager.incoming_message_data_handler(message)
+                msg_payload = self._data_plane_manager.incoming_message_data_handler(
+                    payload, headers.data_handler
                 )
+                if content_type == 'application/json':
+                    msg_payload = GENERIC_MESSAGE_SERIALIZER.validate_json(msg_payload)
             except ValidationError as e:
                 error_msg = f'Service sent back invalid response:\n{e}'
                 logger.warning(error_msg)
@@ -842,33 +897,42 @@ class IntersectService(IntersectEventObserver):
                 # we did not get a valid INTERSECT message back, so just mark it for cleanup
                 extreq.request_state = 'finalized'
             elif (
-                extreq.request.destination != message['headers']['source']
-                or extreq.request.operation != message['operationId']
+                extreq.request.destination != headers.source
+                or extreq.request.operation != headers.operation_id
             ):
                 logger.warning(
                     'Possible spoof message, discarding. Target destination',
                     extreq.request.destination,
                     'Actual source',
-                    message['headers']['source'],
+                    headers.source,
                     'Target operation',
                     extreq.request.operation,
                     'Actual operation',
-                    message['operationId'],
+                    headers.operation_id,
                 )
                 extreq.request_state = 'finalized'
             else:
                 # success
                 extreq.response_payload = msg_payload
-                extreq.has_error = message['headers']['has_error']
+                extreq.has_error = headers.has_error
                 extreq.request_state = 'received'
         else:
-            error_msg = f'No external request found for message:\n{message}'
+            error_msg = f'No external request found for message:\n{headers}'
             logger.warning(error_msg)
 
     def _send_client_message(self, request_id: UUID, params: IntersectDirectMessageParams) -> bool:
         """Send a userspace message."""
         # "params" should already be validated at this stage.
-        request = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
+
+        if params.content_type == 'application/json':
+            request = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
+        else:
+            if not isinstance(params.content_type, bytes):
+                logger.error(
+                    'service-to-service message must be bytes if content-type is not application/json'
+                )
+                return False
+            request = params.payload
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
         try:
@@ -879,18 +943,18 @@ class IntersectService(IntersectEventObserver):
             return False
 
         # THREE: SEND MESSAGE
-        msg = create_userspace_message(
+        headers = create_userspace_message_headers(
             source=self._hierarchy.hierarchy_string('.'),
             destination=params.destination,
-            content_type=params.content_type,
             data_handler=params.data_handler,
             operation_id=params.operation,
-            payload=request_payload,
             message_id=request_id,
         )
-        logger.debug(f'Sending client message:\n{msg}')
+        logger.debug(f'Sending client message:\n{headers}')
         request_channel = f'{params.destination.replace(".", "/")}/request'
-        self._control_plane_manager.publish_message(request_channel, msg, persist=True)
+        self._control_plane_manager.publish_message(
+            request_channel, request_payload, params.content_type, headers, persist=True
+        )
         return True
 
     def _call_user_function(
@@ -1024,15 +1088,27 @@ class IntersectService(IntersectEventObserver):
                 f"Event name '{event_name}' was not registered on capability '{capability_name}', so event will not be emitted.\nEvent value: {event_value}"
             )
             return
-        try:
-            response = event_meta.type_adapter.dump_json(
-                event_value, by_alias=True, warnings='error'
-            )
-        except PydanticSerializationError as e:
-            logger.error(
-                f"Value emitted for event name '{event_name}' from capability '{capability_name}' does not match schema.\nEvent value: {event_value}\nPydantic error: {e}"
-            )
-            return
+
+        if event_meta.content_type == 'application/json':
+            try:
+                response = event_meta.type_adapter.dump_json(
+                    event_value, by_alias=True, warnings='error'
+                )
+            except PydanticSerializationError as e:
+                logger.error(
+                    f"Value emitted for event name '{event_name}' from capability '{capability_name}' does not match schema.\nEvent value: {event_value}\nPydantic error: {e}"
+                )
+                return
+        else:
+            if not isinstance(event_value, bytes):
+                logger.error(
+                    'Event type "%s" from capability "%s" emitted non-binary value when content-type is not application/json, you must change this to actually emit the event',
+                    event_name,
+                    capability_name,
+                )
+                return
+            response = event_value
+
         try:
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
                 response, event_meta.content_type, event_meta.data_transfer_handler
@@ -1041,51 +1117,51 @@ class IntersectService(IntersectEventObserver):
             # error should already be logged from the outgoing_message_data_handler function
             return
 
-        msg = create_event_message(
+        headers = create_event_message_headers(
             source=self._hierarchy.hierarchy_string('.'),
             capability_name=capability_name,
-            content_type=event_meta.content_type,
             data_handler=event_meta.data_transfer_handler,
             event_name=event_name,
-            payload=response_payload,
         )
         full_events_channel_name = f'{self._events_channel_name}/{capability_name}/{event_name}'
-        self._control_plane_manager.publish_message(full_events_channel_name, msg, persist=True)
+        self._control_plane_manager.publish_message(
+            full_events_channel_name,
+            response_payload,
+            event_meta.content_type,
+            headers,
+            persist=True,
+        )
 
-    def _make_error_message(
-        self, error_string: str, original_message: UserspaceMessage
-    ) -> UserspaceMessage:
+    def _make_error_message_headers(
+        self, original_headers: UserspaceMessageHeaders
+    ) -> dict[str, str]:
         """Generate an error message.
 
         Params:
-          error_string: The error string to send as the payload
-          original_message: The original UserspaceMessage
+          original_headers: The original message headers
         Returns:
-          the UserspaceMessage we will send as a reply
+          the headers we will send as a reply
         """
-        return create_userspace_message(
-            source=original_message['headers']['destination'],
-            destination=original_message['headers']['source'],
-            content_type='text/plain',
+        return create_userspace_message_headers(
+            source=original_headers.destination,
+            destination=original_headers.source,
             data_handler=IntersectDataHandler.MESSAGE,
-            operation_id=original_message['operationId'],
-            payload=error_string,
-            message_id=original_message['messageId'],  # associate error reply with original
+            operation_id=original_headers.operation_id,
+            message_id=original_headers.message_id,  # associate error reply with original
             has_error=True,
         )
 
-    def _send_lifecycle_message(self, lifecycle_type: LifecycleType, payload: Any = None) -> None:
+    def _send_lifecycle_message(self, lifecycle_type: LifecycleType, payload: bytes) -> None:
         """Send out a lifecycle message."""
-        msg = create_lifecycle_message(
+        headers = create_lifecycle_message_headers(
             source=self._hierarchy.hierarchy_string('.'),
             lifecycle_type=lifecycle_type,
-            payload=payload,
         )
-        logger.debug(f'Send lifecycle message:\n{msg}')
+        logger.debug('Send lifecycle message \nHEADERS: %s\n\n%s', payload, headers)
         # Lifecycle messages are meant to be short-lived, only the latest message has any usage for systems uninterested in logging,
         # and queues will be regularly polled about these. Do not persist them.
         self._control_plane_manager.publish_message(
-            self._lifecycle_channel_name, msg, persist=False
+            self._lifecycle_channel_name, payload, 'application/json', headers, persist=False
         )
 
     def _status_retrieval_fn(self, fail_harshly: bool) -> dict[str, Any]:
@@ -1126,12 +1202,15 @@ class IntersectService(IntersectEventObserver):
             else:
                 self._status_thread.wait(self._status_ticker_interval)
             while not self._status_thread.stopped():
-                self._send_lifecycle_message(
-                    lifecycle_type=LifecycleType.POLLING,
-                    payload={
+                payload = GENERIC_MESSAGE_SERIALIZER.dump_json(
+                    {
                         'schema': self._schema,
                         'status': self._status_retrieval_fn(fail_harshly=False),
-                    },
+                    }
+                )
+                self._send_lifecycle_message(
+                    lifecycle_type='LCT_POLLING',
+                    payload=payload,
                 )
                 self._status_thread.wait(self._status_ticker_interval)
 

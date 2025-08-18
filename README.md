@@ -19,7 +19,8 @@ For a high-level overview, please see [the architecture website.](https://inters
 
 - Event-driven architecture
 - Support core interaction types: request/response, events, commands, statuses
-- Borrows several concepts from [AsyncAPI](https://www.asyncapi.com/docs/reference/specification/latest), and intends to support multiple different protocols. Currently, we support MQTT 3.1.1 and AMQP 0.9.1, but other protocols will be supported as well.
+- Borrows several concepts from [AsyncAPI](https://www.asyncapi.com/docs/reference/specification/latest), and intends to support multiple different protocols. Currently, we support MQTT 5.0 and AMQP 0.9.1, but other protocols will be supported as well.
+  - As a general rule, we will not support any protocols which do not support headers, do not allow for asynchronous messaging, or require the microservice itself to "keep alive" multiple connections.
 - Users automatically generate schema from code; schemas are part of the core contract of an INTERSECT microservice, and both external inputs and microservice outputs are required to uphold this contract.
 
 ## Authors

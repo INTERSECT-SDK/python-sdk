@@ -1,22 +1,24 @@
 """Core enumerations and structures used throughout INTERSECT, for both client and service."""
 
-from enum import IntEnum
+from enum import Enum
 from typing import Annotated
 
 from pydantic import Field
 
+from .constants import MIME_TYPE_REGEX
 
-class IntersectDataHandler(IntEnum):
+
+class IntersectDataHandler(Enum):
     """What data transfer type do you want to use for handling the request/response?
 
     Default: MESSAGE
     """
 
-    MESSAGE = 0
-    MINIO = 1
+    MESSAGE = 'MESSAGE'
+    MINIO = 'MINIO'
 
 
-IntersectMimeType = Annotated[str, Field(pattern=r'\w+/[-+.\w]+')]
+IntersectMimeType = Annotated[str, Field(pattern=MIME_TYPE_REGEX)]
 """
 Special typing which represents a "Content-Type" value (i.e. `application/json`).
 

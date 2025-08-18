@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 import paho.mqtt.client as paho_client
 from paho.mqtt.enums import CallbackAPIVersion
+from paho.mqtt.packettypes import PacketTypes
+from paho.mqtt.properties import Properties
 from retrying import retry
 
 from ...logger import logger
@@ -15,7 +17,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from paho.mqtt.client import DisconnectFlags
-    from paho.mqtt.properties import Properties
     from paho.mqtt.reasoncodes import ReasonCode
 
     from ..topic_handler import TopicHandler
@@ -47,7 +48,6 @@ class MQTTClient(BrokerClient):
         password: str,
         topics_to_handlers: Callable[[], dict[str, TopicHandler]],
         uid: str | None = None,
-        v5: bool = False,
     ) -> None:
         """The default constructor.
 
@@ -58,7 +58,6 @@ class MQTTClient(BrokerClient):
             password: password credentials for MQTT broker
             topics_to_handlers: callback function which gets the topic to handler map from the channel manager
             uid: A string representing the unique id to identify the client.
-            v5: if true - protocol is MQTTv5; if false - protocol is MQTTv3.1.1
         """
         # Unique id for the MQTT broker to associate this client with
         self.uid = uid if uid else str(uuid.uuid4())
@@ -68,12 +67,10 @@ class MQTTClient(BrokerClient):
         # Create a client to connect to RabbitMQ
         self._connection = paho_client.Client(
             callback_api_version=CallbackAPIVersion.VERSION2,
-            protocol=paho_client.MQTTv5 if v5 else paho_client.MQTTv311,
+            protocol=paho_client.MQTTv5,
             client_id=self.uid,
-            clean_session=False if not v5 else None,
         )
         self._connection.username_pw_set(username=username, password=password)
-        self._v5 = v5
 
         # Whether the connection is currently active
         self._connected = False
@@ -104,7 +101,7 @@ class MQTTClient(BrokerClient):
             self.host,
             self.port,
             60,
-            clean_start=False if self._v5 else 3,
+            clean_start=False,
         )
         self._connection.loop_start()
         while not self.is_connected() and not self._connected_flag.is_set():
@@ -128,7 +125,9 @@ class MQTTClient(BrokerClient):
     def considered_unrecoverable(self) -> bool:
         return self._unrecoverable
 
-    def publish(self, topic: str, payload: bytes, persist: bool) -> None:
+    def publish(
+        self, topic: str, payload: bytes, content_type: str, headers: dict[str, str], persist: bool
+    ) -> None:
         """Publish the given message.
 
         Publish payload with the pre-existing connection (via connect()) on topic.
@@ -136,11 +135,17 @@ class MQTTClient(BrokerClient):
         Args:
             topic: The topic on which to publish the message as a string.
             payload: The message to publish, as raw bytes.
+            content_type: The content type of the message (if the data plane used is the control plane itself), or the value to be retrieved from the data plane (if the message handler is MINIO/etc.)
+            headers: UTF-8 dictionary which can help parse information about the message
             persist: Determine if the message should live until queue consumers or available (True), or
               if it should be removed immediately (False)
         """
-        # NOTE: RabbitMQ only works with QOS of 1 and 0, and seems to convert QOS2 to QOS1
-        self._connection.publish(topic, payload, qos=self._max_supported_qos if persist else 0)
+        props = Properties(PacketTypes.PUBLISH)  # type: ignore[no-untyped-call]
+        props.ContentType = content_type
+        props.UserProperty = list(headers.items())
+        self._connection.publish(
+            topic, payload, qos=self._max_supported_qos if persist else 0, properties=props
+        )
 
     def subscribe(self, topic: str, persist: bool) -> None:
         """Subscribe to a topic over the pre-existing connection (via connect()).
@@ -174,9 +179,26 @@ class MQTTClient(BrokerClient):
           message: MQTT message
         """
         topic_handler = self._topics_to_handlers().get(message.topic)
-        if topic_handler:
-            for cb in topic_handler.callbacks:
-                cb(message.payload)
+        # Note that if we return prior to the callback, there will be no reply message
+        if not topic_handler:
+            logger.warning('Incompatible message topic %s, rejecting message', message.topic)
+            return
+        try:
+            content_type = message.properties.ContentType  # type: ignore[union-attr]
+            headers = dict(message.properties.UserProperty)  # type: ignore[union-attr]
+        except AttributeError as e:
+            logger.warning(
+                'Missing mandatory property %s in received message. The message will be rejected',
+                e.name,
+            )
+            return
+        except ValueError:
+            logger.warning(
+                'Headers in received message are in improper format. The message will be rejected'
+            )
+            return
+        for cb in topic_handler.callbacks:
+            cb(message.payload, content_type, headers)
 
     def _handle_disconnect(
         self,

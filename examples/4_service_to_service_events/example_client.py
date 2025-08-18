@@ -7,7 +7,7 @@ Once it gets two events, it terminates itself.
 import logging
 
 from intersect_sdk import (
-    INTERSECT_JSON_VALUE,
+    INTERSECT_RESPONSE_VALUE,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
@@ -30,7 +30,11 @@ class SampleOrchestrator:
         self.got_first_event = False
 
     def event_callback(
-        self, _source: str, _capability_name: str, _event_name: str, payload: INTERSECT_JSON_VALUE
+        self,
+        _source: str,
+        _capability_name: str,
+        _event_name: str,
+        payload: INTERSECT_RESPONSE_VALUE,
     ) -> None:
         """This simply prints the event from the exposed service to your console.
 

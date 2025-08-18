@@ -59,7 +59,7 @@
         "type": "string",
         "title": "Status"
       },
-      "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload.\n\nThe operation we are calling also emits its own event."
+      "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operation_id of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload.\n\nThe operation we are calling also emits its own event."
     }
   },
   "components": {

@@ -167,7 +167,7 @@ def test_valid_service_config():
                 password='secret',
                 host='http://hardknock.life',
                 port='1883',
-                protocol='mqtt3.1.1',
+                protocol='mqtt5.0',
             ),
             ControlPlaneConfig(
                 username='fine',

@@ -8,7 +8,7 @@ waits for an event from service one to confirm the messages were passed between 
 import logging
 
 from intersect_sdk import (
-    INTERSECT_JSON_VALUE,
+    INTERSECT_RESPONSE_VALUE,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
@@ -29,7 +29,11 @@ class SampleOrchestrator:
         self.got_first_event = False
 
     def event_callback(
-        self, _source: str, _capability_name: str, _event_name: str, payload: INTERSECT_JSON_VALUE
+        self,
+        _source: str,
+        _capability_name: str,
+        _event_name: str,
+        payload: INTERSECT_RESPONSE_VALUE,
     ) -> None:
         """This simply prints the event from Service 1 to your console.
 
@@ -54,7 +58,7 @@ if __name__ == '__main__':
                 'username': 'intersect_username',
                 'password': 'intersect_password',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
             },
         ],
     }

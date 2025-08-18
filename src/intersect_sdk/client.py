@@ -19,21 +19,20 @@ from uuid import uuid4
 from pydantic import ValidationError
 from typing_extensions import Self, final
 
+from intersect_sdk._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
+
 from ._internal.control_plane.control_plane_manager import (
-    GENERIC_MESSAGE_SERIALIZER,
     ControlPlaneManager,
 )
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectError
 from ._internal.logger import logger
 from ._internal.messages.event import (
-    EventMessage,
-    deserialize_and_validate_event_message,
+    validate_event_message_headers,
 )
 from ._internal.messages.userspace import (
-    UserspaceMessage,
-    create_userspace_message,
-    deserialize_and_validate_userspace_message,
+    create_userspace_message_headers,
+    validate_userspace_message_headers,
 )
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
@@ -130,7 +129,7 @@ class IntersectClient:
                 # Do not persist, as we use the temporary client information to build this.
                 self._control_plane_manager.add_subscription_channel(
                     f'{self._hierarchy.hierarchy_string("/")}/response',
-                    {self._handle_userspace_message_raw},
+                    {self._handle_userspace_message},
                     persist=False,
                 )
             if event_callback:
@@ -141,7 +140,7 @@ class IntersectClient:
                 ) in config.initial_message_event_config.services_to_start_listening_for_events:
                     self._control_plane_manager.add_subscription_channel(
                         f'{service.hierarchy.replace(".", "/")}/events/{service.capability_name}/{service.event_name}',
-                        {self._handle_event_message_raw},
+                        {self._handle_event_message},
                         persist=False,
                     )
         self._user_callback = user_callback
@@ -223,16 +222,17 @@ class IntersectClient:
         """
         return self._control_plane_manager.considered_unrecoverable()
 
-    def _handle_userspace_message_raw(self, raw: bytes) -> None:
+    def _handle_userspace_message(
+        self, payload: bytes, content_type: str, raw_headers: dict[str, str]
+    ) -> None:
         """Broker callback, deserialize and validate a userspace message from a broker."""
         # safety check in case we get messages back faster than we can send them
         if self._terminate_after_initial_messages:
             return
 
         try:
-            message = deserialize_and_validate_userspace_message(raw)
-            logger.debug(f'Received userspace message:\n{message}')
-            self._handle_userspace_message(message)
+            headers = validate_userspace_message_headers(raw_headers)
+            logger.debug(f'Received userspace message:\n{headers}')
         except ValidationError as e:
             logger.warning(
                 f'Invalid message received on userspace message channel, ignoring. Full message:\n{e}'
@@ -242,14 +242,13 @@ class IntersectClient:
             # but I would argue that it's fine here. If a service isn't sending valid messages,
             # the client has bigger problems.
             send_os_signal()
+            return
 
-    def _handle_userspace_message(self, message: UserspaceMessage) -> None:
-        """Handle a deserialized userspace message."""
         # ONE: HANDLE CORE COMPAT ISSUES
         # is this first branch necessary? May not be in the future
-        if self._hierarchy.hierarchy_string('.') != message['headers'][
-            'destination'
-        ] or not resolve_user_version(message):
+        if self._hierarchy.hierarchy_string('.') != headers.destination or not resolve_user_version(
+            headers.sdk_version, headers.source, headers.data_handler
+        ):
             # NOTE
             # Again, I would argue that while this may seem drastic, it's fine here.
             # A client should NEVER be getting messages not addressed to it in a normal workflow.
@@ -260,9 +259,11 @@ class IntersectClient:
 
         # TWO: GET DATA FROM APPROPRIATE DATA STORE AND DESERIALIZE IT
         try:
-            request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(
-                self._data_plane_manager.incoming_message_data_handler(message)
+            request_params = self._data_plane_manager.incoming_message_data_handler(
+                payload, headers.data_handler
             )
+            if content_type == 'application/json':
+                request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(request_params)
         except ValidationError as e:
             logger.warning(f'Service sent back invalid response:\n{e}')
             # NOTE
@@ -283,9 +284,9 @@ class IntersectClient:
             # NOTE: the way the service sends a message, errors and non-errors can be handled identically.
             # Leave it to the user to determine how they want to handle an error.
             user_function_return = self._user_callback(
-                message['headers']['source'],
-                message['operationId'],
-                message['headers']['has_error'],
+                headers.source,
+                headers.operation_id,
+                headers.has_error,
                 request_params,
             )  # type: ignore[misc]
             # mypy note: when we are in this function, we know that the callback has been defined
@@ -302,7 +303,9 @@ class IntersectClient:
 
         self._handle_client_callback(user_function_return)
 
-    def _handle_event_message_raw(self, raw: bytes) -> None:
+    def _handle_event_message(
+        self, payload: bytes, content_type: str, raw_headers: dict[str, str]
+    ) -> None:
         """Broker callback, deserialize and validate an event message from a broker."""
         # safety check in case we get messages back faster than we can send them
         if self._terminate_after_initial_messages:
@@ -310,32 +313,28 @@ class IntersectClient:
             return
 
         try:
-            message = deserialize_and_validate_event_message(raw)
-            logger.debug(f'Received userspace message:\n{message}')
-            self._handle_event_message(message)
+            headers = validate_event_message_headers(raw_headers)
+            logger.debug(f'Received userspace message:\n{headers}')
         except ValidationError as e:
             logger.warning(
                 f'Invalid message received on event message channel, ignoring. Full message:\n{e}'
             )
             # NOTE
             # Unlike Userspace messages, we can safely discard bad event messages without dropping the pubsub loop.
+            return
 
-    def _handle_event_message(self, message: EventMessage) -> None:
-        """Handle a deserialized event message."""
         # ONE: HANDLE CORE COMPAT ISSUES
-        if not resolve_user_version(message):
-            # NOTE
-            # Again, I would argue that while this may seem drastic, it's fine here.
-            # A client should also know enough about service SDK versions to know if
-            # it's even possible to try to send messages between them.
-            send_os_signal()
+        if not resolve_user_version(headers.sdk_version, headers.source, headers.data_handler):
+            # we can't handle this event message, so ignore it
             return
 
         # TWO: GET DATA FROM APPROPRIATE DATA STORE AND DESERIALIZE IT
         try:
-            request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(
-                self._data_plane_manager.incoming_message_data_handler(message)
+            request_params = self._data_plane_manager.incoming_message_data_handler(
+                payload, headers.data_handler
             )
+            if content_type == 'application/json':
+                request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(request_params)
         except ValidationError as e:
             logger.warning(f'Service sent back invalid response:\n{e}')
             # NOTE
@@ -356,9 +355,9 @@ class IntersectClient:
             # NOTE: the way the service sends a message, errors and non-errors can be handled identically.
             # Leave it to the user to determine how they want to handle an error.
             event_function_return = self._event_callback(
-                message['headers']['source'],
-                message['headers']['capability_name'],
-                message['headers']['event_name'],
+                headers.source,
+                headers.capability_name,
+                headers.event_name,
                 request_params,
             )  # type: ignore[misc]
             # mypy note: when we are in this function, we know that the callback has been defined
@@ -391,7 +390,7 @@ class IntersectClient:
             for add_event in validated_result.services_to_start_listening_for_events:
                 self._control_plane_manager.add_subscription_channel(
                     f'{add_event.hierarchy.replace(".", "/")}/events/{add_event.capability_name}/{add_event.event_name}',
-                    {self._handle_event_message_raw},
+                    {self._handle_event_message},
                     persist=False,
                 )
             for remove_event in validated_result.services_to_stop_listening_for_events:
@@ -407,12 +406,19 @@ class IntersectClient:
         """Send a userspace message, be it an initial message from the user or from the user's callback function."""
         # ONE: SERIALIZE FUNCTION RESULTS
         # (function input should already be validated at this point)
-        msg_payload = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
+        if params.content_type == 'application/json':
+            serialized_msg = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
+        else:
+            if not isinstance(params.content_type, bytes):
+                logger.error('Content must be bytes if content-type is not application/json')
+                send_os_signal()
+                return
+            serialized_msg = params.payload
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
         try:
-            out_payload = self._data_plane_manager.outgoing_message_data_handler(
-                msg_payload, params.content_type, params.data_handler
+            payload = self._data_plane_manager.outgoing_message_data_handler(
+                serialized_msg, params.content_type, params.data_handler
             )
         except IntersectError:
             # NOTE
@@ -422,17 +428,17 @@ class IntersectClient:
             return
 
         # THREE: SEND MESSAGE
-        msg = create_userspace_message(
+        headers = create_userspace_message_headers(
             source=self._hierarchy.hierarchy_string('.'),
             destination=params.destination,
-            content_type=params.content_type,
             data_handler=params.data_handler,
             operation_id=params.operation,
-            payload=out_payload,
         )
-        logger.debug(f'Send userspace message:\n{msg}')
+        logger.debug(f'Send userspace message:\n{headers}')
         channel = f'{params.destination.replace(".", "/")}/request'
         # WARNING: If both the Service and the Client drop, the Service will execute the command
         # but cannot communicate the response to the Client.
         # in experiment controllers or production, you'll want to set persist to True
-        self._control_plane_manager.publish_message(channel, msg, persist=False)
+        self._control_plane_manager.publish_message(
+            channel, payload, params.content_type, headers, persist=False
+        )

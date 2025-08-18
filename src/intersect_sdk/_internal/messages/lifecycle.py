@@ -9,53 +9,32 @@ Services should NEVER be CONSUMING messages on the lifecycle channel.
 
 import datetime
 import uuid
-from enum import IntEnum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, Field, TypeAdapter
-from typing_extensions import TypedDict
+from pydantic import AwareDatetime, BaseModel, Field, field_serializer
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...version import version_string
 
-
-class LifecycleType(IntEnum):
-    """Lifecycle code which needs to be included in every message sent.
-
-    The lifecycle code is also what determines the structure of the payload.
-    """
-
-    STARTUP = 0
-    """
-    Message sent on startup. Includes the schema in the payload.
-    """
-    SHUTDOWN = 1
-    """
-    Message sent on shutdown. Can send a reason for shutdown in the payload.
-    """
-    POLLING = 2
-    """
-    Message periodically sent out to indicate liveliness.
-    Failure to send a lifecycle message indicates unhealthy service.
-    A message with a POLLING enumeration also implies that the status has not been updated.
-
-    Includes the schema and the current status in the payload ({'schema': schema_str, 'status': current_status})
-    """
-    FUNCTIONS_ALLOWED = 3
-    """
-    Send out a list of functions now allowed in the payload
-    """
-    FUNCTIONS_BLOCKED = 4
-    """
-    Send out a list of functions now blocked in the payload
-    """
+LifecycleType = Literal[
+    'LCT_STARTUP',
+    'LCT_SHUTDOWN',
+    'LCT_POLLING',
+    'LCT_FUNCTIONS_ALLOWED',
+    'LCT_FUNCTIONS_BLOCKED',
+]
 
 
-class LifecycleMessageHeaders(TypedDict):
-    """Matches the current header definition for INTERSECT messages.
+class LifecycleMessageHeaders(BaseModel):
+    """ALL lifecycle messages must include this header.
 
-    ALL messages should contain this header.
+    We do not include the content type of the message in the header, it is handled separately.
+
+    A special note about lifecycle messages is that their content type must ALWAYS be "application/json".
     """
+
+    message_id: Annotated[uuid.UUID, Field()]
+    """UUID of the message."""
 
     source: Annotated[
         str,
@@ -96,59 +75,33 @@ class LifecycleMessageHeaders(TypedDict):
     The integer code of the lifecycle message being sent/received.
     """
 
+    # make sure all non-string fields are serialized into strings, even in Python code
 
-class LifecycleMessage(TypedDict):
-    messageId: uuid.UUID
-    """
-    ID of the message. (NOTE: this is defined here to conform to the AsyncAPI spec)
-    """
+    @field_serializer('message_id', mode='plain')
+    def ser_uuid(self, uuid: uuid.UUID) -> str:
+        return str(uuid)
 
-    headers: LifecycleMessageHeaders
-    """
-    the headers of the message
-    """
-
-    payload: Any
-    """
-    main payload of the message.
-
-    NOTE: The payload's contents will differ based on the lifecycle_type property in the message header.
-    """
-
-    contentType: Annotated[Literal['application/json'], Field('application/json')]
-    """
-    The content type to use when encoding/decoding a message's payload.
-
-    NOTE: ContentType is provided to somewhat match the AsyncAPI spec, but this value must ALWAYS be
-    application/json , as a lifecycle message's payload should ALWAYS be represented in JSON.
-    """
+    @field_serializer('created_at', mode='plain')
+    def ser_datetime(self, dt: datetime.datetime) -> str:
+        return dt.isoformat()
 
 
-def create_lifecycle_message(
+def create_lifecycle_message_headers(
     source: str,
     lifecycle_type: LifecycleType,
-    payload: Any,
-) -> LifecycleMessage:
-    """The contents of the payload should vary based on the lifecycle type."""
-    return LifecycleMessage(
-        messageId=uuid.uuid4(),
-        headers=LifecycleMessageHeaders(
-            source=source,
-            created_at=datetime.datetime.now(tz=datetime.timezone.utc),
-            sdk_version=version_string,
-            lifecycle_type=lifecycle_type,
-        ),
-        payload=payload,
-        contentType='application/json',
-    )
+) -> dict[str, str]:
+    """Generate raw headers and write them into a generic data structure which can be handled by any broker protocol.
 
-
-LIFECYCLE_MESSAGE_ADAPTER = TypeAdapter(LifecycleMessage)
-
-
-def deserialize_and_validate_lifecycle_message(msg: bytes) -> LifecycleMessage:
-    """If the "msg" param is a valid userspace message, return the object.
-
-    Raises Pydantic ValidationError if "msg" is not a valid userspace message
+    The contents of the payload should vary based on the lifecycle type.
     """
-    return LIFECYCLE_MESSAGE_ADAPTER.validate_json(msg, strict=True)
+    return LifecycleMessageHeaders(
+        source=source,
+        message_id=uuid.uuid4(),
+        created_at=datetime.datetime.now(tz=datetime.timezone.utc),
+        sdk_version=version_string,
+        lifecycle_type=lifecycle_type,
+    ).model_dump(by_alias=True)
+
+
+def validate_lifecycle_message_headers(raw_headers: dict[str, str]) -> LifecycleMessageHeaders:
+    return LifecycleMessageHeaders(**raw_headers)  # type: ignore[arg-type]

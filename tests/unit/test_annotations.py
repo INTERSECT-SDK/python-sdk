@@ -18,7 +18,7 @@ def test_invalid_annotation_params() -> None:
             @intersect_message(
                 request_content_type=0,
                 response_content_type=0,
-                response_data_transfer_handler='MESSAGE',
+                response_data_transfer_handler='N/A',
                 strict_request_validation='red',
             )
             def bad_annotations(self, param: bool) -> bool: ...

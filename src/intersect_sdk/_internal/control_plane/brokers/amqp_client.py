@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from pika.frame import Frame
     from pika.spec import Basic, BasicProperties
 
+    from ..definitions import MessageCallback
     from ..topic_handler import TopicHandler
 
 
@@ -193,7 +194,9 @@ class AMQPClient(BrokerClient):
     def considered_unrecoverable(self) -> bool:
         return self._unrecoverable
 
-    def publish(self, topic: str, payload: bytes, persist: bool) -> None:
+    def publish(
+        self, topic: str, payload: bytes, content_type: str, headers: dict[str, str], persist: bool
+    ) -> None:
         """Publish the given message.
 
         Publish payload with the pre-existing connection (via connect()) on topic.
@@ -201,6 +204,8 @@ class AMQPClient(BrokerClient):
         Args:
             topic: The topic on which to publish the message as a string
             payload: The message to publish, as raw bytes.
+            content_type: The content type of the message (if the data plane used is the control plane itself), or the value to be retrieved from the data plane (if the message handler is MINIO/etc.)
+            headers: UTF-8 dictionary which can help parse information about the message
             persist: True if message should persist until consumers available, False if message should be removed immediately.
         """
         topic = _hierarchy_2_amqp(topic)
@@ -212,11 +217,11 @@ class AMQPClient(BrokerClient):
                 routing_key=topic,
                 body=payload,
                 properties=pika.BasicProperties(
-                    content_type='text/plain',
+                    content_type=content_type,
+                    headers=headers,
                     delivery_mode=pika.delivery_mode.DeliveryMode.Persistent
                     if persist
                     else pika.delivery_mode.DeliveryMode.Transient,
-                    # expiration=None if persist else '8640000',
                 ),
             )
         else:
@@ -535,7 +540,7 @@ class AMQPClient(BrokerClient):
         self,
         channel: Channel,
         basic_deliver: Basic.Deliver,
-        _properties: BasicProperties,
+        properties: BasicProperties,
         body: bytes,
         persist: bool,
     ) -> None:
@@ -547,7 +552,7 @@ class AMQPClient(BrokerClient):
         Args:
             channel: The AMQP channel the message was received on. Used to manually acknowledge messages.
             basic_deliver: Contains internal AMQP delivery information - i.e. the routing key.
-            _properties: Object from the AMQP call. Ignored.
+            properties: Object from the AMQP call. Contains various metadata.
             body: the AMQP message to be handled.
             persist: Whether or not our queue should persist on either broker or application shutdown.
         """
@@ -557,6 +562,18 @@ class AMQPClient(BrokerClient):
                 "WARNING: A message for topic %s has been received when it shouldn't, attempting requeue"
             )
             channel.basic_reject(basic_deliver.delivery_tag)
+            return
+
+        # make sure that we have a content-type and headers, note that this does not publish a "reply" message if we fail here
+        content_type = properties.content_type
+        if not content_type:
+            logger.error('Missing message content type')
+            channel.basic_ack(basic_deliver.delivery_tag)
+            return
+        headers = properties.headers
+        if not headers:
+            logger.error('Missing message headers')
+            channel.basic_ack(basic_deliver.delivery_tag)
             return
 
         tth_key = _amqp_2_hierarchy(basic_deliver.routing_key)
@@ -573,7 +590,15 @@ class AMQPClient(BrokerClient):
                 consumer_tag_info.wait(1.0)
             thrd = threading.Thread(
                 target=self._consume_message_subthread,
-                args=(channel, topic_handler.callbacks, body, basic_deliver.delivery_tag, persist),
+                args=(
+                    channel,
+                    topic_handler.callbacks,
+                    body,
+                    content_type,
+                    headers,
+                    basic_deliver.delivery_tag,
+                    persist,
+                ),
             )
             self._consumer_tags_to_threads[consumer_tag_info.consumer_tag] = thrd
             thrd.start()
@@ -584,14 +609,16 @@ class AMQPClient(BrokerClient):
     def _consume_message_subthread(
         self,
         channel: Channel,
-        callbacks: set[Callable[[bytes], None]],
+        callbacks: set[MessageCallback],
         body: bytes,
+        content_type: str,
+        headers: dict[str, str],
         delivery_tag: int,
         persist: bool,
     ) -> None:
         """This is a subthread which executes the consumer code without blocking the IO loop. Without using a subthread, the AMQP heartbeat checker will be blocked."""
         for cb in callbacks:
-            cb(body)
+            cb(body, content_type, headers)
         # With persistent messages, we only acknowledge the message AFTER we are done processing
         # (this removes the message from the broker queue)
         # this allows us to retry a message if the broker OR this application goes down

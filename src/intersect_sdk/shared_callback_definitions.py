@@ -22,6 +22,14 @@ This is a simple type representation of JSON as a Python object. INTERSECT will 
 (Pydantic has a similar type, "JsonValue", which should be used if you desire functionality beyond type hinting. This is strictly a type hint.)
 """
 
+INTERSECT_RESPONSE_VALUE: TypeAlias = INTERSECT_JSON_VALUE | bytes
+"""
+This is the actual response value you will get back from a Service. The type will already be serialized into Python for you,
+but will not be serialized into a precise value.
+
+If you receive 'bytes', you should assume binary data. Other types imply JSON values.
+"""
+
 
 class IntersectDirectMessageParams(BaseModel):
     """These are the public-facing properties of a message which can be sent to another Service.

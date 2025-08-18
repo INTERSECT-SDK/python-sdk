@@ -33,7 +33,7 @@ from .event_metadata import EventMetadata, definition_metadata_differences
 from .function_metadata import FunctionMetadata
 from .logger import logger
 from .messages.event import EventMessageHeaders
-from .messages.userspace import UserspaceMessageHeader
+from .messages.userspace import UserspaceMessageHeaders
 from .pydantic_schema_generator import GenerateTypedJsonSchema
 from .status_metadata import StatusMetadata
 from .utils import die
@@ -674,7 +674,7 @@ def get_schema_and_functions_from_capability_implementations(
             'messageTraits': {
                 # this is where we can define our message headers
                 'commonHeaders': {
-                    'messageHeaders': TypeAdapter(UserspaceMessageHeader).json_schema(
+                    'messageHeaders': TypeAdapter(UserspaceMessageHeaders).json_schema(
                         ref_template='#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/{model}',
                         mode='serialization',
                     ),

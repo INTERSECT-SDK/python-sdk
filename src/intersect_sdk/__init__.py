@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from .client_callback_definitions import (
         INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
         INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
-        INTERSECT_RESPONSE_VALUE,
         IntersectClientCallback,
     )
     from .config.client import IntersectClientConfig
@@ -44,6 +43,7 @@ if TYPE_CHECKING:
     )
     from .shared_callback_definitions import (
         INTERSECT_JSON_VALUE,
+        INTERSECT_RESPONSE_VALUE,
         IntersectDirectMessageParams,
         IntersectEventMessageParams,
     )
@@ -87,7 +87,7 @@ __lazy_imports = {
     'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE': '.client_callback_definitions',
     'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE': '.client_callback_definitions',
     'INTERSECT_JSON_VALUE': '.shared_callback_definitions',
-    'INTERSECT_RESPONSE_VALUE': '.client_callback_definitions',
+    'INTERSECT_RESPONSE_VALUE': '.shared_callback_definitions',
     'INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE': '.service_callback_definitions',
     'ControlPlaneConfig': '.config.shared',
     'ControlProvider': '.config.shared',

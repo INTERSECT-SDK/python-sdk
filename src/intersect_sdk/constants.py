@@ -15,3 +15,14 @@ This is the regex used for representing capabilities and event keys. Capabilitie
 
 This regex applies to namespacing local to a Service, so does not have to be unique across the ecosystem.
 """
+
+MIME_TYPE_REGEX = r'\w+/[-+.\w]+'
+"""
+Regex used for validating Content Types.
+
+References can be found at:
+
+- https://www.iana.org/assignments/media-types/media-types.xhtml
+
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+"""
