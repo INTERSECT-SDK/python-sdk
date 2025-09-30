@@ -11,7 +11,6 @@ from typing_extensions import Annotated, final
 from .constants import SYSTEM_OF_SYSTEM_REGEX
 from .shared_callback_definitions import INTERSECT_JSON_VALUE, IntersectDirectMessageParams
 
-
 INTERSECT_CLIENT_TIMEOUT_CALLBACK_TYPE = Callable[[str], None]
 """
 This is a callable function type which should be defined by the user.

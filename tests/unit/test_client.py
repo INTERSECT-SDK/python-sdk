@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import time
 from threading import Event, Thread
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from intersect_sdk.client import IntersectClient
 from intersect_sdk.client_callback_definitions import IntersectClientCallback
@@ -18,7 +16,15 @@ def test_timeout_callback_is_called():
         system='test',
         facility='test',
         organization='test',
-        brokers=[{'host': 'localhost', 'port': 1883, 'protocol': 'mqtt3.1.1', 'username': 'test', 'password': 'test'}],
+        brokers=[
+            {
+                'host': 'localhost',
+                'port': 1883,
+                'protocol': 'mqtt3.1.1',
+                'username': 'test',
+                'password': 'test',
+            }
+        ],
         initial_message_event_config=IntersectClientCallback(),
         terminate_after_initial_messages=True,
     )
@@ -72,7 +78,15 @@ def test_timeout_callback_is_not_called():
         system='test',
         facility='test',
         organization='test',
-        brokers=[{'host': 'localhost', 'port': 1883, 'protocol': 'mqtt3.1.1', 'username': 'test', 'password': 'test'}],
+        brokers=[
+            {
+                'host': 'localhost',
+                'port': 1883,
+                'protocol': 'mqtt3.1.1',
+                'username': 'test',
+                'password': 'test',
+            }
+        ],
         initial_message_event_config=IntersectClientCallback(),
         terminate_after_initial_messages=True,
     )
@@ -86,7 +100,6 @@ def test_timeout_callback_is_not_called():
 
     def user_callback(source, operation_id, has_error, payload):
         user_callback_called.append(True)
-        return None
 
     client = IntersectClient(config, user_callback=user_callback)
 
@@ -151,7 +164,15 @@ def test_response_after_timeout_is_ignored():
         system='test',
         facility='test',
         organization='test',
-        brokers=[{'host': 'localhost', 'port': 1883, 'protocol': 'mqtt3.1.1', 'username': 'test', 'password': 'test'}],
+        brokers=[
+            {
+                'host': 'localhost',
+                'port': 1883,
+                'protocol': 'mqtt3.1.1',
+                'username': 'test',
+                'password': 'test',
+            }
+        ],
         initial_message_event_config=IntersectClientCallback(),
         terminate_after_initial_messages=True,
     )
@@ -165,7 +186,6 @@ def test_response_after_timeout_is_ignored():
 
     def user_callback(source, operation_id, has_error, payload):
         user_callback_called.append(True)
-        return None
 
     client = IntersectClient(config, user_callback=user_callback)
 

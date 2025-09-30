@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 from collections import defaultdict
 from threading import Event, Thread
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -154,7 +154,7 @@ class IntersectClient:
         self._user_callback = user_callback
         self._event_callback = event_callback
         self._timeout_callback = timeout_callback
-        self._pending_requests: defaultdict[str, list] = defaultdict(list)
+        self._pending_requests: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
         self._stop_timeout_thread = Event()
         self._timeout_thread = Thread(target=self._check_timeouts, daemon=True)
 
@@ -229,8 +229,10 @@ class IntersectClient:
                     if now > request['timeout']:
                         try:
                             request['on_timeout'](operation_id)
-                        except Exception as e:
-                            logger.warning(f'Exception from timeout callback for operation {operation_id}:\n{e}')
+                        except Exception as e:  # noqa: BLE001
+                            logger.warning(
+                                f'Exception from timeout callback for operation {operation_id}:\n{e}'
+                            )
                         requests.remove(request)
                 if not requests:
                     del self._pending_requests[operation_id]
@@ -293,7 +295,9 @@ class IntersectClient:
         if message['operationId'] in self._pending_requests:
             del self._pending_requests[message['operationId']]
         else:
-            logger.debug(f'Received response for operation {message["operationId"]} that already timed out, ignoring')
+            logger.debug(
+                f'Received response for operation {message["operationId"]} that already timed out, ignoring'
+            )
             return
 
         # TWO: GET DATA FROM APPROPRIATE DATA STORE AND DESERIALIZE IT
