@@ -12,6 +12,16 @@ from .constants import SYSTEM_OF_SYSTEM_REGEX
 from .shared_callback_definitions import INTERSECT_JSON_VALUE, IntersectDirectMessageParams
 
 
+INTERSECT_CLIENT_TIMEOUT_CALLBACK_TYPE = Callable[[str], None]
+"""
+This is a callable function type which should be defined by the user.
+
+Params
+    The SDK will send the function one argument:
+        1) The operation ID of the request that timed out.
+"""
+
+
 @final
 class IntersectClientCallback(BaseModel):
     """The value a user should return from ALL client callback functions.

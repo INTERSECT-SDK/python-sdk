@@ -13,6 +13,8 @@ Most useful definitions and typings will be found in the client_callback_definit
 from __future__ import annotations
 
 import time
+from collections import defaultdict
+from threading import Event, Thread
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -47,6 +49,7 @@ if TYPE_CHECKING:
     from .client_callback_definitions import (
         INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
         INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
+        INTERSECT_CLIENT_TIMEOUT_CALLBACK_TYPE,
     )
     from .shared_callback_definitions import IntersectDirectMessageParams
 
@@ -71,6 +74,7 @@ class IntersectClient:
         config: IntersectClientConfig,
         user_callback: INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE | None = None,
         event_callback: INTERSECT_CLIENT_EVENT_CALLBACK_TYPE | None = None,
+        timeout_callback: INTERSECT_CLIENT_TIMEOUT_CALLBACK_TYPE | None = None,
     ) -> None:
         """The constructor performs almost all validation checks necessary to function in the INTERSECT ecosystem, with the exception of checking connections/credentials to any backing services.
 
@@ -79,6 +83,7 @@ class IntersectClient:
           user_callback: The callback function you can use to handle response messages from Services.
             If this is left empty, you can only send a single message
           event_callback: The callback function you can use to handle events from any Service.
+          timeout_callback: The callback function you can use to handle request timeouts.
         """
         # this is called here in case a user created the object using "IntersectClientConfig.model_construct()" to skip validation
         config = IntersectClientConfig.model_validate(config)
@@ -87,6 +92,8 @@ class IntersectClient:
             die('user_callback function should be a callable function if defined')
         if event_callback is not None and not callable(event_callback):
             die('event_callback function should be a callable function if defined')
+        if timeout_callback is not None and not callable(timeout_callback):
+            die('timeout_callback function should be a callable function if defined')
         if not user_callback and not event_callback:
             die('must define at least one of user_callback or event_callback')
         if not user_callback:
@@ -146,6 +153,10 @@ class IntersectClient:
                     )
         self._user_callback = user_callback
         self._event_callback = event_callback
+        self._timeout_callback = timeout_callback
+        self._pending_requests: defaultdict[str, list] = defaultdict(list)
+        self._stop_timeout_thread = Event()
+        self._timeout_thread = Thread(target=self._check_timeouts, daemon=True)
 
     @final
     def startup(self) -> Self:
@@ -171,6 +182,8 @@ class IntersectClient:
         # this problem is quite noticeable with the AMQP hello-world example,
         # and has nothing to do with the Service at all.
         time.sleep(1.0)
+
+        self._timeout_thread.start()
 
         if self._resend_initial_messages or not self._sent_initial_messages:
             for message in self._initial_messages:
@@ -200,10 +213,28 @@ class IntersectClient:
         """
         logger.info(f'Client is shutting down (reason: {reason})')
 
+        self._stop_timeout_thread.set()
+        self._timeout_thread.join()
         self._control_plane_manager.disconnect()
 
         logger.info('Client shutdown complete')
         return self
+
+    def _check_timeouts(self) -> None:
+        """Periodically check for timed out requests."""
+        while not self._stop_timeout_thread.is_set():
+            now = time.time()
+            for operation_id, requests in list(self._pending_requests.items()):
+                for request in requests:
+                    if now > request['timeout']:
+                        try:
+                            request['on_timeout'](operation_id)
+                        except Exception as e:
+                            logger.warning(f'Exception from timeout callback for operation {operation_id}:\n{e}')
+                        requests.remove(request)
+                if not requests:
+                    del self._pending_requests[operation_id]
+            time.sleep(0.1)  # Sleep for a short duration
 
     @final
     def is_connected(self) -> bool:
@@ -256,6 +287,13 @@ class IntersectClient:
             # A client should also know enough about service SDK versions to know if
             # it's even possible to try to send messages between them.
             send_os_signal()
+            return
+
+        # If not in pending requests, it already timed out, so ignore this response
+        if message['operationId'] in self._pending_requests:
+            del self._pending_requests[message['operationId']]
+        else:
+            logger.debug(f'Received response for operation {message["operationId"]} that already timed out, ignoring')
             return
 
         # TWO: GET DATA FROM APPROPRIATE DATA STORE AND DESERIALIZE IT
@@ -436,3 +474,11 @@ class IntersectClient:
         # but cannot communicate the response to the Client.
         # in experiment controllers or production, you'll want to set persist to True
         self._control_plane_manager.publish_message(channel, msg, persist=False)
+
+        if params.timeout is not None and params.on_timeout is not None:
+            self._pending_requests[params.operation].append(
+                {
+                    'timeout': time.time() + params.timeout,
+                    'on_timeout': params.on_timeout,
+                }
+            )
