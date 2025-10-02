@@ -59,6 +59,7 @@ class IntersectClient:
     - startup()
     - shutdown()
     - is_connected()
+    - considered_unrecoverable()
 
     No other functions or parameters are guaranteed to remain stable.
 
@@ -262,6 +263,13 @@ class IntersectClient:
             request_params = self._data_plane_manager.incoming_message_data_handler(
                 payload, headers.data_handler
             )
+            if not headers.has_error:
+                match headers.encryption_scheme:
+                    case 'RSA':
+                        # TODO - decrypt and reassign request_params here
+                        pass
+                    case _:
+                        pass
             if content_type == 'application/json':
                 request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(request_params)
         except ValidationError as e:
@@ -415,7 +423,15 @@ class IntersectClient:
                 return
             serialized_msg = params.payload
 
-        # TWO: SEND DATA TO APPROPRIATE DATA STORE
+        # TWO: encrypt message
+        match params.encryption_scheme:
+            case 'RSA':
+                # TODO reassign serialized_msg here to encrypted value
+                pass
+            case _:
+                pass
+
+        # THREE: SEND DATA TO APPROPRIATE DATA STORE
         try:
             payload = self._data_plane_manager.outgoing_message_data_handler(
                 serialized_msg, params.content_type, params.data_handler
@@ -427,12 +443,13 @@ class IntersectClient:
             send_os_signal()
             return
 
-        # THREE: SEND MESSAGE
+        # FOUR: SEND MESSAGE
         headers = create_userspace_message_headers(
             source=self._hierarchy.hierarchy_string('.'),
             destination=params.destination,
             data_handler=params.data_handler,
             operation_id=params.operation,
+            encryption_scheme=params.encryption_scheme,
         )
         logger.debug(f'Send userspace message:\n{headers}')
         channel = f'{params.destination.replace(".", "/")}/request'

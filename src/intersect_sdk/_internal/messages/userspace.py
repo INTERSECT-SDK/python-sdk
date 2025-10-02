@@ -23,9 +23,7 @@ from typing import Annotated
 from pydantic import AwareDatetime, BaseModel, Field, field_serializer
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
-from ...core_definitions import (
-    IntersectDataHandler,
-)
+from ...core_definitions import IntersectDataHandler, IntersectEncryptionScheme
 from ...version import version_string
 
 
@@ -116,6 +114,11 @@ class UserspaceMessageHeaders(BaseModel):
     This should only be set to "True" on return messages sent by services - NEVER clients.
     """
 
+    encryption_scheme: IntersectEncryptionScheme = 'NONE'
+    """
+    The encryption scheme of the message itself. This determines the requested payload.
+    """
+
     # make sure all non-string fields are serialized into strings, even in Python code
 
     @field_serializer('message_id', mode='plain')
@@ -140,6 +143,7 @@ def create_userspace_message_headers(
     destination: str,
     operation_id: str,
     data_handler: IntersectDataHandler,
+    encryption_scheme: IntersectEncryptionScheme,
     message_id: uuid.UUID | None = None,
     has_error: bool = False,
 ) -> dict[str, str]:
@@ -153,6 +157,7 @@ def create_userspace_message_headers(
         created_at=datetime.datetime.now(tz=datetime.timezone.utc),
         operation_id=operation_id,
         data_handler=data_handler,
+        encryption_scheme=encryption_scheme,
         has_error=has_error,
     ).model_dump(by_alias=True)
 
