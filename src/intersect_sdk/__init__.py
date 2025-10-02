@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         DataStoreConfigMap,
         HierarchyConfig,
     )
-    from .core_definitions import IntersectDataHandler, IntersectMimeType
+    from .core_definitions import IntersectDataHandler, IntersectEncryptionScheme, IntersectMimeType
     from .exceptions import IntersectCapabilityError
     from .schema import get_schema_from_capability_implementations
     from .service import IntersectService
@@ -67,6 +67,7 @@ __all__ = (
     'IntersectClientConfig',
     'IntersectDataHandler',
     'IntersectDirectMessageParams',
+    'IntersectEncryptionScheme',
     'IntersectEventDefinition',
     'IntersectEventMessageParams',
     'IntersectMimeType',
@@ -101,6 +102,7 @@ __lazy_imports = {
     'IntersectClientConfig': '.config.client',
     'IntersectDataHandler': '.core_definitions',
     'IntersectDirectMessageParams': '.shared_callback_definitions',
+    'IntersectEncryptionScheme': '.core_definitions',
     'IntersectEventDefinition': '.service_definitions',
     'IntersectEventMessageParams': '.shared_callback_definitions',
     'IntersectMimeType': '.core_definitions',

@@ -115,6 +115,7 @@ def test_create_userspace_message() -> None:
         data_handler=IntersectDataHandler.MESSAGE,
         request_id=uuid.uuid4(),
         campaign_id=uuid.uuid4(),
+        encryption_scheme='NONE',
     )
 
     # make sure all values are serialized as strings, this is necessary for some protocols i.e. MQTT5 Properties

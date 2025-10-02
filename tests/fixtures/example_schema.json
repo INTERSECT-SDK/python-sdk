@@ -23,6 +23,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -43,6 +47,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -65,6 +73,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "image/png",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -80,6 +92,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "image/png",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -98,6 +114,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -115,6 +135,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -133,6 +157,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -150,6 +178,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -176,6 +208,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -189,6 +225,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -204,6 +244,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -231,6 +275,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -249,6 +297,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -264,6 +316,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -281,6 +337,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -294,6 +354,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -311,6 +375,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -324,6 +392,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               }
@@ -335,6 +407,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -348,6 +424,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               }
@@ -359,6 +439,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -373,6 +457,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -388,6 +476,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -402,6 +494,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -419,6 +515,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -433,6 +533,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -456,6 +560,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -473,6 +581,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -492,6 +604,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -506,6 +622,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -521,6 +641,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -538,6 +662,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -554,6 +682,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -575,6 +707,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -593,6 +729,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -605,6 +745,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -619,6 +763,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -633,6 +781,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -650,6 +802,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -670,6 +826,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -689,6 +849,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -729,6 +893,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               }
@@ -741,6 +909,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -755,6 +927,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -772,6 +948,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -791,6 +971,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -812,6 +996,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -825,6 +1013,10 @@
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
               "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -1200,6 +1392,15 @@
             "has_error": {
               "description": "If this value is True, the payload will contain the error message (a string)",
               "title": "Has Error",
+              "type": "string"
+            },
+            "encryption_scheme": {
+              "default": "NONE",
+              "enum": [
+                "NONE",
+                "RSA"
+              ],
+              "title": "Encryption Scheme",
               "type": "string"
             }
           },

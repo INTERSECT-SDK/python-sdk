@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 if TYPE_CHECKING:
     from pydantic import TypeAdapter
 
-    from ..core_definitions import IntersectDataHandler, IntersectMimeType
+    from ..core_definitions import (
+        IntersectDataHandler,
+        IntersectEncryptionScheme,
+        IntersectMimeType,
+    )
 
 
 class FunctionMetadata(NamedTuple):
@@ -41,6 +45,10 @@ class FunctionMetadata(NamedTuple):
     response_data_transfer_handler: IntersectDataHandler
     """
     How we intend on handling the response value
+    """
+    encryption_schemes: set[IntersectEncryptionScheme]
+    """
+    Supported encryption schemes
     """
     strict_validation: bool
     """
