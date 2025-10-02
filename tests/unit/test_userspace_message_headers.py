@@ -103,6 +103,7 @@ def test_create_userspace_message() -> None:
         destination='destination',
         operation_id='operation',
         data_handler=IntersectDataHandler.MESSAGE,
+        encryption_scheme='NONE',
     )
 
     # make sure all values are serialized as strings, this is necessary for some protocols i.e. MQTT5 Properties

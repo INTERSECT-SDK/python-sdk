@@ -112,6 +112,7 @@ def test_call_user_function_with_invalid_payload() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='ReturnTypeMismatchCapability.wrong_return_annotation',
+            encryption_scheme='NONE',
         ),
         True,
     )
