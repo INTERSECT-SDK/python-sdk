@@ -13,6 +13,8 @@ sphinx:
   # Fail on all warnings to avoid broken references
   fail_on_warning: true
 
+formats: all
+
 python:
   install:
     - method: pip

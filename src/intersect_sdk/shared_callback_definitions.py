@@ -1,6 +1,8 @@
 """Callback definitions shared between Services, Capabilities, and Clients."""
 
-from typing import Annotated, Any, TypeAlias
+from __future__ import annotations
+
+from typing import Annotated, Any, Callable, Dict, List, TypeAlias, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -73,6 +75,15 @@ class IntersectDirectMessageParams(BaseModel):
     # pydantic config
     model_config = ConfigDict(revalidate_instances='always')
 
+    timeout: float | None = None
+    """
+    The timeout in seconds for the request. If the request is not fulfilled within this time, the on_timeout callback will be called.
+    """
+
+    on_timeout: Callable[[], None] | None = None
+    """
+    The callback to call if the request times out.
+    """
 
 class IntersectEventMessageParams(BaseModel):
     """Public facing properties of events the Client/Service wants to listen to."""
