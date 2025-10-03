@@ -26,7 +26,7 @@ class CapabilityWithMinio(IntersectBaseCapabilityImplementation):
     def arbitrary_function(self, param: int) -> int: ...
 
 
-def test_minio_not_allowed_without_config(caplog: pytest.LogCaptureFixture):
+def test_minio_not_allowed_without_config(caplog: pytest.LogCaptureFixture) -> None:
     cap = CapabilityWithMinio()
     # note that despite the broker configuration, you do not actually need a broker running for this test
     conf = IntersectServiceConfig(
@@ -36,10 +36,13 @@ def test_minio_not_allowed_without_config(caplog: pytest.LogCaptureFixture):
                 username='intersect_username',
                 password='intersect_password',
                 port=1883,
-                protocol='mqtt3.1.1',
+                protocol='mqtt5.0',
             ),
         ],
     )
     with pytest.raises(SystemExit):
         IntersectService([cap], conf)
-    assert "function 'arbitrary_function' should not set response_data_type as 1" in caplog.text
+    assert (
+        "function 'arbitrary_function' should not set response_data_type as IntersectDataHandler.MINIO"
+        in caplog.text
+    )

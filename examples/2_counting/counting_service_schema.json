@@ -8,8 +8,16 @@
   },
   "defaultContentType": "application/json",
   "capabilities": {
+    "intersect_sdk": {
+      "endpoints": {},
+      "events": {},
+      "status": {
+        "$ref": "#/components/schemas/IntersectCoreStatus"
+      },
+      "description": "Core capability present in every INTERSECT Service.\n\nThis may be called explicitly by any Client interacting with any SDK service. Set the operation to be \"intersect_sdk.<ENDPOINT>\"."
+    },
     "CountingExample": {
-      "channels": {
+      "endpoints": {
         "reset_count": {
           "publish": {
             "message": {
@@ -32,12 +40,12 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "boolean"
+                "type": "boolean",
+                "title": "start_again"
               }
             },
             "description": "Set the counter back to 0.\n\nParams\n  start_again: if True, start the counter again; if False, the\n    counter will remain off.\n\nReturns:\n  the state BEFORE the counter was reset"
-          },
-          "events": []
+          }
         },
         "start_count": {
           "publish": {
@@ -62,8 +70,7 @@
               }
             },
             "description": "Start the counter (potentially from any number). \"Fails\" if the counter is already running.\n\nReturns:\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was started successfully\n    False - if counter was already running and this was called"
-          },
-          "events": []
+          }
         },
         "stop_count": {
           "publish": {
@@ -88,20 +95,100 @@
               }
             },
             "description": "Stop the new ticker.\n\nReturns:\n  A CountingServiceCapabilityImplementationResponse object. The success value will be:\n    True - if counter was stopped successfully\n    False - if counter was already not running and this was called"
-          },
-          "events": []
+          }
         }
+      },
+      "events": {},
+      "status": {
+        "$ref": "#/components/schemas/CountingServiceCapabilityImplementationState"
       },
       "description": "This example is meant to showcase that your implementation is able to track state if you want it to.\n\nPlease note that this is not an especially robust implementation, as in the instance\nthe service gets two messages at the same time, it may manage to create\ntwo threads at once."
     }
   },
-  "events": {},
-  "status": {
-    "$ref": "#/components/schemas/CountingServiceCapabilityImplementationState"
-  },
   "components": {
     "schemas": {
+      "IntersectCoreStatus": {
+        "description": "Core status information about the INTERSECT-SDK Service as a whole.",
+        "properties": {
+          "uptime": {
+            "format": "duration",
+            "title": "Uptime",
+            "type": "string"
+          },
+          "logical_cpus": {
+            "title": "Logical CPUs",
+            "type": "integer"
+          },
+          "physical_cpus": {
+            "title": "Physical CPUs",
+            "type": "integer"
+          },
+          "cpu_percentages": {
+            "items": {
+              "type": "number"
+            },
+            "title": "CPU Percentages",
+            "type": "array"
+          },
+          "service_cpu_percentage": {
+            "title": "Service CPU Usage Percentage",
+            "type": "number"
+          },
+          "memory_total": {
+            "title": "Memory Total",
+            "type": "integer"
+          },
+          "memory_usage_percentage": {
+            "title": "Memory Usage Percentage",
+            "type": "number"
+          },
+          "service_memory_percentage": {
+            "title": "Service Memory Usage Percentage",
+            "type": "number"
+          },
+          "disk_total": {
+            "title": "Disk Total",
+            "type": "integer"
+          },
+          "disk_usage_percentage": {
+            "title": "Disk Usage Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "uptime",
+          "logical_cpus",
+          "physical_cpus",
+          "cpu_percentages",
+          "service_cpu_percentage",
+          "memory_total",
+          "memory_usage_percentage",
+          "service_memory_percentage",
+          "disk_total",
+          "disk_usage_percentage"
+        ],
+        "title": "IntersectCoreStatus",
+        "type": "object"
+      },
       "CountingServiceCapabilityImplementationState": {
+        "description": "We can't just use any class to represent state. This class either needs to extend Pydantic's BaseModel class, or be a dataclass. Both the Python standard library's dataclass and Pydantic's dataclass are valid.",
+        "properties": {
+          "count": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "counting": {
+            "default": false,
+            "title": "Counting",
+            "type": "boolean"
+          }
+        },
+        "title": "CountingServiceCapabilityImplementationState",
+        "type": "object"
+      },
+      "__CountingServiceCapabilityImplementationState": {
         "description": "We can't just use any class to represent state. This class either needs to extend Pydantic's BaseModel class, or be a dataclass. Both the Python standard library's dataclass and Pydantic's dataclass are valid.",
         "properties": {
           "count": {
@@ -122,7 +209,7 @@
       "CountingServiceCapabilityImplementationResponse": {
         "properties": {
           "state": {
-            "$ref": "#/components/schemas/CountingServiceCapabilityImplementationState"
+            "$ref": "#/components/schemas/__CountingServiceCapabilityImplementationState"
           },
           "success": {
             "title": "Success",
@@ -155,13 +242,13 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Destination",
               "type": "string"
             },
@@ -178,11 +265,7 @@
               "type": "string"
             },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler"
-                }
-              ],
+              "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler",
               "default": 0,
               "description": "Code signifying where data is stored."
             },
@@ -218,7 +301,7 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
@@ -235,13 +318,13 @@
               "type": "string"
             },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler"
-                }
-              ],
+              "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler",
               "default": 0,
               "description": "Code signifying where data is stored."
+            },
+            "capability_name": {
+              "title": "Capability Name",
+              "type": "string"
             },
             "event_name": {
               "title": "Event Name",
@@ -252,6 +335,7 @@
             "source",
             "created_at",
             "sdk_version",
+            "capability_name",
             "event_name"
           ],
           "title": "EventMessageHeaders",

@@ -16,28 +16,28 @@ Clients should be CONSUMING from their userspace channel, but should only get me
 from services they explicitly messaged.
 """
 
-from __future__ import annotations
-
 import datetime
 import uuid
-from typing import Any, Union
+from typing import Annotated
 
-from pydantic import AwareDatetime, Field, TypeAdapter
-from typing_extensions import Annotated, TypedDict
+from pydantic import AwareDatetime, BaseModel, Field, field_serializer
 
 from ...constants import SYSTEM_OF_SYSTEM_REGEX
 from ...core_definitions import (
     IntersectDataHandler,
-    IntersectMimeType,
 )
 from ...version import version_string
-from ..data_plane.minio_utils import MinioPayload  # noqa: TC001 (this is runtime checked)
 
 
-class UserspaceMessageHeader(TypedDict):
-    """Matches the current header definition for INTERSECT messages.
+class UserspaceMessageHeaders(BaseModel):
+    """ALL request/response/command messages must contain this header.
 
-    ALL messages should contain this header.
+    We do not include the content type of the message in the header, it is handled separately.
+    """
+
+    message_id: uuid.UUID
+    """
+    ID of the message.
     """
 
     source: Annotated[
@@ -77,6 +77,18 @@ class UserspaceMessageHeader(TypedDict):
       SDKs should be assumed NOT to be compatible if they don't share the major version.
     """
 
+    operation_id: Annotated[
+        str,
+        Field(
+            description='Name of capability and operation we want to call, in the format ${CAPABILITY_NAME}.${FUNCTION_NAME}'
+        ),
+    ]
+    """
+    The name of the operation we want to call. For Services, this indicates the operation which will be called; for Clients, this is the operation which was called.
+
+    This maps to the format ${CAPABILITY_NAME}.${FUNCTION_NAME} .
+    """
+
     data_handler: Annotated[
         IntersectDataHandler,
         Field(
@@ -104,82 +116,51 @@ class UserspaceMessageHeader(TypedDict):
     This should only be set to "True" on return messages sent by services - NEVER clients.
     """
 
+    # make sure all non-string fields are serialized into strings, even in Python code
 
-class UserspaceMessage(TypedDict):
-    """Core definition of a message.
+    @field_serializer('message_id', mode='plain')
+    def ser_uuid(self, uuid: uuid.UUID) -> str:
+        return str(uuid)
 
-    The structure of this class is meant to somewhat closely mirror the AsyncAPI definition of a message:
-    https://www.asyncapi.com/docs/reference/specification/v2.6.0#messageObject
-    """
+    @field_serializer('created_at', mode='plain')
+    def ser_datetime(self, dt: datetime.datetime) -> str:
+        return dt.isoformat()
 
-    messageId: uuid.UUID
-    """
-    ID of the message. (NOTE: this is defined here to conform to the AsyncAPI spec)
-    """
+    @field_serializer('has_error', mode='plain')
+    def ser_boolean(self, boolean: bool) -> str:
+        return str(boolean).lower()
 
-    operationId: str
-    """
-    The name of the operation we want to call. These would map to the names of user functions.
-    """
-
-    headers: UserspaceMessageHeader
-    """
-    the headers of the message
-    """
-
-    payload: Union[bytes, MinioPayload]  # noqa: UP007 (Pydantic uses runtime annotations)
-    """
-    main payload of the message. Needs to match the schema format, including the content type.
-
-    NOTE: The payload's contents will differ based on the data_handler property in the message header.
-    NOTE: If "has_error" flag in the message headers is set to "True", the payload will instead contain an error string.
-    """
-
-    contentType: Annotated[IntersectMimeType, Field(IntersectMimeType.JSON)]
-    """
-    The content type to use when encoding/decoding a message's payload.
-    The value MUST be a specific media type (e.g. application/json).
-    When omitted, the value MUST be the one specified on the defaultContentType field.
-
-    Note that if the data_handler type is anything other MESSAGE, the actual content-type of the message
-    payload will depend on the data_handler type.
-    """
+    @field_serializer('data_handler', mode='plain')
+    def ser_enum(self, enum: IntersectDataHandler) -> str:
+        return enum.value
 
 
-def create_userspace_message(
+def create_userspace_message_headers(
     source: str,
     destination: str,
     operation_id: str,
-    content_type: IntersectMimeType,
     data_handler: IntersectDataHandler,
-    payload: Any,
     message_id: uuid.UUID | None = None,
     has_error: bool = False,
-) -> UserspaceMessage:
-    """Payloads depend on the data_handler and has_error."""
+) -> dict[str, str]:
+    """Generate raw headers and write them into a generic data structure which can be handled by any broker protocol."""
     msg_id = message_id if message_id else uuid.uuid4()
-    return UserspaceMessage(
-        messageId=msg_id,
-        operationId=operation_id,
-        contentType=content_type,
-        payload=payload,
-        headers=UserspaceMessageHeader(
-            source=source,
-            destination=destination,
-            sdk_version=version_string,
-            created_at=datetime.datetime.now(tz=datetime.timezone.utc),
-            data_handler=data_handler,
-            has_error=has_error,
-        ),
-    )
+    return UserspaceMessageHeaders(
+        message_id=msg_id,
+        source=source,
+        destination=destination,
+        sdk_version=version_string,
+        created_at=datetime.datetime.now(tz=datetime.timezone.utc),
+        operation_id=operation_id,
+        data_handler=data_handler,
+        has_error=has_error,
+    ).model_dump(by_alias=True)
 
 
-USERSPACE_MESSAGE_ADAPTER = TypeAdapter(UserspaceMessage)
+def validate_userspace_message_headers(raw_headers: dict[str, str]) -> UserspaceMessageHeaders:
+    """Validate raw headers and return the object.
 
-
-def deserialize_and_validate_userspace_message(msg: bytes) -> UserspaceMessage:
-    """If the "msg" param is a valid userspace message, return the object.
-
-    Raises Pydantic ValidationError if "msg" is not a valid userspace message
+    Raises:
+      pydantic.ValidationError - if the headers were missing any essential information
     """
-    return USERSPACE_MESSAGE_ADAPTER.validate_json(msg, strict=True)
+    return UserspaceMessageHeaders(**raw_headers)  # type: ignore[arg-type]

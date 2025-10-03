@@ -15,7 +15,6 @@ from intersect_sdk import (
     DataStoreConfigMap,
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
-    IntersectMimeType,
     IntersectService,
     IntersectServiceConfig,
     intersect_message,
@@ -24,9 +23,8 @@ from intersect_sdk._internal.control_plane.control_plane_manager import (
     ControlPlaneManager,
 )
 from intersect_sdk._internal.messages.userspace import (
-    UserspaceMessage,
-    create_userspace_message,
-    deserialize_and_validate_userspace_message,
+    create_userspace_message_headers,
+    validate_userspace_message_headers,
 )
 from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 
@@ -64,7 +62,7 @@ def make_intersect_service() -> IntersectService:
                     username='intersect_username',
                     password='intersect_password',
                     port=1883,
-                    protocol='mqtt3.1.1',
+                    protocol='mqtt5.0',
                 ),
             ],
             status_interval=30.0,
@@ -79,7 +77,7 @@ def make_message_interceptor() -> ControlPlaneManager:
                 username='intersect_username',
                 password='intersect_password',
                 port=1883,
-                protocol='mqtt3.1.1',
+                protocol='mqtt5.0',
             )
         ],
     )
@@ -89,13 +87,15 @@ def make_message_interceptor() -> ControlPlaneManager:
 
 
 # the service is not fulfilling its schema contract in the return value, so we get an error message back
-def test_call_user_function_with_invalid_payload():
+def test_call_user_function_with_invalid_payload() -> None:
     intersect_service = make_intersect_service()
     message_interceptor = make_message_interceptor()
     msg = [None]
 
-    def userspace_msg_callback(payload: bytes) -> None:
-        msg[0] = deserialize_and_validate_userspace_message(payload)
+    def userspace_msg_callback(
+        payload: bytes, content_type: str, raw_headers: dict[str, str]
+    ) -> None:
+        msg[0] = (payload, content_type, validate_userspace_message_headers(raw_headers))
 
     message_interceptor.add_subscription_channel(
         'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
@@ -105,14 +105,13 @@ def test_call_user_function_with_invalid_payload():
     time.sleep(1.0)
     message_interceptor.publish_message(
         intersect_service._service_channel_name,
-        create_userspace_message(
+        b'2',
+        'application/json',
+        create_userspace_message_headers(
             source='msg.msg.msg.msg.msg',
             destination='test.test.test.test.test',
-            content_type=IntersectMimeType.JSON,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='ReturnTypeMismatchCapability.wrong_return_annotation',
-            # calculate_fibonacci takes in a tuple of two integers but we'll just send it one
-            payload=b'2',
         ),
         True,
     )
@@ -120,6 +119,5 @@ def test_call_user_function_with_invalid_payload():
     intersect_service.shutdown()
     message_interceptor.disconnect()
 
-    msg: UserspaceMessage = msg[0]
-    assert msg['headers']['has_error'] is True
-    assert b'Service domain logic threw exception.' in msg['payload']
+    assert msg[0][2].has_error is True
+    assert b'Service domain logic threw exception.' in msg[0][0]

@@ -1,37 +1,47 @@
 """Core enumerations and structures used throughout INTERSECT, for both client and service."""
 
-from enum import Enum, IntEnum
+from enum import Enum
+from typing import Annotated
+
+from pydantic import Field
+
+from .constants import MIME_TYPE_REGEX
 
 
-class IntersectDataHandler(IntEnum):
+class IntersectDataHandler(Enum):
     """What data transfer type do you want to use for handling the request/response?
 
     Default: MESSAGE
     """
 
-    MESSAGE = 0
-    MINIO = 1
+    MESSAGE = 'MESSAGE'
+    MINIO = 'MINIO'
 
 
-class IntersectMimeType(Enum):
-    """Roughly corresponds to "Content-Type" values, but enforce standardization of values.
+IntersectMimeType = Annotated[str, Field(pattern=MIME_TYPE_REGEX)]
+"""
+Special typing which represents a "Content-Type" value (i.e. `application/json`).
 
-    Default: JSON
+The value should be a MIME type; references can be found at:
 
-    The value should be a MIME type; references can be found at:
+- https://www.iana.org/assignments/media-types/media-types.xhtml
 
-    - https://www.iana.org/assignments/media-types/media-types.xhtml
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
 
-    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+These values are used to help map an output (or a part of an output) from an arbitrary microservice to an input (or a part of an input) of another arbitrary microservice.
 
-    JSON is acceptable for any file which contains non-binary data.
+In general, mime types follow one of two rules:
+- Complex types (types which cannot be represented as a sequence of bytes) MUST be represented by a Content-Type of 'application/json' (this is default).
 
-    BINARY is acceptable for any file which contains binary data and can reasonably be handled as application/octet-string.
+  If a complex type has binary data in a field, this field MUST be Base64 encoded.
 
-    This list is not exhaustive and should be regularly updated. If this list is missing a MIME type you would like to use, please contact the developers or open an issue.
-    """
+  You can mark the type with either 'pydantic.Base64Bytes', or if you need the value to be URL safe, 'pydantic.Base64UrlBytes'. You MUST also specify the "contentType" property, like this:
 
-    JSON = 'application/json'
-    STRING = 'text/plain'
-    BINARY = 'application/octet-string'
-    HDF5 = 'application/x-hdf5'
+    ```
+    field: Annotated[pydantic.Base64Bytes, pydantic.Field(json_schema_extra={"contentType": "image/png"})]
+    ```
+
+  INTERSECT is able to handle serialization/deserialization of 'application/json' types for you, though note that you will need to verify binary data (incoming and outgoing) yourself. INTERSECT will handle the Base64 encoding/decoding, though.
+
+- If your Content-Type value is ANYTHING ELSE, you MUST mark it as "bytes" . In this instance, INTERSECT will not base64-encode or base64-decode the value.
+"""

@@ -8,8 +8,16 @@
   },
   "defaultContentType": "application/json",
   "capabilities": {
+    "intersect_sdk": {
+      "endpoints": {},
+      "events": {},
+      "status": {
+        "$ref": "#/components/schemas/IntersectCoreStatus"
+      },
+      "description": "Core capability present in every INTERSECT Service.\n\nThis may be called explicitly by any Client interacting with any SDK service. Set the operation to be \"intersect_sdk.<ENDPOINT>\"."
+    },
     "DummyCapability": {
-      "channels": {
+      "endpoints": {
         "annotated_set": {
           "publish": {
             "message": {
@@ -25,7 +33,8 @@
                 },
                 "minItems": 1,
                 "type": "array",
-                "uniqueItems": true
+                "uniqueItems": true,
+                "title": "annotated_set"
               }
             },
             "description": "return numbers in set which are prime numbers in the range 1-100"
@@ -44,12 +53,80 @@
                 },
                 "minItems": 1,
                 "type": "array",
-                "uniqueItems": true
+                "uniqueItems": true,
+                "title": "positive_int_set"
               }
             },
             "description": "return numbers in set which are prime numbers in the range 1-100"
+          }
+        },
+        "binary_to_binary": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "image/png",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "format": "binary",
+                "type": "string",
+                "title": "binary_to_binary",
+                "contentMediaType": "image/png"
+              }
+            }
           },
-          "events": []
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "image/png",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "format": "binary",
+                "maxLength": 1048576,
+                "type": "string",
+                "title": "binary_to_binary",
+                "contentMediaType": "image/png"
+              }
+            }
+          }
+        },
+        "calculate_3n_plus_1": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "title": "calculate_3n_plus_1"
+              }
+            },
+            "description": "Calculates the famous \"3n + 1\" problem. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "maximum": 1000000,
+                "minimum": 1,
+                "type": "integer",
+                "title": "token"
+              }
+            },
+            "description": "Calculates the famous \"3n + 1\" problem. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
+          }
         },
         "calculate_fibonacci": {
           "publish": {
@@ -63,7 +140,8 @@
                 "items": {
                   "type": "integer"
                 },
-                "type": "array"
+                "type": "array",
+                "title": "calculate_fibonacci"
               }
             },
             "description": "calculates all fibonacci numbers between two numbers\n\ni.e. start = 4, end = 6:\nresponse = [5, 8, 13]"
@@ -86,14 +164,14 @@
                     "type": "integer"
                   }
                 ],
-                "type": "array"
+                "type": "array",
+                "title": "request"
               }
             },
             "description": "calculates all fibonacci numbers between two numbers\n\ni.e. start = 4, end = 6:\nresponse = [5, 8, 13]"
-          },
-          "events": []
+          }
         },
-        "calculate_weird_algorithm": {
+        "divide_by_zero_exceptions": {
           "publish": {
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
@@ -102,13 +180,10 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "items": {
-                  "type": "integer"
-                },
-                "type": "array"
+                "type": "number",
+                "title": "divide_by_zero_exceptions"
               }
-            },
-            "description": "Weird algorithm calculator. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
+            }
           },
           "subscribe": {
             "message": {
@@ -118,14 +193,11 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "maximum": 1000000,
-                "minimum": 1,
-                "type": "integer"
+                "type": "integer",
+                "title": "param"
               }
-            },
-            "description": "Weird algorithm calculator. Takes in an integer, outputs an array of numbers\nwhich follow the algorithm all the way to \"1\"."
-          },
-          "events": []
+            }
+          }
         },
         "get_url_parts": {
           "publish": {
@@ -149,10 +221,11 @@
                     }
                   ]
                 },
-                "type": "object"
+                "type": "object",
+                "title": "get_url_parts"
               }
             },
-            "description": "example of automatic URL parsing and schema validation"
+            "description": "example of automatic URL parsing and schema validation\n\n(the return type should realistically be a TypedDict, not a dict)"
           },
           "subscribe": {
             "message": {
@@ -164,12 +237,12 @@
               "payload": {
                 "format": "uri",
                 "minLength": 1,
-                "type": "string"
+                "type": "string",
+                "title": "url"
               }
             },
-            "description": "example of automatic URL parsing and schema validation"
-          },
-          "events": []
+            "description": "example of automatic URL parsing and schema validation\n\n(the return type should realistically be a TypedDict, not a dict)"
+          }
         },
         "ip4_to_ip6": {
           "publish": {
@@ -181,7 +254,8 @@
               },
               "payload": {
                 "format": "ipv6",
-                "type": "string"
+                "type": "string",
+                "title": "ip4_to_ip6"
               }
             },
             "description": "example of IPaddress conversion\nreturn value will always start with '2002::' based on implementation\n\nPydantic also supports IP networks and interfaces, in addition to addresses"
@@ -189,18 +263,18 @@
           "subscribe": {
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-              "contentType": "text/plain",
+              "contentType": "application/json",
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
                 "format": "ipv4",
-                "type": "string"
+                "type": "string",
+                "title": "ip4"
               }
             },
             "description": "example of IPaddress conversion\nreturn value will always start with '2002::' based on implementation\n\nPydantic also supports IP networks and interfaces, in addition to addresses"
-          },
-          "events": []
+          }
         },
         "primitive_event_message": {
           "publish": {
@@ -211,7 +285,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "primitive_event_message"
               }
             }
           },
@@ -225,15 +300,11 @@
               "payload": {
                 "default": 1,
                 "minimum": 1,
-                "type": "integer"
+                "type": "integer",
+                "title": "emit_times"
               }
             }
-          },
-          "events": [
-            "int",
-            "str",
-            "float"
-          ]
+          }
         },
         "primitive_event_message_random": {
           "publish": {
@@ -244,7 +315,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "primitive_event_message_random"
               }
             }
           },
@@ -256,12 +328,31 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               }
             }
+          }
+        },
+        "raise_exception_no_param": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string",
+                "title": "raise_exception_no_param"
+              }
+            }
           },
-          "events": [
-            "int",
-            "str",
-            "float"
-          ]
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              }
+            }
+          }
         },
         "search_for_lucky_string_in_json": {
           "publish": {
@@ -272,7 +363,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "boolean"
+                "type": "boolean",
+                "title": "search_for_lucky_string_in_json"
               }
             },
             "description": "return true if our lucky string is in JSON, false otherwise"
@@ -289,8 +381,7 @@
               }
             },
             "description": "return true if our lucky string is in JSON, false otherwise"
-          },
-          "events": []
+          }
         },
         "test_datetime": {
           "publish": {
@@ -301,7 +392,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_datetime"
               }
             },
             "description": "NOTE: If strict mode is ON, only JSON strings can be coerced into datetimes.\nIf strict mode is OFF, integers can also be coerced into datetimes."
@@ -315,12 +407,12 @@
               },
               "payload": {
                 "format": "date-time",
-                "type": "string"
+                "type": "string",
+                "title": "request"
               }
             },
             "description": "NOTE: If strict mode is ON, only JSON strings can be coerced into datetimes.\nIf strict mode is OFF, integers can also be coerced into datetimes."
-          },
-          "events": []
+          }
         },
         "test_decimal": {
           "publish": {
@@ -331,7 +423,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_decimal"
               }
             },
             "description": "take in decimal input\nreturn decimal divided by PI (20 precision digits)"
@@ -351,12 +444,12 @@
                   {
                     "type": "string"
                   }
-                ]
+                ],
+                "title": "input_value"
               }
             },
             "description": "take in decimal input\nreturn decimal divided by PI (20 precision digits)"
-          },
-          "events": []
+          }
         },
         "test_dicts": {
           "publish": {
@@ -370,7 +463,8 @@
                 "additionalProperties": {
                   "type": "integer"
                 },
-                "type": "object"
+                "type": "object",
+                "title": "test_dicts"
               }
             },
             "description": "NOTE: JSON always stores Dict/Mapping keys as strings.\nIf the string can't be coerced into the input value, it will throw a RUNTIME error."
@@ -386,12 +480,12 @@
                 "additionalProperties": {
                   "type": "integer"
                 },
-                "type": "object"
+                "type": "object",
+                "title": "request"
               }
             },
             "description": "NOTE: JSON always stores Dict/Mapping keys as strings.\nIf the string can't be coerced into the input value, it will throw a RUNTIME error."
-          },
-          "events": []
+          }
         },
         "test_enum": {
           "publish": {
@@ -402,7 +496,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_enum"
               }
             },
             "description": "Returns either 'first' or 'later' depending on the enum value."
@@ -419,8 +514,7 @@
               }
             },
             "description": "Returns either 'first' or 'later' depending on the enum value."
-          },
-          "events": []
+          }
         },
         "test_generator": {
           "publish": {
@@ -434,7 +528,8 @@
                 "items": {
                   "type": "integer"
                 },
-                "type": "array"
+                "type": "array",
+                "title": "test_generator"
               }
             },
             "description": "TODO - Generators need more support than this.\n\nThis tests returning a generator function, which may be useful for streaming data.\nIn this example, yield all substring hashes of the request string.\n\nA couple of notes about the Generator type:\n  1) Given the typing is Generator[yield_type, send_type, return_type], only the yield_type matters\n  2) The schema will always look like \"{'items': {'type': <YIELD_TYPE>}, 'type': 'array'}\""
@@ -447,18 +542,18 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "request"
               }
             },
             "description": "TODO - Generators need more support than this.\n\nThis tests returning a generator function, which may be useful for streaming data.\nIn this example, yield all substring hashes of the request string.\n\nA couple of notes about the Generator type:\n  1) Given the typing is Generator[yield_type, send_type, return_type], only the yield_type matters\n  2) The schema will always look like \"{'items': {'type': <YIELD_TYPE>}, 'type': 'array'}\""
-          },
-          "events": []
+          }
         },
         "test_path": {
           "publish": {
             "message": {
               "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
-              "contentType": "text/plain",
+              "contentType": "application/json",
               "traits": {
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
@@ -470,7 +565,8 @@
                   {
                     "type": "null"
                   }
-                ]
+                ],
+                "title": "test_path"
               }
             },
             "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
@@ -485,12 +581,12 @@
               "payload": {
                 "format": "path",
                 "pattern": "([\\w-]+/)*([\\w-]+)\\.[\\w]+",
-                "type": "string"
+                "type": "string",
+                "title": "path"
               }
             },
             "description": "Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. \"..\").\n\nThe example regex would work for allowing inputs from a file which always has a file extension and does not allow backwards traversal from the root.\nIt only allows for relative paths and filenames only.\n\nIt's ideal to try to capture this in a regex so that the schema can represent validation 100%; this helps out clients.\nHowever, if you're unable to, it's not required to express everything through schema; you are always free to implement your\nown validation template.\n\nUsing \"Path\" as the request type adds a `\"format\": \"path\"` attribute to the schema and automatically serializes to Pathlib, assuming you want to use the\nPathlib API.\n\nRETURNS - the type of the file based on its URL, or null if it can't guess."
-          },
-          "events": []
+          }
         },
         "test_special_python_types": {
           "publish": {
@@ -516,8 +612,7 @@
                 "$ref": "#/components/schemas/MyTypedDict"
               }
             }
-          },
-          "events": []
+          }
         },
         "test_uuid": {
           "publish": {
@@ -528,7 +623,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "test_uuid"
               }
             },
             "description": "Get the 13th digit of a UUID to determine UUID VERSION"
@@ -542,12 +638,12 @@
               },
               "payload": {
                 "format": "uuid",
-                "type": "string"
+                "type": "string",
+                "title": "uid"
               }
             },
             "description": "Get the 13th digit of a UUID to determine UUID VERSION"
-          },
-          "events": []
+          }
         },
         "union_message_with_events": {
           "publish": {
@@ -565,7 +661,8 @@
                   {
                     "type": "string"
                   }
-                ]
+                ],
+                "title": "union_message_with_events"
               }
             }
           },
@@ -581,13 +678,11 @@
                   "str",
                   "int"
                 ],
-                "type": "string"
+                "type": "string",
+                "title": "param"
               }
             }
-          },
-          "events": [
-            "union"
-          ]
+          }
         },
         "union_response": {
           "publish": {
@@ -624,7 +719,8 @@
                     },
                     "type": "object"
                   }
-                ]
+                ],
+                "title": "union_response"
               }
             },
             "description": "Spit out a random string, integer, boolean, or object response"
@@ -638,8 +734,7 @@
               }
             },
             "description": "Spit out a random string, integer, boolean, or object response"
-          },
-          "events": []
+          }
         },
         "valid_default_argument": {
           "publish": {
@@ -650,7 +745,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "integer"
+                "type": "integer",
+                "title": "valid_default_argument"
               }
             },
             "description": "verifies that you can call a function with a default parameter"
@@ -664,12 +760,12 @@
               },
               "payload": {
                 "default": 4,
-                "type": "integer"
+                "type": "integer",
+                "title": "param"
               }
             },
             "description": "verifies that you can call a function with a default parameter"
-          },
-          "events": []
+          }
         },
         "verify_float_dict": {
           "publish": {
@@ -685,7 +781,8 @@
                     "type": "string"
                   }
                 },
-                "type": "object"
+                "type": "object",
+                "title": "verify_float_dict"
               }
             },
             "description": "verifies that dictionaries can have floats and integers as key types"
@@ -703,12 +800,12 @@
                     "type": "string"
                   }
                 },
-                "type": "object"
+                "type": "object",
+                "title": "param"
               }
             },
             "description": "verifies that dictionaries can have floats and integers as key types"
-          },
-          "events": []
+          }
         },
         "verify_nested": {
           "publish": {
@@ -736,45 +833,152 @@
               }
             },
             "description": "verifies that nested values are parsed correctly"
-          },
-          "events": []
+          }
         }
+      },
+      "events": {
+        "union": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "payload": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "union"
+          },
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "description": "Generic example of how to do a union event"
+        },
+        "int": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "payload": {
+            "description": "Generic integer event",
+            "type": "integer",
+            "title": "int"
+          },
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          }
+        },
+        "str": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "payload": {
+            "type": "string",
+            "title": "str"
+          },
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "description": "Generic string event"
+        },
+        "float": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "payload": {
+            "type": "number",
+            "title": "float"
+          },
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "description": "Generic float event"
+        },
+        "list_float": {
+          "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+          "contentType": "application/json",
+          "payload": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "list_float"
+          },
+          "traits": {
+            "$ref": "#/components/messageTraits/commonHeaders"
+          },
+          "description": "generic list of floats event"
+        }
+      },
+      "status": {
+        "$ref": "#/components/schemas/DummyStatus"
       },
       "description": "This is an example of the overarching capability class a user creates that we want to inject into the service.\n\nWhen defining entrypoints to your capability, use the @intersect_message() annotation. Your class will need\nat least one function with this annotation. These functions REQUIRE type annotations to function properly.\nSee the @intersect_message() annotation for more information.\n\nYou can potentially extend from multiple preexisting Capabilities in this class - each Capability may have\nseveral abstract functions which would need to be implemented by the user.\n\nBeyond this, you may define your capability class however you like, including through its constructor."
     }
   },
-  "events": {
-    "int": {
-      "type": "integer"
-    },
-    "str": {
-      "type": "string"
-    },
-    "float": {
-      "type": "number"
-    },
-    "union": {
-      "anyOf": [
-        {
-          "type": "integer"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "list_float": {
-      "items": {
-        "type": "number"
-      },
-      "type": "array"
-    }
-  },
-  "status": {
-    "$ref": "#/components/schemas/DummyStatus"
-  },
   "components": {
     "schemas": {
+      "IntersectCoreStatus": {
+        "description": "Core status information about the INTERSECT-SDK Service as a whole.",
+        "properties": {
+          "uptime": {
+            "format": "duration",
+            "title": "Uptime",
+            "type": "string"
+          },
+          "logical_cpus": {
+            "title": "Logical CPUs",
+            "type": "integer"
+          },
+          "physical_cpus": {
+            "title": "Physical CPUs",
+            "type": "integer"
+          },
+          "cpu_percentages": {
+            "items": {
+              "type": "number"
+            },
+            "title": "CPU Percentages",
+            "type": "array"
+          },
+          "service_cpu_percentage": {
+            "title": "Service CPU Usage Percentage",
+            "type": "number"
+          },
+          "memory_total": {
+            "title": "Memory Total",
+            "type": "integer"
+          },
+          "memory_usage_percentage": {
+            "title": "Memory Usage Percentage",
+            "type": "number"
+          },
+          "service_memory_percentage": {
+            "title": "Service Memory Usage Percentage",
+            "type": "number"
+          },
+          "disk_total": {
+            "title": "Disk Total",
+            "type": "integer"
+          },
+          "disk_usage_percentage": {
+            "title": "Disk Usage Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "uptime",
+          "logical_cpus",
+          "physical_cpus",
+          "cpu_percentages",
+          "service_cpu_percentage",
+          "memory_total",
+          "memory_usage_percentage",
+          "service_memory_percentage",
+          "disk_total",
+          "disk_usage_percentage"
+        ],
+        "title": "IntersectCoreStatus",
+        "type": "object"
+      },
       "Json": {
         "anyOf": [
           {
@@ -944,34 +1148,26 @@
     "messageTraits": {
       "commonHeaders": {
         "messageHeaders": {
-          "$defs": {
-            "IntersectDataHandler": {
-              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
-              "title": "IntersectDataHandler",
-              "type": "integer"
-            }
-          },
-          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "description": "ALL request/response/command messages must contain this header.\n\nWe do not include the content type of the message in the header, it is handled separately.",
           "properties": {
+            "message_id": {
+              "title": "Message Id",
+              "type": "string"
+            },
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Destination",
               "type": "string"
             },
             "created_at": {
               "description": "the UTC timestamp of message creation",
-              "format": "date-time",
               "title": "Created At",
               "type": "string"
             },
@@ -981,50 +1177,47 @@
               "title": "Sdk Version",
               "type": "string"
             },
+            "operation_id": {
+              "description": "Name of capability and operation we want to call, in the format ${CAPABILITY_NAME}.${FUNCTION_NAME}",
+              "title": "Operation Id",
+              "type": "string"
+            },
             "data_handler": {
-              "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler",
-              "default": 0,
-              "description": "Code signifying where data is stored."
+              "description": "Code signifying where data is stored.",
+              "type": "string"
             },
             "has_error": {
-              "default": false,
               "description": "If this value is True, the payload will contain the error message (a string)",
               "title": "Has Error",
-              "type": "boolean"
+              "type": "string"
             }
           },
           "required": [
+            "message_id",
             "source",
             "destination",
             "created_at",
-            "sdk_version"
+            "sdk_version",
+            "operation_id"
           ],
-          "title": "UserspaceMessageHeader",
+          "title": "UserspaceMessageHeaders",
           "type": "object"
         },
         "eventHeaders": {
-          "$defs": {
-            "IntersectDataHandler": {
-              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
-              "title": "IntersectDataHandler",
-              "type": "integer"
-            }
-          },
-          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "description": "ALL event messages must include this header.\n\nWe do not include the content type of the message in the header, it is handled separately.",
           "properties": {
+            "message_id": {
+              "title": "Message Id",
+              "type": "string"
+            },
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "created_at": {
               "description": "the UTC timestamp of message creation",
-              "format": "date-time",
               "title": "Created At",
               "type": "string"
             },
@@ -1035,19 +1228,28 @@
               "type": "string"
             },
             "data_handler": {
-              "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler",
-              "default": 0,
-              "description": "Code signifying where data is stored."
+              "description": "Code signifying where data is stored.",
+              "type": "string"
+            },
+            "capability_name": {
+              "description": "The name of the capability which emitted the event originally.",
+              "pattern": "^[a-zA-Z0-9]\\w*$",
+              "title": "Capability Name",
+              "type": "string"
             },
             "event_name": {
+              "description": "The name of the event that was emitted, namespaced to the capability.",
+              "pattern": "^[a-zA-Z0-9]\\w*$",
               "title": "Event Name",
               "type": "string"
             }
           },
           "required": [
+            "message_id",
             "source",
             "created_at",
             "sdk_version",
+            "capability_name",
             "event_name"
           ],
           "title": "EventMessageHeaders",

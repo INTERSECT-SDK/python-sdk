@@ -2,10 +2,9 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated
 
 from intersect_sdk import (
     HierarchyConfig,
@@ -72,7 +71,7 @@ class CountingServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
         """
         super().__init__()
         self.state = CountingServiceCapabilityImplementationState()
-        self.counter_thread: Optional[threading.Thread] = None
+        self.counter_thread: threading.Thread | None = None
 
     @intersect_status()
     def status(self) -> CountingServiceCapabilityImplementationState:
@@ -169,7 +168,7 @@ if __name__ == '__main__':
                 'username': 'intersect_username',
                 'password': 'intersect_password',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
             },
         ],
     }

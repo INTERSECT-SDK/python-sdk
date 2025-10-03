@@ -21,13 +21,13 @@ class IntersectEventObserver(Protocol):
     Used as the common interface for event emitters (i.e. CapabilityImplementations).
     """
 
-    def _on_observe_event(self, event_name: str, event_value: Any, operation: str) -> None:
+    def _on_observe_event(self, event_name: str, event_value: Any, capability_name: str) -> None:
         """How to react to an event being fired.
 
         Args:
             event_name: The key of the event which is fired.
             event_value: The value of the event which is fired.
-            operation: The source of the event (generally the function name, not directly invoked by application devs)
+            capability_name: The name of the capability which fired the event.
         """
         ...
 
@@ -52,6 +52,7 @@ class IntersectEventObserver(Protocol):
     def register_event(
         self,
         service: HierarchyConfig,
+        capability_name: str,
         event_name: str,
         response_handler: INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
     ) -> None:
@@ -59,6 +60,7 @@ class IntersectEventObserver(Protocol):
 
         Params:
           - service: HierarchyConfig of the service we want to talk to
+          - capability_name: name of capability which will fire off the event
           - event_name: name of event to subscribe to
           - response_handler: callback for how to handle the reception of an event
         """

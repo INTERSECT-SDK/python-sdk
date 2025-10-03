@@ -8,8 +8,16 @@
   },
   "defaultContentType": "application/json",
   "capabilities": {
+    "intersect_sdk": {
+      "endpoints": {},
+      "events": {},
+      "status": {
+        "$ref": "#/components/schemas/IntersectCoreStatus"
+      },
+      "description": "Core capability present in every INTERSECT Service.\n\nThis may be called explicitly by any Client interacting with any SDK service. Set the operation to be \"intersect_sdk.<ENDPOINT>\"."
+    },
     "HelloExample": {
-      "channels": {
+      "endpoints": {
         "say_hello_to_name": {
           "publish": {
             "message": {
@@ -19,7 +27,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "say_hello_to_name"
               }
             },
             "description": "Takes in a string parameter and says 'Hello' to the parameter! This ALSO emits a separate event, broadcast globally."
@@ -32,29 +41,93 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "name"
               }
             },
             "description": "Takes in a string parameter and says 'Hello' to the parameter! This ALSO emits a separate event, broadcast globally."
-          },
-          "events": [
-            "hello_event"
-          ]
+          }
         }
       },
-      "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload.\n\nThe operation we are calling also emits its own event."
+      "events": {
+        "hello_event": {
+          "type": "string",
+          "title": "hello_event"
+        }
+      },
+      "status": {
+        "type": "string",
+        "title": "Status"
+      },
+      "description": "Rudimentary capability implementation example.\n\nAll capability implementations are required to have an @intersect_status decorated function,\nbut we do not use it here.\n\nThe operation we are calling is `say_hello_to_name` , so the message being sent will need to have\nan operation_id of `say_hello_to_name`. The operation expects a string sent to it in the payload,\nand will send a string back in its own payload.\n\nThe operation we are calling also emits its own event."
     }
-  },
-  "events": {
-    "hello_event": {
-      "type": "string"
-    }
-  },
-  "status": {
-    "type": "string"
   },
   "components": {
-    "schemas": {},
+    "schemas": {
+      "IntersectCoreStatus": {
+        "description": "Core status information about the INTERSECT-SDK Service as a whole.",
+        "properties": {
+          "uptime": {
+            "format": "duration",
+            "title": "Uptime",
+            "type": "string"
+          },
+          "logical_cpus": {
+            "title": "Logical CPUs",
+            "type": "integer"
+          },
+          "physical_cpus": {
+            "title": "Physical CPUs",
+            "type": "integer"
+          },
+          "cpu_percentages": {
+            "items": {
+              "type": "number"
+            },
+            "title": "CPU Percentages",
+            "type": "array"
+          },
+          "service_cpu_percentage": {
+            "title": "Service CPU Usage Percentage",
+            "type": "number"
+          },
+          "memory_total": {
+            "title": "Memory Total",
+            "type": "integer"
+          },
+          "memory_usage_percentage": {
+            "title": "Memory Usage Percentage",
+            "type": "number"
+          },
+          "service_memory_percentage": {
+            "title": "Service Memory Usage Percentage",
+            "type": "number"
+          },
+          "disk_total": {
+            "title": "Disk Total",
+            "type": "integer"
+          },
+          "disk_usage_percentage": {
+            "title": "Disk Usage Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "uptime",
+          "logical_cpus",
+          "physical_cpus",
+          "cpu_percentages",
+          "service_cpu_percentage",
+          "memory_total",
+          "memory_usage_percentage",
+          "service_memory_percentage",
+          "disk_total",
+          "disk_usage_percentage"
+        ],
+        "title": "IntersectCoreStatus",
+        "type": "object"
+      }
+    },
     "messageTraits": {
       "commonHeaders": {
         "messageHeaders": {
@@ -73,13 +146,13 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Destination",
               "type": "string"
             },
@@ -96,11 +169,7 @@
               "type": "string"
             },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler"
-                }
-              ],
+              "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler",
               "default": 0,
               "description": "Code signifying where data is stored."
             },
@@ -136,7 +205,7 @@
           "properties": {
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
@@ -153,13 +222,13 @@
               "type": "string"
             },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler"
-                }
-              ],
+              "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler",
               "default": 0,
               "description": "Code signifying where data is stored."
+            },
+            "capability_name": {
+              "title": "Capability Name",
+              "type": "string"
             },
             "event_name": {
               "title": "Event Name",
@@ -170,6 +239,7 @@
             "source",
             "created_at",
             "sdk_version",
+            "capability_name",
             "event_name"
           ],
           "title": "EventMessageHeaders",
