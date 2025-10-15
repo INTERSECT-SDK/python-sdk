@@ -130,14 +130,14 @@ def test_timeout_callback_is_not_called() -> None:
 
     # Simulate receiving a response before the timeout
     response_headers = {
-        'messageId': str(uuid4()),
+        'message_id': str(uuid4()),
         'source': 'test.test.test.test.test',
         'destination': client._hierarchy.hierarchy_string('.'),
         'has_error': 'false',
         'sdk_version': '0.8.0',
         'created_at': datetime.now(timezone.utc).isoformat(),
         'data_handler': '0',  # IntersectDataHandler.MESSAGE
-        'operationId': 'test_op',
+        'operation_id': 'test_op',
     }
 
     client._handle_userspace_message(b'"test"', 'application/json', response_headers)
@@ -216,14 +216,14 @@ def test_response_after_timeout_is_ignored() -> None:
 
     # Now simulate receiving a late response after timeout
     response_headers = {
-        'messageId': str(uuid4()),
+        'message_id': str(uuid4()),
         'source': 'test.test.test.test.test',
         'destination': client._hierarchy.hierarchy_string('.'),
         'has_error': 'false',
         'sdk_version': '0.8.0',
         'created_at': datetime.now(timezone.utc).isoformat(),
         'data_handler': '0',  # IntersectDataHandler.MESSAGE
-        'operationId': 'test_op',
+        'operation_id': 'test_op',
     }
 
     client._handle_userspace_message(b'"test"', 'application/json', response_headers)
