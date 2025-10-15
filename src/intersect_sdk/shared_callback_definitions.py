@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Callable, Dict, List, TypeAlias, Union
+from collections.abc import Callable
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -84,6 +85,7 @@ class IntersectDirectMessageParams(BaseModel):
     """
     The callback to call if the request times out.
     """
+
 
 class IntersectEventMessageParams(BaseModel):
     """Public facing properties of events the Client/Service wants to listen to."""

@@ -291,11 +291,11 @@ class IntersectClient:
             return
 
         # If not in pending requests, it already timed out, so ignore this response
-        if message['operationId'] in self._pending_requests:
-            del self._pending_requests[message['operationId']]
+        if headers.operation_id in self._pending_requests:
+            del self._pending_requests[headers.operation_id]
         else:
             logger.debug(
-                f'Received response for operation {message["operationId"]} that already timed out, ignoring'
+                f'Received response for operation {headers.operation_id} that already timed out, ignoring'
             )
             return
 
@@ -484,7 +484,7 @@ class IntersectClient:
         self._control_plane_manager.publish_message(
             channel, payload, params.content_type, headers, persist=False
         )
-  
+
         if params.timeout is not None and params.on_timeout is not None:
             self._pending_requests[params.operation].append(
                 {

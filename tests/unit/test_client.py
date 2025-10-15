@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import time
+from datetime import datetime, timezone
 from threading import Event, Thread
 from unittest.mock import MagicMock
+from uuid import uuid4
 
 from intersect_sdk.client import IntersectClient
 from intersect_sdk.client_callback_definitions import IntersectClientCallback
@@ -10,7 +12,7 @@ from intersect_sdk.config.client import IntersectClientConfig
 from intersect_sdk.shared_callback_definitions import IntersectDirectMessageParams
 
 
-def test_timeout_callback_is_called():
+def test_timeout_callback_is_called() -> None:
     """Tests that the timeout callback is called when a request times out."""
     config = IntersectClientConfig(
         system='test',
@@ -20,7 +22,7 @@ def test_timeout_callback_is_called():
             {
                 'host': 'localhost',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
                 'username': 'test',
                 'password': 'test',
             }
@@ -72,7 +74,7 @@ def test_timeout_callback_is_called():
     client._timeout_thread.join()
 
 
-def test_timeout_callback_is_not_called():
+def test_timeout_callback_is_not_called() -> None:
     """Tests that the timeout callback is not called when a request is fulfilled."""
     config = IntersectClientConfig(
         system='test',
@@ -82,7 +84,7 @@ def test_timeout_callback_is_not_called():
             {
                 'host': 'localhost',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
                 'username': 'test',
                 'password': 'test',
             }
@@ -127,25 +129,18 @@ def test_timeout_callback_is_not_called():
     client._send_userspace_message(message)
 
     # Simulate receiving a response before the timeout
-    from datetime import datetime, timezone
-    from uuid import uuid4
-
-    response_message = {
+    response_headers = {
         'messageId': str(uuid4()),
-        'headers': {
-            'source': 'test.test.test.test.test',
-            'destination': client._hierarchy.hierarchy_string('.'),
-            'has_error': False,
-            'sdk_version': '0.8.0',
-            'created_at': datetime.now(timezone.utc),
-            'data_handler': 0,  # IntersectDataHandler.MESSAGE
-        },
+        'source': 'test.test.test.test.test',
+        'destination': client._hierarchy.hierarchy_string('.'),
+        'has_error': 'false',
+        'sdk_version': '0.8.0',
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'data_handler': '0',  # IntersectDataHandler.MESSAGE
         'operationId': 'test_op',
-        'payload': 'test',
-        'contentType': 'application/json',
     }
 
-    client._handle_userspace_message(response_message)
+    client._handle_userspace_message(b'"test"', 'application/json', response_headers)
 
     # Wait to make sure timeout doesn't fire
     time.sleep(0.7)
@@ -158,7 +153,7 @@ def test_timeout_callback_is_not_called():
     client._timeout_thread.join()
 
 
-def test_response_after_timeout_is_ignored():
+def test_response_after_timeout_is_ignored() -> None:
     """Tests that responses arriving after timeout are ignored and user_callback is not called."""
     config = IntersectClientConfig(
         system='test',
@@ -168,7 +163,7 @@ def test_response_after_timeout_is_ignored():
             {
                 'host': 'localhost',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
                 'username': 'test',
                 'password': 'test',
             }
@@ -220,25 +215,18 @@ def test_response_after_timeout_is_ignored():
     assert timeout_called[0] == 'test_op'
 
     # Now simulate receiving a late response after timeout
-    from datetime import datetime, timezone
-    from uuid import uuid4
-
-    response_message = {
+    response_headers = {
         'messageId': str(uuid4()),
-        'headers': {
-            'source': 'test.test.test.test.test',
-            'destination': client._hierarchy.hierarchy_string('.'),
-            'has_error': False,
-            'sdk_version': '0.8.0',
-            'created_at': datetime.now(timezone.utc),
-            'data_handler': 0,  # IntersectDataHandler.MESSAGE
-        },
+        'source': 'test.test.test.test.test',
+        'destination': client._hierarchy.hierarchy_string('.'),
+        'has_error': 'false',
+        'sdk_version': '0.8.0',
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'data_handler': '0',  # IntersectDataHandler.MESSAGE
         'operationId': 'test_op',
-        'payload': 'test',
-        'contentType': 'application/json',
     }
 
-    client._handle_userspace_message(response_message)
+    client._handle_userspace_message(b'"test"', 'application/json', response_headers)
 
     # User callback should NOT have been called since the request already timed out
     assert len(user_callback_called) == 0
