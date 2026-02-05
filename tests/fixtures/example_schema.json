@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.8.3",
+  "x-intersect-version": "0.8.4",
   "info": {
     "title": "test.test.test.test.test",
     "description": "INTERSECT schema",
@@ -1147,7 +1147,7 @@
     },
     "messageTraits": {
       "commonHeaders": {
-        "messageHeaders": {
+        "userspaceHeaders": {
           "description": "ALL request/response/command messages must contain this header.\n\nWe do not include the content type of the message in the header, it is handled separately.",
           "properties": {
             "message_id": {

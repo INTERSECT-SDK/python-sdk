@@ -3,7 +3,7 @@
 
 services:
   broker:
-    image: "bitnami/rabbitmq:4.1"
+    image: "bitnamilegacy/rabbitmq:4.1"
     ports:
       - "1883:1883" # MQTT port
       - "5672:5672" # AMQP port
@@ -22,7 +22,7 @@ services:
       timeout: 10s
 
   minio:
-    image: "bitnami/minio:2024.6.4"
+    image: "bitnamilegacy/minio:2024.6.4"
     environment:
       # references: https://github.com/bitnami/containers/blob/main/bitnami/minio/README.md
       MINIO_ROOT_USER: AKIAIOSFODNN7EXAMPLE

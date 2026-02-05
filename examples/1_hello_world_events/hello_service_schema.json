@@ -1,6 +1,6 @@
 {
   "asyncapi": "2.6.0",
-  "x-intersect-version": "0.8.3",
+  "x-intersect-version": "0.8.4",
   "info": {
     "title": "hello-organization.hello-facility.hello-system.hello-subsystem.hello-service",
     "description": "INTERSECT schema",
@@ -130,7 +130,7 @@
     },
     "messageTraits": {
       "commonHeaders": {
-        "messageHeaders": {
+        "userspaceHeaders": {
           "$defs": {
             "IntersectDataHandler": {
               "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
