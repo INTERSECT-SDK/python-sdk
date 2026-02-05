@@ -67,7 +67,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     services:
       rabbitmq:
-        image: "bitnami/rabbitmq:3.13.3"
+        image: "bitnamilegacy/rabbitmq:3.13.3"
         env:
           # space-delimited list of plugins
           RABBITMQ_PLUGINS: "rabbitmq_mqtt"
@@ -79,7 +79,7 @@ jobs:
           - "1883:1883" # MQTT port
           - "5672:5672" # AMQP port
       minio:
-        image: "bitnami/minio:2024.6.4"
+        image: "bitnamilegacy/minio:2024.6.4"
         env:
           MINIO_ROOT_USER: AKIAIOSFODNN7EXAMPLE
           MINIO_ROOT_PASSWORD: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
