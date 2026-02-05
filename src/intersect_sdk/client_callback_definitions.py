@@ -15,6 +15,15 @@ from .shared_callback_definitions import (
     IntersectEventMessageParams,
 )
 
+INTERSECT_CLIENT_TIMEOUT_CALLBACK_TYPE = Callable[[str], None]
+"""
+This is a callable function type which should be defined by the user.
+
+Params
+    The SDK will send the function one argument:
+        1) The operation ID of the request that timed out.
+"""
+
 
 @final
 class IntersectClientCallback(BaseModel):
