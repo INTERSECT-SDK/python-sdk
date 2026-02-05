@@ -2,6 +2,12 @@
 
 We follow [Common Changelog](https://common-changelog.org/) formatting for this document.
 
+## [0.8.4] - 2026-02-05
+
+### Fixed
+
+- Fixed an issue with JSON schema resolution ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/f4e51ffae0ad94cd12387d664d019afa6cf790c0)) (Lance Drane, Shayan Monadjemi)
+
 ## [0.8.3] - 2025-05-27
 
 ### Fixed
@@ -64,6 +70,7 @@ _If you are upgrading: please see [`UPGRADING.md`](UPGRADING.md)._
 
 - **Breaking:** Added service-to-service request/response mechanism ([!9](https://github.com/INTERSECT-SDK/python-sdk/pull/9)) (Michael Brim, Lance Drane)
 
+[0.8.3]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.3
 [0.8.2]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.2
 [0.8.1]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.1
 [0.8.0]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.0
