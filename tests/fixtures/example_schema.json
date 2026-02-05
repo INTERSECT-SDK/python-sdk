@@ -943,7 +943,7 @@
     },
     "messageTraits": {
       "commonHeaders": {
-        "messageHeaders": {
+        "userspaceHeaders": {
           "$defs": {
             "IntersectDataHandler": {
               "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",

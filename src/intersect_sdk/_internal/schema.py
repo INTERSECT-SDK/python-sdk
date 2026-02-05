@@ -594,7 +594,7 @@ def get_schema_and_functions_from_capability_implementations(
             'messageTraits': {
                 # this is where we can define our message headers
                 'commonHeaders': {
-                    'messageHeaders': TypeAdapter(UserspaceMessageHeader).json_schema(
+                    'userspaceHeaders': TypeAdapter(UserspaceMessageHeader).json_schema(
                         ref_template='#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/{model}',
                         mode='serialization',
                     ),
