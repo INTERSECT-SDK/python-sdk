@@ -1,7 +1,7 @@
 """Core enumerations and structures used throughout INTERSECT, for both client and service."""
 
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -45,3 +45,6 @@ In general, mime types follow one of two rules:
 
 - If your Content-Type value is ANYTHING ELSE, you MUST mark it as "bytes" . In this instance, INTERSECT will not base64-encode or base64-decode the value.
 """
+
+IntersectEncryptionScheme = Literal['NONE', 'RSA']
+"""Supported encryption schemes throughout INTERSECT. 'NONE' implies no encryption scheme."""

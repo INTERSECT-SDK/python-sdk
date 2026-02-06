@@ -115,6 +115,7 @@ def test_call_user_function_with_invalid_payload() -> None:
             operation_id='ReturnTypeMismatchCapability.wrong_return_annotation',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )

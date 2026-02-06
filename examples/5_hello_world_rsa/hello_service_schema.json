@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/INTERSECT-SDK/python-sdk/main/src/intersect_sdk/_internal/schema.schema.json",
+  "intersect_sdk_version": "0.8.0",
+  "name": "hello-organization.hello-facility.hello-system.hello-subsystem.hello-service",
+  "capabilities": [
+    {
+      "name": "HelloExample",
+      "functions": [
+        {
+          "name": "say_hello_to_name",
+          "parameters": {
+            "type": "string"
+          },
+          "returns": {
+            "type": "string"
+          }
+        }
+      ],
+      "encryption_schemes": [
+        "NONE",
+        "RSA"
+      ]
+    }
+  ]
+}

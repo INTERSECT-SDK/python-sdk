@@ -150,3 +150,8 @@ def test_example_4_service_to_service_events():
         'From event "internal_service_event", received message "not_feeling_creative" from "example-organization.example-facility.example-system.example-subsystem.internal-service"\n'
         'From event "internal_service_event", received message "not_feeling_creative" from "example-organization.example-facility.example-system.example-subsystem.internal-service"\n'
     )
+
+
+def test_example_5_hello_world_rsa():
+    """Test hello world example with RSA encryption."""
+    assert run_example_test('5_hello_world_rsa') == 'Hello, hello_client!\n'

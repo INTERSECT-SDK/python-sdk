@@ -35,6 +35,7 @@ dependencies = [
     "jsonschema[format-nongpl]>=4.21.1",               # extras necessary for enforcing formats
     #"brotli>=1.1.0", # TODO - add this dependency when we add compression
     "psutil>=7.0.0",
+    "cryptography>=46.0.4",
 ]
 
 [project.urls]
