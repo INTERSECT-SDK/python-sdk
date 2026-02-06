@@ -19,7 +19,7 @@ We follow [Common Changelog](https://common-changelog.org/) formatting for this 
 ### Added
 
 - Added MQTT 5.0 support ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/e09f13f9b244b92b6bcecc814df49c81340dcc02)) (Lance Drane)
-
+- Added a default `intersect_sdk` capability meant to encompass common system querying information ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/e05e27471f05bf50e0bc5a0123f7e0133a3d969e)) (Lance Drane)
 
 ### Removed
 
