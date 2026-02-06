@@ -146,6 +146,8 @@ class IntersectClient:
         self._user_callback = user_callback
         self._event_callback = event_callback
 
+        self._campaign_id = uuid4()
+
     @final
     def startup(self) -> Self:
         """This function connects the client to all INTERSECT systems.
@@ -433,6 +435,8 @@ class IntersectClient:
             destination=params.destination,
             data_handler=params.data_handler,
             operation_id=params.operation,
+            campaign_id=self._campaign_id,
+            request_id=uuid4(),
         )
         logger.debug(f'Send userspace message:\n{headers}')
         channel = f'{params.destination.replace(".", "/")}/request'

@@ -33,7 +33,7 @@ class LifecycleMessageHeaders(BaseModel):
     A special note about lifecycle messages is that their content type must ALWAYS be "application/json".
     """
 
-    message_id: Annotated[uuid.UUID, Field()]
+    message_id: Annotated[uuid.UUID, Field(description='Unique message ID')]
     """UUID of the message."""
 
     source: Annotated[

@@ -18,6 +18,8 @@ from intersect_sdk._internal.messages.userspace import (
 def test_valid_userspace_message_deserializes() -> None:
     raw_headers = {
         'message_id': 'cc88a2c9-7e47-409f-82c5-ef49914ae140',
+        'campaign_id': 'dd88a2c9-7e47-409f-82c5-ef49914ae141',
+        'request_id': 'ee88a2c9-7e47-409f-82c5-ef49914ae142',
         'operation_id': 'operation',
         'source': 'source',
         'destination': 'destination',
@@ -37,6 +39,8 @@ def test_valid_userspace_message_deserializes() -> None:
 def test_unusual_userspace_message_deserializes() -> None:
     raw_headers = {
         'message_id': 'cc88a2c9-7e47-409f-82c5-ef49914ae140',
+        'campaign_id': 'dd88a2c9-7e47-409f-82c5-ef49914ae141',
+        'request_id': 'ee88a2c9-7e47-409f-82c5-ef49914ae142',
         'operation_id': 'operation',
         'source': 'source.one',
         'destination': 'destination.two',
@@ -57,10 +61,12 @@ def test_missing_does_not_deserialize() -> None:
     with pytest.raises(ValidationError) as err:
         validate_userspace_message_headers(raw_headers)
     errors = err.value.errors()
-    assert len(errors) == 6
+    assert len(errors) == 8
     assert all(e['type'] == 'missing' for e in errors)
     locations = [e['loc'] for e in errors]
     assert ('message_id',) in locations
+    assert ('campaign_id',) in locations
+    assert ('request_id',) in locations
     assert ('operation_id',) in locations
     assert ('source',) in locations
     assert ('destination',) in locations
@@ -71,6 +77,8 @@ def test_missing_does_not_deserialize() -> None:
 def test_invalid_does_not_deserialize() -> None:
     raw_headers = {
         'message_id': 'not_a_uuid',
+        'campaign_id': 'also_not_a_uuid',
+        'request_id': 'definitely_not_a_uuid',
         'operation_id': 1,
         'source': '/',
         'destination': '/',
@@ -82,9 +90,11 @@ def test_invalid_does_not_deserialize() -> None:
     with pytest.raises(ValidationError) as err:
         validate_userspace_message_headers(raw_headers)
     errors = [{'type': e['type'], 'loc': e['loc']} for e in err.value.errors()]
-    assert len(errors) == 8
+    assert len(errors) == 10
     # value we have is a string, but not a UUID
     assert {'type': 'uuid_parsing', 'loc': ('message_id',)} in errors
+    assert {'type': 'uuid_parsing', 'loc': ('request_id',)} in errors
+    assert {'type': 'uuid_parsing', 'loc': ('campaign_id',)} in errors
     assert {'type': 'string_type', 'loc': ('operation_id',)} in errors
     # '/' is not a valid character in a source string or destination string
     assert {'type': 'string_pattern_mismatch', 'loc': ('source',)} in errors
@@ -103,6 +113,8 @@ def test_create_userspace_message() -> None:
         destination='destination',
         operation_id='operation',
         data_handler=IntersectDataHandler.MESSAGE,
+        request_id=uuid.uuid4(),
+        campaign_id=uuid.uuid4(),
     )
 
     # make sure all values are serialized as strings, this is necessary for some protocols i.e. MQTT5 Properties
@@ -112,6 +124,10 @@ def test_create_userspace_message() -> None:
     # rule of UUID-4 generation
     assert str(msg['message_id'])[14] == '4'
     assert len(msg['message_id']) == 36
+    assert str(msg['request_id'])[14] == '4'
+    assert len(msg['request_id']) == 36
+    assert str(msg['campaign_id'])[14] == '4'
+    assert len(msg['campaign_id']) == 36
     # enforce UTC
     assert msg['created_at'][-6:] == '+00:00'
     # this should be lowercase for maximum language capability

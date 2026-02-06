@@ -35,9 +35,24 @@ class UserspaceMessageHeaders(BaseModel):
     We do not include the content type of the message in the header, it is handled separately.
     """
 
-    message_id: uuid.UUID
+    message_id: Annotated[uuid.UUID, Field(description='Unique message ID')]
     """
     ID of the message.
+    """
+
+    campaign_id: Annotated[uuid.UUID, Field(description='ID associated with a campaign')]
+    """
+    ID of the campaign. For Clients, this should be set once per run, and then not changed. For orchestrators, this is associated with a campaign.
+    """
+
+    request_id: Annotated[
+        uuid.UUID,
+        Field(
+            description='ID associated with a specific request message and response message sequence'
+        ),
+    ]
+    """
+    ID of the request. A Client/orchestrator generates this ID for each request message it sends, and the Service generates a response message with this ID.
     """
 
     source: Annotated[
@@ -118,7 +133,7 @@ class UserspaceMessageHeaders(BaseModel):
 
     # make sure all non-string fields are serialized into strings, even in Python code
 
-    @field_serializer('message_id', mode='plain')
+    @field_serializer('message_id', 'request_id', 'campaign_id', mode='plain')
     def ser_uuid(self, uuid: uuid.UUID) -> str:
         return str(uuid)
 
@@ -140,13 +155,15 @@ def create_userspace_message_headers(
     destination: str,
     operation_id: str,
     data_handler: IntersectDataHandler,
-    message_id: uuid.UUID | None = None,
+    campaign_id: uuid.UUID,
+    request_id: uuid.UUID,
     has_error: bool = False,
 ) -> dict[str, str]:
     """Generate raw headers and write them into a generic data structure which can be handled by any broker protocol."""
-    msg_id = message_id if message_id else uuid.uuid4()
     return UserspaceMessageHeaders(
-        message_id=msg_id,
+        message_id=uuid.uuid4(),
+        campaign_id=campaign_id,
+        request_id=request_id,
         source=source,
         destination=destination,
         sdk_version=version_string,

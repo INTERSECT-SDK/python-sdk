@@ -9,6 +9,7 @@ instead, initialize an array with one value in it, then change the value inside 
 
 import json
 import time
+from uuid import uuid4
 
 from intersect_sdk import (
     ControlPlaneConfig,
@@ -106,6 +107,9 @@ def test_call_user_function() -> None:
     message_interceptor = make_message_interceptor()
     msg = [None, None, None]
 
+    campaign_id = uuid4()
+    request_id = uuid4()
+
     def userspace_msg_callback(
         payload: bytes, content_type: str, raw_headers: dict[str, str]
     ) -> None:
@@ -128,6 +132,8 @@ def test_call_user_function() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.calculate_fibonacci',
+            campaign_id=campaign_id,
+            request_id=request_id,
         ),
         True,
     )
@@ -136,6 +142,9 @@ def test_call_user_function() -> None:
     message_interceptor.disconnect()
 
     assert msg[0] == b'[5,8,13]'
+    # make sure header IDs were not modified
+    assert msg[2]['request_id'] == request_id
+    assert msg[2]['campaign_id'] == campaign_id
 
 
 # call a @staticmethod user function, which should work as normal
@@ -166,6 +175,8 @@ def test_call_static_user_function() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.test_generator',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -203,6 +214,8 @@ def test_call_user_function_with_default_and_empty_payload() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.valid_default_argument',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -241,6 +254,8 @@ def test_call_user_function_with_invalid_payload() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.calculate_fibonacci',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -282,6 +297,8 @@ def test_call_nonexistent_user_function() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.THIS_FUNCTION_DOES_NOT_EXIST',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -320,6 +337,8 @@ def test_exception_propagation() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.divide_by_zero_exceptions',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -333,6 +352,8 @@ def test_exception_propagation() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.divide_by_zero_exceptions',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -346,6 +367,8 @@ def test_exception_propagation() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.raise_exception_no_param',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -392,6 +415,8 @@ def test_call_minio_user_function() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.test_datetime',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )
@@ -446,6 +471,8 @@ def test_lifecycle_messages() -> None:
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.verify_float_dict',
             # note that the dict key MUST be a string, even though the input wants a float key
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )

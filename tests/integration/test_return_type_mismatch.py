@@ -8,6 +8,7 @@ instead, initialize an array with one value in it, then change the value inside 
 """
 
 import time
+from uuid import uuid4
 
 from intersect_sdk import (
     ControlPlaneConfig,
@@ -112,6 +113,8 @@ def test_call_user_function_with_invalid_payload() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='ReturnTypeMismatchCapability.wrong_return_annotation',
+            campaign_id=uuid4(),
+            request_id=uuid4(),
         ),
         True,
     )

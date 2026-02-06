@@ -21,7 +21,7 @@ from collections import defaultdict
 from threading import Lock
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal
-from uuid import UUID, uuid1, uuid3
+from uuid import UUID, uuid1, uuid3, uuid4
 
 from pydantic import ConfigDict, ValidationError, validate_call
 from pydantic_core import PydanticSerializationError
@@ -240,6 +240,9 @@ class IntersectService(IntersectEventObserver):
 
         self._hierarchy = config.hierarchy
         self._uuid = uuid3(uuid1(), config.hierarchy.hierarchy_string('.'))
+
+        # for service-to-service requests where this service is the client
+        self._campaign_id = uuid4()
 
         self._status_thread: StoppableThread | None = None
         self._status_ticker_interval = config.status_interval
@@ -857,7 +860,8 @@ class IntersectService(IntersectEventObserver):
             destination=headers.source,
             data_handler=response_data_handler,
             operation_id=headers.operation_id,
-            message_id=headers.message_id,  # associate response with request
+            request_id=headers.request_id,
+            campaign_id=headers.campaign_id,
         )
         return (response_payload, response_content_type, response_headers)
 
@@ -948,7 +952,8 @@ class IntersectService(IntersectEventObserver):
             destination=params.destination,
             data_handler=params.data_handler,
             operation_id=params.operation,
-            message_id=request_id,
+            request_id=request_id,
+            campaign_id=self._campaign_id,
         )
         logger.debug(f'Sending client message:\n{headers}')
         request_channel = f'{params.destination.replace(".", "/")}/request'
@@ -1147,7 +1152,8 @@ class IntersectService(IntersectEventObserver):
             destination=original_headers.source,
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id=original_headers.operation_id,
-            message_id=original_headers.message_id,  # associate error reply with original
+            campaign_id=original_headers.campaign_id,
+            request_id=original_headers.request_id,
             has_error=True,
         )
 

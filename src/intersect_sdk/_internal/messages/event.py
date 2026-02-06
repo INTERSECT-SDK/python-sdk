@@ -28,7 +28,7 @@ class EventMessageHeaders(BaseModel):
     We do not include the content type of the message in the header, it is handled separately.
     """
 
-    message_id: uuid.UUID
+    message_id: Annotated[uuid.UUID, Field(description='Unique message ID')]
     """
     ID of the message.
     """

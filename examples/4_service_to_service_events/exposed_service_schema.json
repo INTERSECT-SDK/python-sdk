@@ -99,19 +99,23 @@
     "messageTraits": {
       "commonHeaders": {
         "userspaceHeaders": {
-          "$defs": {
-            "IntersectDataHandler": {
-              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
-              "title": "IntersectDataHandler",
-              "type": "integer"
-            }
-          },
-          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "description": "ALL request/response/command messages must contain this header.\n\nWe do not include the content type of the message in the header, it is handled separately.",
           "properties": {
+            "message_id": {
+              "description": "Unique message ID",
+              "title": "Message Id",
+              "type": "string"
+            },
+            "campaign_id": {
+              "description": "ID associated with a campaign",
+              "title": "Campaign Id",
+              "type": "string"
+            },
+            "request_id": {
+              "description": "ID associated with a specific request message and response message sequence",
+              "title": "Request Id",
+              "type": "string"
+            },
             "source": {
               "description": "source of the message",
               "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
@@ -126,7 +130,6 @@
             },
             "created_at": {
               "description": "the UTC timestamp of message creation",
-              "format": "date-time",
               "title": "Created At",
               "type": "string"
             },
@@ -136,41 +139,42 @@
               "title": "Sdk Version",
               "type": "string"
             },
+            "operation_id": {
+              "description": "Name of capability and operation we want to call, in the format ${CAPABILITY_NAME}.${FUNCTION_NAME}",
+              "title": "Operation Id",
+              "type": "string"
+            },
             "data_handler": {
-              "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler",
-              "default": 0,
-              "description": "Code signifying where data is stored."
+              "description": "Code signifying where data is stored.",
+              "type": "string"
             },
             "has_error": {
-              "default": false,
               "description": "If this value is True, the payload will contain the error message (a string)",
               "title": "Has Error",
-              "type": "boolean"
+              "type": "string"
             }
           },
           "required": [
+            "message_id",
+            "campaign_id",
+            "request_id",
             "source",
             "destination",
             "created_at",
-            "sdk_version"
+            "sdk_version",
+            "operation_id"
           ],
-          "title": "UserspaceMessageHeader",
+          "title": "UserspaceMessageHeaders",
           "type": "object"
         },
         "eventHeaders": {
-          "$defs": {
-            "IntersectDataHandler": {
-              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
-              "title": "IntersectDataHandler",
-              "type": "integer"
-            }
-          },
-          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "description": "ALL event messages must include this header.\n\nWe do not include the content type of the message in the header, it is handled separately.",
           "properties": {
+            "message_id": {
+              "description": "Unique message ID",
+              "title": "Message Id",
+              "type": "string"
+            },
             "source": {
               "description": "source of the message",
               "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
@@ -179,7 +183,6 @@
             },
             "created_at": {
               "description": "the UTC timestamp of message creation",
-              "format": "date-time",
               "title": "Created At",
               "type": "string"
             },
@@ -190,20 +193,24 @@
               "type": "string"
             },
             "data_handler": {
-              "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler",
-              "default": 0,
-              "description": "Code signifying where data is stored."
+              "description": "Code signifying where data is stored.",
+              "type": "string"
             },
             "capability_name": {
+              "description": "The name of the capability which emitted the event originally.",
+              "pattern": "^[a-zA-Z0-9]\\w*$",
               "title": "Capability Name",
               "type": "string"
             },
             "event_name": {
+              "description": "The name of the event that was emitted, namespaced to the capability.",
+              "pattern": "^[a-zA-Z0-9]\\w*$",
               "title": "Event Name",
               "type": "string"
             }
           },
           "required": [
+            "message_id",
             "source",
             "created_at",
             "sdk_version",
