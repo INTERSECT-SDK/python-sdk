@@ -18,7 +18,7 @@ Usage
 External users would benefit most by understanding the `Models <https://docs.pydantic.dev/latest/concepts/models/>`_, `Fields <https://docs.pydantic.dev/latest/concepts/fields/>`_,
 and `Types <https://docs.pydantic.dev/latest/concepts/types/>`_ documentation pages on Pydantic's own documentation website.
 
-INTERSECT-SDK will handle the schema generation logic, but users are able to customize fields themselves. For example, users can combine ``typing_extensions.Annotated``
+INTERSECT-SDK will handle the schema generation logic, but users are able to customize fields themselves. For example, users can combine ``typing.Annotated``
 with ``pydantic.Field`` to specify regular expression patterns for string, minimum lengths for arrays/lists, and many other validation concepts.
 
 For handling complex objects, your class should either extend ``pydantic.BaseModel`` or be a `Python Dataclass <https://docs.python.org/3/library/dataclasses.html>`_.

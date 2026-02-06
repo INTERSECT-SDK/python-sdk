@@ -9,7 +9,7 @@ Schema
 JSON schema advertises the interfaces to other systems. This is necessary for creating scientific campaigns, and the schema
 is extensible to other clients.
 
-Parts of the schema will be generated from users' own definitions. Functions are represented under "channels",
+Parts of the schema will be generated from users' own definitions. Functions are represented under "endpoints",
 while Pydantic models defined by users and used as request or response types in their functions will have their schemas generated here.
 
 There are also several parameters mainly for use by the central INTERSECT microservices, largely encapsulated from users.
@@ -35,6 +35,7 @@ from typing import (
 
 from ._internal.schema import get_schema_and_functions_from_capability_implementations
 from .capability.base import IntersectBaseCapabilityImplementation
+from .capability.universal_capability.universal_capability import IntersectSdkCoreCapability
 
 if TYPE_CHECKING:
     from .config.shared import HierarchyConfig
@@ -50,7 +51,7 @@ def get_schema_from_capability_implementations(
     Some key differences:
     - We utilize three custom fields: "capabilities", "events", and "status".
     - "capabilities" contains a dictionary: the keys of this dictionary are capability names. The values are dictionaries with the "description" property being a string which describes the capability,
-    and a "channels" property which more closely follows the AsyncAPI specification of the top-level value "channels".
+    and a "endpoints" property which more closely follows the AsyncAPI specification of the top-level value "endpoints".
     - "events" is a key-value dictionary: the keys represent the event name, the values represent the associated schema of the event type. Events are currently shared across all capabilities.
     - "status" will have a value of the status schema - if no status has been defined, a null schema is used.
 
@@ -62,9 +63,9 @@ def get_schema_from_capability_implementations(
         msg = 'get_schema_from_capability_implementations - not all provided values are valid capabilities (class must extend IntersectBaseCapabilityImplementation)'
         raise RuntimeError(msg)
 
-    schemas, _, _, _, _, _ = get_schema_and_functions_from_capability_implementations(
-        capability_types,
+    schema, _, _, _ = get_schema_and_functions_from_capability_implementations(
+        [IntersectSdkCoreCapability, *capability_types],
         hierarchy,
-        set(),  # assume all data handlers are configured if user is just checking their schema
+        set(),  # assume all data handlers are configured if user is just checking their schema  - TODO may want to start asserting this in the schema
     )
-    return schemas
+    return schema

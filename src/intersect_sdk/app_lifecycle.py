@@ -17,12 +17,14 @@ from __future__ import annotations
 import signal
 import sys
 from threading import Event
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from ._internal.logger import logger
 from ._internal.utils import die
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .client import IntersectClient
     from .service import IntersectService
 

@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import mimetypes
 from hashlib import sha224
 from io import BytesIO
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from minio import Minio
@@ -9,11 +12,13 @@ from typing_extensions import TypedDict
 from urllib3.exceptions import MaxRetryError
 from urllib3.util import parse_url
 
-from ...config.shared import DataStoreConfig, HierarchyConfig
-from ...core_definitions import IntersectMimeType
 from ..exceptions import IntersectError
 from ..logger import logger
 from ..utils import die
+
+if TYPE_CHECKING:
+    from ...config.shared import DataStoreConfig, HierarchyConfig
+    from ...core_definitions import IntersectMimeType
 
 
 class MinioPayload(TypedDict):
@@ -86,7 +91,7 @@ def send_minio_object(
     """
     bucket_name = _condense_minio_bucket_name(hierarchy)
     # mimetypes.guess_extension() is a nice-to-have for MINIO preview, but isn't essential.
-    object_id = str(uuid4()) + (mimetypes.guess_extension(content_type.value) or '')
+    object_id = str(uuid4()) + (mimetypes.guess_extension(content_type) or '')
     try:
         if not provider.bucket_exists(bucket_name):
             provider.make_bucket(bucket_name)
@@ -96,7 +101,7 @@ def send_minio_object(
             object_name=object_id,
             data=buff_data,
             length=buff_data.getbuffer().nbytes,
-            content_type=content_type.value,
+            content_type=content_type,
         )
         return MinioPayload(
             minio_url=provider._base_url._url.geturl(),  # noqa: SLF001 (only way to get URL from MINIO API)

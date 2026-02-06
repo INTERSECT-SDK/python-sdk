@@ -6,24 +6,18 @@ import datetime
 import decimal
 import mimetypes
 import random
+from collections.abc import Generator
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     ClassVar,
-    Dict,
-    FrozenSet,
-    Generator,
-    List,
     Literal,
     NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Union,
 )
 from uuid import UUID
 
@@ -37,15 +31,14 @@ from pydantic import (
     WrapValidator,
 )
 from pydantic_core import PydanticCustomError, Url
-from typing_extensions import Annotated, TypeAliasType, TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 from intersect_sdk import (
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
+    IntersectCapabilityError,
     IntersectDataHandler,
     IntersectEventDefinition,
-    IntersectMimeType,
-    intersect_event,
     intersect_message,
     intersect_status,
 )
@@ -80,7 +73,7 @@ def json_custom_error_validator(
 Json = TypeAliasType(
     'Json',
     Annotated[
-        Union[Dict[str, 'Json'], List['Json'], str, int, float, bool, None],
+        dict[str, 'Json'] | list['Json'] | str | int | float | bool | None,
         WrapValidator(json_custom_error_validator),
     ],
 )
@@ -113,7 +106,7 @@ class Nested2(BaseModel):
     sub-nested class
     """
 
-    variables: FrozenSet[int]
+    variables: frozenset[int]
     nested_json: Json
 
 
@@ -175,7 +168,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
     """
 
     # everybody knows that the fastest Fibonacci program is one which pre-caches the numbers :)
-    _FIBONACCI_LST: ClassVar[List[int]] = [
+    _FIBONACCI_LST: ClassVar[list[int]] = [
         0,
         1,
         2,
@@ -229,6 +222,22 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
 
     intersect_sdk_capability_name = 'DummyCapability'
 
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'union': IntersectEventDefinition(
+            event_type=(int | str), event_documentation='Generic example of how to do a union event'
+        ),
+        'int': IntersectEventDefinition(
+            event_type=Annotated[int, Field(description='Generic integer event')]
+        ),
+        'str': IntersectEventDefinition(event_type=str, event_documentation='Generic string event'),
+        'float': IntersectEventDefinition(
+            event_type=float, event_documentation='Generic float event'
+        ),
+        'list_float': IntersectEventDefinition(
+            event_type=list[float], event_documentation='generic list of floats event'
+        ),
+    }
+
     def __init__(self) -> None:
         """
         Users have complete freedom over the capability constructor (and are free to use stateful or stateless design paradigms).
@@ -266,11 +275,11 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         self._status_example['last_function_called'] = fn_name
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
     )
-    def calculate_fibonacci(self, request: Tuple[int, int]) -> List[int]:
+    def calculate_fibonacci(self, request: tuple[int, int]) -> list[int]:
         """
         calculates all fibonacci numbers between two numbers
 
@@ -287,17 +296,17 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return self._FIBONACCI_LST[left:right]
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
         strict_request_validation=True,
     )
-    def calculate_weird_algorithm(self, token: Annotated[int, Ge(1), Le(1_000_000)]) -> List[int]:
+    def calculate_3n_plus_1(self, token: Annotated[int, Ge(1), Le(1_000_000)]) -> list[int]:
         """
-        Weird algorithm calculator. Takes in an integer, outputs an array of numbers
+        Calculates the famous "3n + 1" problem. Takes in an integer, outputs an array of numbers
         which follow the algorithm all the way to "1".
         """
-        self.update_status('calculate_weird_algorithm')
+        self.update_status('calculate_3n_plus_1')
         result = []
         while token != 1:
             result.append(token)
@@ -309,11 +318,11 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return result
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
     )
-    def union_response(self) -> Union[str, int, bool, Dict[str, Union[str, int, bool]]]:
+    def union_response(self) -> str | int | bool | dict[str, str | int | bool]:
         """
         Spit out a random string, integer, boolean, or object response
         """
@@ -333,15 +342,15 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         }
 
     @intersect_message(
-        request_content_type=IntersectMimeType.JSON,
-        response_content_type=IntersectMimeType.JSON,
+        request_content_type='application/json',
+        response_content_type='application/json',
         response_data_transfer_handler=IntersectDataHandler.MESSAGE,
         strict_request_validation=True,
     )
     def annotated_set(
         self,
-        positive_int_set: Annotated[Set[Annotated[int, Field(gt=0)]], Field(min_length=1)],
-    ) -> Annotated[Set[Annotated[int, Field(gt=0)]], Field(min_length=1)]:
+        positive_int_set: Annotated[set[Annotated[int, Field(gt=0)]], Field(min_length=1)],
+    ) -> Annotated[set[Annotated[int, Field(gt=0)]], Field(min_length=1)]:
         """
         return numbers in set which are prime numbers in the range 1-100
         """
@@ -375,7 +384,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         }
 
     @intersect_message()
-    def test_dicts(self, request: Dict[str, int]) -> Dict[str, int]:
+    def test_dicts(self, request: dict[str, int]) -> dict[str, int]:
         """
         NOTE: JSON always stores Dict/Mapping keys as strings.
         If the string can't be coerced into the input value, it will throw a RUNTIME error.
@@ -420,10 +429,10 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         self.update_status('test_uuid')
         return uid.hex[12]
 
-    @intersect_message(request_content_type=IntersectMimeType.STRING)
+    @intersect_message(request_content_type='application/json')
     def test_path(
         self, path: Annotated[Path, Field(pattern=r'([\w-]+/)*([\w-]+)\.[\w]+')]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Paths are valid parameters, but you'll often want to further sanitize input to block certain inputs (i.e. "..").
 
@@ -454,7 +463,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return input_value / Decimal('3.14159265358979323846')
 
     @intersect_message(
-        response_content_type=IntersectMimeType.STRING,
+        response_content_type='application/json',
     )
     def ip4_to_ip6(self, ip4: IPv4Address) -> IPv6Address:
         """
@@ -467,9 +476,11 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return IPv6Address(42545680458834377588178886921629466624 | (int(ip4) << 80))
 
     @intersect_message()
-    def get_url_parts(self, url: Url) -> Dict[str, Optional[Union[str, int]]]:
+    def get_url_parts(self, url: Url) -> dict[str, str | int | None]:
         """
         example of automatic URL parsing and schema validation
+
+        (the return type should realistically be a TypedDict, not a dict)
         """
         self.update_status('get_url_parts')
         return {
@@ -506,7 +517,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         return search_through_json_for_value('777', param)
 
     @intersect_message
-    def verify_float_dict(self, param: Dict[float, str]) -> Dict[int, str]:
+    def verify_float_dict(self, param: dict[float, str]) -> dict[int, str]:
         """
         verifies that dictionaries can have floats and integers as key types
         """
@@ -541,15 +552,14 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
     # - the same event can show up in multiple messages
     # - we can advertise complex types (i.e. Union)
     # - a message can advertise multiple events
-    # - that both @intersect_message and @intersect_event work
+    # - that both @intersect_message and an event configuration works
 
-    @intersect_message(events={'union': IntersectEventDefinition(event_type=Union[int, str])})
-    def union_message_with_events(self, param: Literal['str', 'int']) -> Union[int, str]:
+    @intersect_message
+    def union_message_with_events(self, param: Literal['str', 'int']) -> int | str:
         ret = str(random.random()) if param == 'str' else random.randint(1, 1_000_000)
         self.intersect_sdk_emit_event('union', ret)
         return ret
 
-    @intersect_event(events={'union': IntersectEventDefinition(event_type=Union[int, str])})
     def union_event(self) -> None:
         ran_dumb = random.randrange(2)
         if ran_dumb == 0:
@@ -557,13 +567,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
         else:
             self.intersect_sdk_emit_event('union', random.randrange(1_000_001, 2_000_000))
 
-    @intersect_message(
-        events={
-            'int': IntersectEventDefinition(event_type=int),
-            'str': IntersectEventDefinition(event_type=str),
-            'float': IntersectEventDefinition(event_type=float),
-        }
-    )
+    @intersect_message
     def primitive_event_message(self, emit_times: Annotated[int, Field(1, ge=1)]) -> str:
         for _ in range(emit_times):
             self.intersect_sdk_emit_event('str', str(random.random()))
@@ -571,13 +575,7 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
             self.intersect_sdk_emit_event('float', random.random())
         return 'your events have been emitted'
 
-    @intersect_message(
-        events={
-            'int': IntersectEventDefinition(event_type=int),
-            'str': IntersectEventDefinition(event_type=str),
-            'float': IntersectEventDefinition(event_type=float),
-        }
-    )
+    @intersect_message
     def primitive_event_message_random(self) -> str:
         ran_dumb = random.randrange(3)
         if ran_dumb == 0:
@@ -588,6 +586,37 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
             self.intersect_sdk_emit_event('float', random.random())
         return 'your events have been emitted'
 
-    @intersect_event(events={'list_float': IntersectEventDefinition(event_type=List[float])})
     def list_float_event(self) -> None:
         self.intersect_sdk_emit_event('list_int', [random.random() for i in range(3)])
+
+    @intersect_message(request_content_type='image/png', response_content_type='image/png')
+    def binary_to_binary(self, in_image: Annotated[bytes, Field(max_length=(1 << 20))]) -> bytes:
+        return in_image
+
+    @intersect_message
+    def divide_by_zero_exceptions(self, param: int) -> float:
+        if param < 0:
+            # not explicitly raising an exception, not propagating the exception message
+            return 100 / (param + 1)
+        # explicitly raising an IntersectCapabilityException, will propagate the exception message
+        try:
+            return 100 / (param - 1)
+        except ZeroDivisionError as e:
+            raise IntersectCapabilityError(str(e)) from e
+
+    @intersect_message
+    def raise_exception_no_param(self) -> str:
+        raise IntersectCapabilityError('I should not exist in production!')  # noqa: EM101, TRY003
+
+
+# quick script for generating a valid schema
+if __name__ == '__main__':
+    import json
+
+    from intersect_sdk import get_schema_from_capability_implementations
+
+    schema = get_schema_from_capability_implementations(
+        [DummyCapabilityImplementation], FAKE_HIERARCHY_CONFIG
+    )
+    # have user redirect stdout instead of forcing a file location
+    print(json.dumps(schema, indent=2))  # noqa: T201

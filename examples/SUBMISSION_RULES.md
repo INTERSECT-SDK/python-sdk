@@ -37,7 +37,7 @@ class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation
     but we do not use it here.
 
     The operation we are calling is `say_hello_to_name` , so the message being sent will need to have
-    an operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,
+    an operation_id of `say_hello_to_name`. The operation expects a string sent to it in the payload,
     and will send a string back in its own payload.
     """
 
@@ -97,4 +97,4 @@ if __name__ == '__main__':
 
 ## Validation
 
-Validation should be expressed as declaratively as possible, through `pydantic`, `typing_extensions`, and `annotated_types` imports. Try to avoid implementing validation directly in the function body, as that cannot be represented in the generated schemas.
+Validation should be expressed as declaratively as possible, through `pydantic`, `typing_extensions`, `typing`, and `annotated_types` imports. Try to avoid implementing validation directly in the function body, as that cannot be represented in the generated schemas.

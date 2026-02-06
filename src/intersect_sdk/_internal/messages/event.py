@@ -9,25 +9,28 @@ Clients/orchestrators are expected to consume these events themselves.
 
 import datetime
 import uuid
-from typing import Any, Union
+from typing import Annotated
 
-from pydantic import AwareDatetime, Field, TypeAdapter
-from typing_extensions import Annotated, TypedDict
+from pydantic import AwareDatetime, BaseModel, Field, field_serializer
 
-from ...constants import SYSTEM_OF_SYSTEM_REGEX
-from ...core_definitions import IntersectDataHandler, IntersectMimeType
+from ...constants import CAPABILITY_REGEX, SYSTEM_OF_SYSTEM_REGEX
+from ...core_definitions import IntersectDataHandler
 from ...version import version_string
-from ..data_plane.minio_utils import MinioPayload
 
 # TODO - another property we should consider is an optional max_wait_time for events which are fired from functions.
 # This would mostly be useful for clients/orchestrators that are waiting for a specific event.
 # This should probably be configured on the schema level...
 
 
-class EventMessageHeaders(TypedDict):
-    """Matches the current header definition for INTERSECT messages.
+class EventMessageHeaders(BaseModel):
+    """ALL event messages must include this header.
 
-    ALL messages should contain this header.
+    We do not include the content type of the message in the header, it is handled separately.
+    """
+
+    message_id: Annotated[uuid.UUID, Field(description='Unique message ID')]
+    """
+    ID of the message.
     """
 
     source: Annotated[
@@ -78,80 +81,65 @@ class EventMessageHeaders(TypedDict):
     usage, the payload would indicate the URI to where the data is stored on MinIO.
     """
 
-    event_name: str
-    """
-    The name of an event. You can reasonably determine the structure of the message payload by parsing:
-
-    1) the source of this message header
-    2) this "name" property
-    3) the service schema itself
-    """
-
-
-class EventMessage(TypedDict):
-    messageId: uuid.UUID
-    """
-    ID of the message. (NOTE: this is defined here to conform to the AsyncAPI spec)
-    """
-
-    operationId: str
-    """
-    The name of the operation that was called when an event was emitted. These would map to the names of user functions.
-    """
-
-    headers: EventMessageHeaders
-    """
-    the headers of the message
-    """
-
-    payload: Union[bytes, MinioPayload]  # noqa: FA100 (Pydantic uses runtime annotations)
-    """
-    main payload of the message. Needs to match the schema format, including the content type.
-
-    NOTE: The payload's contents will differ based on the data_handler property in the message header.
-    """
-
-    contentType: Annotated[IntersectMimeType, Field(IntersectMimeType.JSON)]
-    """
-    The content type to use when encoding/decoding a message's payload.
-    The value MUST be a specific media type (e.g. application/json).
-    When omitted, the value MUST be the one specified on the defaultContentType field.
-
-    Note that if the data_handler type is anything other MESSAGE, the actual content-type of the message
-    payload will depend on the data_handler type.
-    """
-
-
-def create_event_message(
-    source: str,
-    operation_id: str,
-    content_type: IntersectMimeType,
-    data_handler: IntersectDataHandler,
-    event_name: str,
-    payload: Any,
-) -> EventMessage:
-    """Payloads depend on the data handler."""
-    return EventMessage(
-        messageId=uuid.uuid4(),
-        operationId=operation_id,
-        contentType=content_type,
-        payload=payload,
-        headers=EventMessageHeaders(
-            source=source,
-            created_at=datetime.datetime.now(tz=datetime.timezone.utc),
-            sdk_version=version_string,
-            event_name=event_name,
-            data_handler=data_handler,
+    capability_name: Annotated[
+        str,
+        Field(
+            pattern=CAPABILITY_REGEX,
+            description='The name of the capability which emitted the event originally.',
         ),
-    )
-
-
-EVENT_MESSAGE_ADAPTER = TypeAdapter(EventMessage)
-
-
-def deserialize_and_validate_event_message(msg: bytes) -> EventMessage:
-    """If the "msg" param is a valid userspace message, return the object.
-
-    Raises Pydantic ValidationError if "msg" is not a valid userspace message
+    ]
     """
-    return EVENT_MESSAGE_ADAPTER.validate_json(msg, strict=True)
+    The name of the capability which emitted the event originally.
+    """
+
+    event_name: Annotated[
+        str,
+        Field(
+            pattern=CAPABILITY_REGEX,
+            description='The name of the event that was emitted, namespaced to the capability.',
+        ),
+    ]
+    """
+    The name of the event that was emitted. This is meaningless without the capability name.
+    """
+
+    # make sure all non-string fields are serialized into strings, even in Python code
+
+    @field_serializer('message_id', mode='plain')
+    def ser_uuid(self, uuid: uuid.UUID) -> str:
+        return str(uuid)
+
+    @field_serializer('created_at', mode='plain')
+    def ser_datetime(self, dt: datetime.datetime) -> str:
+        return dt.isoformat()
+
+    @field_serializer('data_handler', mode='plain')
+    def ser_enum(self, enum: IntersectDataHandler) -> str:
+        return enum.value
+
+
+def create_event_message_headers(
+    source: str,
+    capability_name: str,
+    event_name: str,
+    data_handler: IntersectDataHandler,
+) -> dict[str, str]:
+    """Generate raw headers and write them into a generic data structure which can be handled by any broker protocol."""
+    return EventMessageHeaders(
+        source=source,
+        message_id=uuid.uuid4(),
+        created_at=datetime.datetime.now(tz=datetime.timezone.utc),
+        sdk_version=version_string,
+        capability_name=capability_name,
+        event_name=event_name,
+        data_handler=data_handler,
+    ).model_dump(by_alias=True)
+
+
+def validate_event_message_headers(raw_headers: dict[str, str]) -> EventMessageHeaders:
+    """Validate raw headers and return the object.
+
+    Raises:
+      pydantic.ValidationError - if the headers were missing any essential information
+    """
+    return EventMessageHeaders(**raw_headers)  # type: ignore[arg-type]

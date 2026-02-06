@@ -7,6 +7,7 @@ The exposed service listens to the events of this service.
 import logging
 import threading
 import time
+from typing import ClassVar
 
 from intersect_sdk import (
     HierarchyConfig,
@@ -15,7 +16,6 @@ from intersect_sdk import (
     IntersectService,
     IntersectServiceConfig,
     default_intersect_lifecycle_loop,
-    intersect_event,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +25,10 @@ logger = logging.getLogger(__name__)
 class InternalServiceCapabilityImplementation(IntersectBaseCapabilityImplementation):
     """Internal service capability."""
 
-    intersect_sdk_capability_name = 'InternalService'
+    intersect_sdk_capability_name = 'InternalServiceCapability'
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'internal_service_event': IntersectEventDefinition(event_type=str),
+    }
 
     def after_service_startup(self) -> None:
         """Called after service startup."""
@@ -34,7 +37,6 @@ class InternalServiceCapabilityImplementation(IntersectBaseCapabilityImplementat
         )
         self.thread.start()
 
-    @intersect_event(events={'internal_service_event': IntersectEventDefinition(event_type=str)})
     def internal_service_event_generator(self) -> str:
         """Emits a periodic internal_service_event event."""
         while True:
@@ -66,7 +68,7 @@ if __name__ == '__main__':
     )
     capability = InternalServiceCapabilityImplementation()
     service = IntersectService([capability], config)
-    logger.info('Starting Service 2, use Ctrl+C to exit.')
+    logger.info('Starting Internal Service, use Ctrl+C to exit.')
     default_intersect_lifecycle_loop(
         service,
         post_startup_callback=capability.after_service_startup,

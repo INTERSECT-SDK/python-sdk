@@ -1,7 +1,7 @@
 import logging
 
 from intersect_sdk import (
-    INTERSECT_JSON_VALUE,
+    INTERSECT_RESPONSE_VALUE,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def simple_client_callback(
-    _source: str, _operation: str, _has_error: bool, payload: INTERSECT_JSON_VALUE
+    _source: str, _operation: str, _has_error: bool, payload: INTERSECT_RESPONSE_VALUE
 ) -> None:
     """This simply prints the response from the service to your console.
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
                 'username': 'intersect_username',
                 'password': 'intersect_password',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
             },
         ],
     }

@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 from intersect_sdk import (
     HierarchyConfig,
@@ -22,20 +23,23 @@ class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation
     but we do not use it here.
 
     The operation we are calling is `say_hello_to_name` , so the message being sent will need to have
-    an operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,
+    an operation_id of `say_hello_to_name`. The operation expects a string sent to it in the payload,
     and will send a string back in its own payload.
 
     The operation we are calling also emits its own event.
     """
 
     intersect_sdk_capability_name = 'HelloExample'
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'hello_event': IntersectEventDefinition(event_type=str)
+    }
 
     @intersect_status()
     def status(self) -> str:
         """Basic status function which returns a hard-coded string."""
         return 'Up'
 
-    @intersect_message(events={'hello_event': IntersectEventDefinition(event_type=str)})
+    @intersect_message
     def say_hello_to_name(self, name: str) -> str:
         """Takes in a string parameter and says 'Hello' to the parameter! This ALSO emits a separate event, broadcast globally."""
         self.intersect_sdk_emit_event('hello_event', f'{name} requested a salutation!')
@@ -54,7 +58,7 @@ if __name__ == '__main__':
                 'username': 'intersect_username',
                 'password': 'intersect_password',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
             },
         ],
     }

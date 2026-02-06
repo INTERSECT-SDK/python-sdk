@@ -10,9 +10,7 @@ from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
     IntersectDirectMessageParams,
     IntersectEventDefinition,
-    intersect_event,
     intersect_message,
-    intersect_status,
 )
 from intersect_sdk._internal.interfaces import IntersectEventObserver
 
@@ -27,8 +25,9 @@ class MockObserver(IntersectEventObserver):
             tuple[IntersectDirectMessageParams, INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE | None],
         ] = {}
 
-    def _on_observe_event(self, event_name: str, event_value: Any, operation: str) -> None:
-        self.tracked_events.append((event_name, event_value, operation))
+    # this will work even if capability_name is an empty string; this is checked on the Service
+    def _on_observe_event(self, event_name: str, event_value: Any, capability_name: str) -> None:
+        self.tracked_events.append((event_name, event_value, capability_name))
 
     def create_external_request(
         self,
@@ -44,7 +43,7 @@ class MockObserver(IntersectEventObserver):
 # TESTS ####################
 
 
-def test_no_override():
+def test_no_override() -> None:
     with pytest.raises(RuntimeError) as ex:
 
         class BadClass1(IntersectBaseCapabilityImplementation):
@@ -87,59 +86,24 @@ def test_no_override():
     assert 'BadClass4: Attempted to override a reserved INTERSECT-SDK function' in str(ex)
 
 
-# Note that the ONLY thing the capability itself checks for are annotated functions.
-# The event definitions and overall schema validation are a service-specific feature
-def test_functions_dont_emit_events():
-    """Functions without annotations and status functions should NOT emit events"""
-
+def test_functions_emit_events() -> None:
     class Inner(IntersectBaseCapabilityImplementation):
-        def mock_message(self, param: int) -> int:
-            ret = param << 1
-            self.intersect_sdk_emit_event('mock_message', ret)
-            return ret
+        intersect_sdk_events = {
+            'mock_event': IntersectEventDefinition(event_type=str),
+            'inner': IntersectEventDefinition(event_type=int),
+        }
 
-        def mock_event(self) -> None:
-            self.intersect_sdk_emit_event('mock_event', 'hello')
-
-        @intersect_status()
-        def mock_status(self) -> str:
-            self._inner_function()
-            self.intersect_sdk_emit_event('status', 'test')
-            return 'test'
-
-        # this function WOULD emit an event if it were called directly, but it gets called through a status function
-        @intersect_event(events={'inner': IntersectEventDefinition(event_type=str)})
-        def _inner_function(self) -> None:
-            self.intersect_sdk_emit_event('inner', 'function')
-
-    # setup
-    observer = MockObserver()
-    capability = Inner()
-    capability._intersect_sdk_register_observer(observer)
-
-    # message mocking
-    capability.mock_message(7)
-    capability.mock_event()
-    capability.mock_status()
-
-    assert len(observer.tracked_events) == 0
-
-
-def test_functions_emit_events():
-    class Inner(IntersectBaseCapabilityImplementation):
         @intersect_message()
         def mock_message(self, param: int) -> int:
             ret = param << 1
             self.intersect_sdk_emit_event('mock_message', ret)
             return ret
 
-        @intersect_event(events={'mock_event': IntersectEventDefinition(event_type=str)})
         def mock_event(self) -> None:
             self.intersect_sdk_emit_event('mock_event', 'hello')
 
         # can emit any event as long as an earlier function has the event configuration
         # NOTE: The event_type here is invalid, BUT this is something the IntersectService handles.
-        @intersect_event(events={'inner': IntersectEventDefinition(event_type=int)})
         def outer_function(self) -> None:
             self._inner_function()
 
@@ -160,7 +124,7 @@ def test_functions_emit_events():
     assert len(observer.tracked_events) == 3
 
 
-def test_functions_handle_requests():
+def test_functions_handle_requests() -> None:
     class Inner(IntersectBaseCapabilityImplementation):
         def __init__(self) -> None:
             super().__init__()

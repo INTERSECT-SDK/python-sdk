@@ -7,10 +7,11 @@ Once it gets two events, it terminates itself.
 import logging
 
 from intersect_sdk import (
-    INTERSECT_JSON_VALUE,
+    INTERSECT_RESPONSE_VALUE,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
+    IntersectEventMessageParams,
     default_intersect_lifecycle_loop,
 )
 
@@ -29,14 +30,18 @@ class SampleOrchestrator:
         self.got_first_event = False
 
     def event_callback(
-        self, _source: str, _operation: str, _event_name: str, payload: INTERSECT_JSON_VALUE
+        self,
+        _source: str,
+        _capability_name: str,
+        _event_name: str,
+        payload: INTERSECT_RESPONSE_VALUE,
     ) -> None:
         """This simply prints the event from the exposed service to your console.
 
         Params:
           source: the source of the response message.
-          operation: the name of the function we called in the original message.
-          _has_error: Boolean value which represents an error.
+          capability_name: the name of the capability which emitted the event.
+          event_name: Name of the event.
           payload: Value of the response from the Service.
         """
         print(payload)
@@ -60,11 +65,16 @@ if __name__ == '__main__':
     }
 
     # Listen for an event on the exposed service
+    events = [
+        IntersectEventMessageParams(
+            hierarchy='example-organization.example-facility.example-system.example-subsystem.exposed-service',
+            capability_name='ExposedServiceCapability',
+            event_name='exposed_service_event',
+        )
+    ]
     config = IntersectClientConfig(
         initial_message_event_config=IntersectClientCallback(
-            services_to_start_listening_for_events=[
-                'example-organization.example-facility.example-system.example-subsystem.exposed-service'
-            ],
+            services_to_start_listening_for_events=events,
         ),
         **from_config_file,
     )

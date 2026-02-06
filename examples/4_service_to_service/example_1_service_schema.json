@@ -8,8 +8,16 @@
   },
   "defaultContentType": "application/json",
   "capabilities": {
+    "intersect_sdk": {
+      "endpoints": {},
+      "events": {},
+      "status": {
+        "$ref": "#/components/schemas/IntersectCoreStatus"
+      },
+      "description": "Core capability present in every INTERSECT Service.\n\nThis may be called explicitly by any Client interacting with any SDK service. Set the operation to be \"intersect_sdk.<ENDPOINT>\"."
+    },
     "ServiceOne": {
-      "channels": {
+      "endpoints": {
         "pass_text_to_service_2": {
           "publish": {
             "message": {
@@ -19,7 +27,8 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "null"
+                "type": "null",
+                "title": "pass_text_to_service_2"
               }
             },
             "description": "Takes in a string parameter and sends it to service 2."
@@ -32,58 +41,127 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
-                "type": "string"
+                "type": "string",
+                "title": "text"
               }
             },
             "description": "Takes in a string parameter and sends it to service 2."
-          },
-          "events": []
+          }
         }
+      },
+      "events": {
+        "response_event": {
+          "type": "string",
+          "title": "response_event"
+        }
+      },
+      "status": {
+        "type": "string",
+        "title": "Status"
       },
       "description": "Service 1 Capability."
     }
   },
-  "events": {
-    "response_event": {
-      "type": "string"
-    }
-  },
-  "status": {
-    "type": "string"
-  },
   "components": {
-    "schemas": {},
+    "schemas": {
+      "IntersectCoreStatus": {
+        "description": "Core status information about the INTERSECT-SDK Service as a whole.",
+        "properties": {
+          "uptime": {
+            "format": "duration",
+            "title": "Uptime",
+            "type": "string"
+          },
+          "logical_cpus": {
+            "title": "Logical CPUs",
+            "type": "integer"
+          },
+          "physical_cpus": {
+            "title": "Physical CPUs",
+            "type": "integer"
+          },
+          "cpu_percentages": {
+            "items": {
+              "type": "number"
+            },
+            "title": "CPU Percentages",
+            "type": "array"
+          },
+          "service_cpu_percentage": {
+            "title": "Service CPU Usage Percentage",
+            "type": "number"
+          },
+          "memory_total": {
+            "title": "Memory Total",
+            "type": "integer"
+          },
+          "memory_usage_percentage": {
+            "title": "Memory Usage Percentage",
+            "type": "number"
+          },
+          "service_memory_percentage": {
+            "title": "Service Memory Usage Percentage",
+            "type": "number"
+          },
+          "disk_total": {
+            "title": "Disk Total",
+            "type": "integer"
+          },
+          "disk_usage_percentage": {
+            "title": "Disk Usage Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "uptime",
+          "logical_cpus",
+          "physical_cpus",
+          "cpu_percentages",
+          "service_cpu_percentage",
+          "memory_total",
+          "memory_usage_percentage",
+          "service_memory_percentage",
+          "disk_total",
+          "disk_usage_percentage"
+        ],
+        "title": "IntersectCoreStatus",
+        "type": "object"
+      }
+    },
     "messageTraits": {
       "commonHeaders": {
         "userspaceHeaders": {
-          "$defs": {
-            "IntersectDataHandler": {
-              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
-              "title": "IntersectDataHandler",
-              "type": "integer"
-            }
-          },
-          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "description": "ALL request/response/command messages must contain this header.\n\nWe do not include the content type of the message in the header, it is handled separately.",
           "properties": {
+            "message_id": {
+              "description": "Unique message ID",
+              "title": "Message Id",
+              "type": "string"
+            },
+            "campaign_id": {
+              "description": "ID associated with a campaign",
+              "title": "Campaign Id",
+              "type": "string"
+            },
+            "request_id": {
+              "description": "ID associated with a specific request message and response message sequence",
+              "title": "Request Id",
+              "type": "string"
+            },
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "destination": {
               "description": "destination of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Destination",
               "type": "string"
             },
             "created_at": {
               "description": "the UTC timestamp of message creation",
-              "format": "date-time",
               "title": "Created At",
               "type": "string"
             },
@@ -93,54 +171,50 @@
               "title": "Sdk Version",
               "type": "string"
             },
+            "operation_id": {
+              "description": "Name of capability and operation we want to call, in the format ${CAPABILITY_NAME}.${FUNCTION_NAME}",
+              "title": "Operation Id",
+              "type": "string"
+            },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/userspaceHeaders/$defs/IntersectDataHandler"
-                }
-              ],
-              "default": 0,
-              "description": "Code signifying where data is stored."
+              "description": "Code signifying where data is stored.",
+              "type": "string"
             },
             "has_error": {
-              "default": false,
               "description": "If this value is True, the payload will contain the error message (a string)",
               "title": "Has Error",
-              "type": "boolean"
+              "type": "string"
             }
           },
           "required": [
+            "message_id",
+            "campaign_id",
+            "request_id",
             "source",
             "destination",
             "created_at",
-            "sdk_version"
+            "sdk_version",
+            "operation_id"
           ],
-          "title": "UserspaceMessageHeader",
+          "title": "UserspaceMessageHeaders",
           "type": "object"
         },
         "eventHeaders": {
-          "$defs": {
-            "IntersectDataHandler": {
-              "description": "What data transfer type do you want to use for handling the request/response?\n\nDefault: MESSAGE",
-              "enum": [
-                0,
-                1
-              ],
-              "title": "IntersectDataHandler",
-              "type": "integer"
-            }
-          },
-          "description": "Matches the current header definition for INTERSECT messages.\n\nALL messages should contain this header.",
+          "description": "ALL event messages must include this header.\n\nWe do not include the content type of the message in the header, it is handled separately.",
           "properties": {
+            "message_id": {
+              "description": "Unique message ID",
+              "title": "Message Id",
+              "type": "string"
+            },
             "source": {
               "description": "source of the message",
-              "pattern": "([-a-z0-9]+\\.)*[-a-z0-9]",
+              "pattern": "^[a-z0-9][-a-z0-9.]*[-a-z0-9]$",
               "title": "Source",
               "type": "string"
             },
             "created_at": {
               "description": "the UTC timestamp of message creation",
-              "format": "date-time",
               "title": "Created At",
               "type": "string"
             },
@@ -151,23 +225,28 @@
               "type": "string"
             },
             "data_handler": {
-              "allOf": [
-                {
-                  "$ref": "#/components/messageTraits/commonHeaders/eventHeaders/$defs/IntersectDataHandler"
-                }
-              ],
-              "default": 0,
-              "description": "Code signifying where data is stored."
+              "description": "Code signifying where data is stored.",
+              "type": "string"
+            },
+            "capability_name": {
+              "description": "The name of the capability which emitted the event originally.",
+              "pattern": "^[a-zA-Z0-9]\\w*$",
+              "title": "Capability Name",
+              "type": "string"
             },
             "event_name": {
+              "description": "The name of the event that was emitted, namespaced to the capability.",
+              "pattern": "^[a-zA-Z0-9]\\w*$",
               "title": "Event Name",
               "type": "string"
             }
           },
           "required": [
+            "message_id",
             "source",
             "created_at",
             "sdk_version",
+            "capability_name",
             "event_name"
           ],
           "title": "EventMessageHeaders",

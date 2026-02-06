@@ -7,14 +7,3 @@ It's best to catch all configuration errors prior to sending or receiving any me
 
 Configuration classes are the most likely thing to "break" following a version update.
 """
-
-from .client import IntersectClientConfig
-from .service import IntersectServiceConfig
-from .shared import (
-    HIERARCHY_REGEX,
-    ControlPlaneConfig,
-    ControlProvider,
-    DataStoreConfig,
-    DataStoreConfigMap,
-    HierarchyConfig,
-)

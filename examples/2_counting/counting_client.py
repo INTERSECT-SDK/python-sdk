@@ -3,7 +3,7 @@ import logging
 import time
 
 from intersect_sdk import (
-    INTERSECT_JSON_VALUE,
+    INTERSECT_RESPONSE_VALUE,
     IntersectClient,
     IntersectClientCallback,
     IntersectClientConfig,
@@ -95,7 +95,7 @@ class SampleOrchestrator:
         self.message_stack.reverse()
 
     def client_callback(
-        self, source: str, operation: str, _has_error: bool, payload: INTERSECT_JSON_VALUE
+        self, source: str, operation: str, _has_error: bool, payload: INTERSECT_RESPONSE_VALUE
     ) -> IntersectClientCallback:
         """This simply prints the response from the Service to your console.
 
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                 'username': 'intersect_username',
                 'password': 'intersect_password',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
             },
         ],
     }

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 if TYPE_CHECKING:
     from pydantic import TypeAdapter
+
+    from ..core_definitions import IntersectDataHandler, IntersectMimeType
 
 
 class FunctionMetadata(NamedTuple):
@@ -16,16 +18,35 @@ class FunctionMetadata(NamedTuple):
     """
     The type of the class that implements the target method.
     """
-    method: Callable[[Any], Any]
+    request_adapter: TypeAdapter[Any] | Literal[0] | None
     """
-    The raw method of the function. The function itself is useless and should not be called,
-    but will store user-defined attributes needed for internal handling of data.
+    Type adapter for serializing and validating requests.
+
+    Null if user did not specify a request parameter.
+    0 if user did specify a request parameter, but Content-Type does not require a TypeAdapter.
     """
-    request_adapter: TypeAdapter[Any] | None
-    """
-    Type adapter for serializing and validating requests. Should only be null if user did not specify a request parameter.
-    """
-    response_adapter: TypeAdapter[Any]
+    response_adapter: TypeAdapter[Any] | Literal[0]
     """
     Type adapter for serializing and validating responses.
+    0 if Content-Type does not require a TypeAdapter.
+    """
+    request_content_type: IntersectMimeType
+    """
+    Content-Type of the request value
+    """
+    response_content_type: IntersectMimeType
+    """
+    Content-Type of the response value
+    """
+    response_data_transfer_handler: IntersectDataHandler
+    """
+    How we intend on handling the response value
+    """
+    strict_validation: bool
+    """
+    Whether or not we're using lenient Pydantic validation (default, False) or strict
+    """
+    shutdown_keys: set[str]
+    """
+    keys which should cause the function to be skipped if set
     """

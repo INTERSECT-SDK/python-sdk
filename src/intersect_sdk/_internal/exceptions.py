@@ -3,7 +3,7 @@ class IntersectError(Exception):
 
 
 class IntersectApplicationError(IntersectError):
-    """This is a special IntersectException, thrown if user application logic throws ANY kind of Exception.
+    """This is a special IntersectException, thrown if user application logic throws ANY kind of Exception. The only caveat is that if a user explicitly throws an IntersectCapabilityException, in which case that logic will be handled instead.
 
     In general, validation should be expressed through JSON schema as much as possible; however, JSON schema is NOT a complete prescription for input validation.
     When this exception is thrown, however, we do not leak any exception information in the error message. On the other hand, if the input fails

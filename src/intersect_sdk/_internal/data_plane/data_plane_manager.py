@@ -3,6 +3,8 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from pydantic import TypeAdapter, ValidationError
+
 from ...core_definitions import IntersectDataHandler, IntersectMimeType
 from ..exceptions import IntersectError
 from ..logger import logger
@@ -10,8 +12,9 @@ from .minio_utils import MinioPayload, create_minio_store, get_minio_object, sen
 
 if TYPE_CHECKING:
     from ...config.shared import DataStoreConfigMap, HierarchyConfig
-    from ..messages.event import EventMessage
-    from ..messages.userspace import UserspaceMessage
+
+
+MINIO_ADAPTER = TypeAdapter(MinioPayload)
 
 
 class DataPlaneManager:
@@ -34,7 +37,9 @@ class DataPlaneManager:
         if not self._minio_providers:
             logger.warning('WARNING: This service cannot support any MINIO instances')
 
-    def incoming_message_data_handler(self, message: UserspaceMessage | EventMessage) -> bytes:
+    def incoming_message_data_handler(
+        self, message: bytes, request_data_handler: IntersectDataHandler
+    ) -> bytes:
         """Get data from the request data provider.
 
         Params:
@@ -44,12 +49,15 @@ class DataPlaneManager:
         Raise:
           IntersectException - if we couldn't get the data
         """
-        request_data_handler = message['headers']['data_handler']
         if request_data_handler == IntersectDataHandler.MESSAGE:
-            return message['payload']  # type: ignore[return-value]
+            return message
         if request_data_handler == IntersectDataHandler.MINIO:
             # TODO - we may want to send additional provider information in the payload
-            payload: MinioPayload = message['payload']  # type: ignore[assignment]
+            try:
+                payload: MinioPayload = MINIO_ADAPTER.validate_json(message)
+            except ValidationError as e:
+                logger.warning('Invalid MINIO payload format, dropping message')
+                raise IntersectError from e
             provider = None
             for store in self._minio_providers:
                 if store._base_url._url.geturl() == payload['minio_url']:  # noqa: SLF001 (only way to get URL from MINIO API)
@@ -69,7 +77,7 @@ class DataPlaneManager:
         function_response: bytes,
         content_type: IntersectMimeType,
         data_handler: IntersectDataHandler,
-    ) -> bytes | MinioPayload:
+    ) -> bytes:
         """Send the user's response to the appropriate data provider.
 
         Params:
@@ -78,7 +86,7 @@ class DataPlaneManager:
           - data_handler - where we're going to send the data off to (i.e. the message, MINIO...)
 
         Returns:
-          the payload of the message
+          the payload of the message, this varies based off of the data_handler value
         Raise:
           IntersectException - if there was any error in submitting the response
         """
@@ -94,7 +102,10 @@ class DataPlaneManager:
                 )
                 raise IntersectError
             provider = random.choice(self._minio_providers)  # noqa: S311 (TODO choose a MINIO provider better than at random - this may be determined from external message params)
-            return send_minio_object(function_response, provider, content_type, self._hierarchy)
+            minio_payload = send_minio_object(
+                function_response, provider, content_type, self._hierarchy
+            )
+            return MINIO_ADAPTER.dump_json(minio_payload)
 
         logger.error(
             f'No support implemented for code {data_handler}, please upgrade your intersect-sdk version.'

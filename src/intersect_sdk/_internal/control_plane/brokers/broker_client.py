@@ -32,7 +32,9 @@ class BrokerClient(Protocol):
         """
         ...
 
-    def publish(self, topic: str, payload: bytes, persist: bool) -> None:
+    def publish(
+        self, topic: str, payload: bytes, content_type: str, headers: dict[str, str], persist: bool
+    ) -> None:
         """Publishes the given message.
 
         Publish payload with the pre-existing connection (via connect()) on topic.
@@ -40,6 +42,8 @@ class BrokerClient(Protocol):
         Args:
             topic: The topic on which to publish the message as a string.
             payload: The message to publish, as raw bytes.
+            content_type: The content type of the message (if the data plane used is the control plane itself), or the value to be retrieved from the data plane (if the message handler is MINIO/etc.)
+            headers: UTF-8 dictionary which can help parse information about the message
             persist:
                 True = message will persist forever in associated queues until consumers are available (usually used for Userspace messages)
                 False = remove message immediately if no consumers available (usually used for Event messages and Lifecycle messages)

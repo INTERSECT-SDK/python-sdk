@@ -3,8 +3,6 @@
 These values are often used programmatically by the SDK, but can be used by application developers as well.
 """
 
-from __future__ import annotations
-
 from ._internal.version import strip_version_metadata
 
 # may include build metadata

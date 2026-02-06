@@ -3,8 +3,9 @@
 import logging
 import threading
 import time
+from typing import ClassVar
 
-from intersect_sdk import IntersectEventDefinition, intersect_event
+from intersect_sdk import IntersectEventDefinition
 
 from .service_runner import P_ngBaseCapabilityImplementation, run_service
 
@@ -16,6 +17,9 @@ class PongCapabilityImplementation(P_ngBaseCapabilityImplementation):
     """Basic capability definition, very similar to the other capability except for the type of event it emits."""
 
     intersect_sdk_capability_name = 'pong'
+    intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
+        'pong': IntersectEventDefinition(event_type=str),
+    }
 
     def after_service_startup(self) -> None:
         """Called after service startup."""
@@ -26,7 +30,6 @@ class PongCapabilityImplementation(P_ngBaseCapabilityImplementation):
         )
         self.counter_thread.start()
 
-    @intersect_event(events={'pong': IntersectEventDefinition(event_type=str)})
     def pong_event(self) -> None:
         """Send out a pong event every 2 seconds."""
         while True:

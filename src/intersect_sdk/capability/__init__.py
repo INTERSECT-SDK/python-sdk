@@ -6,9 +6,3 @@ This package will also be important for INTERSECT capability authors, which can 
 The benefit of using pre-existing INTERSECT capabilities over using your own is that it's easier
 for campaign authors and automated workflows to discover your instrument.
 """
-
-from .base import IntersectBaseCapabilityImplementation
-
-__all__ = [
-    'IntersectBaseCapabilityImplementation',
-]

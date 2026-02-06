@@ -1,12 +1,10 @@
-from __future__ import annotations
-
-from typing import Callable
+from .definitions import MessageCallback
 
 
 class TopicHandler:
     """ControlPlaneManager information about a topic, avoids protocol specific information."""
 
-    callbacks: set[Callable[[bytes], None]]
+    callbacks: set[MessageCallback]
     """Set of functions to call when consuming a message.
 
     (In practice there will only be one callback, but it could be helpful to add a debugging function callback in for development.)
