@@ -2,6 +2,29 @@
 
 We follow [Common Changelog](https://common-changelog.org/) formatting for this document.
 
+## Unreleased
+
+### Fixed
+
+- namespace events and statuses to capabilities instead of services ([commit 1](https://github.com/INTERSECT-SDK/python-sdk/commit/e05e27471f05bf50e0bc5a0123f7e0133a3d969e) [commit 2](https://github.com/INTERSECT-SDK/python-sdk/commit/1460e989f70efaf9713eb77bbb4508698db3e655)) (Lance-Drane)
+
+### Changed
+
+- Allow user to specify whatever message Content-Type they would like in messages, and provide handling for non-JSON data types ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/dcd536ebb03973e8939e2715e51dfc3da0d8bd16)) (Lance Drane)
+- change events API; instead of using `@intersect_event` or `@intersect_message(events=...)`, declare all events in capability variable `intersect_sdk_events` ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/1460e989f70efaf9713eb77bbb4508698db3e655)) (Lance Drane)
+- move Pika (AMQP) to be a required dependency instead of an optional dependency ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/5ed5be6a51917b5598043115fb9cb176a6627a2a)) (Lance Drane)
+- bump required Paho MQTT version from v1 to v2 ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/d0bcb9550aa92c7ef327e313a2ad5b34d914a3b3)) (Lance Drane)
+- change internal message structure representation; metadata is sent through as headers, while the direct payload is always the data. This decreases the number of JSON serializations/deserializations from 2 to at most 1 (if the data is actually JSON). This does NOT modify any APIs already in use, with the exception of core services ([initial commit](https://github.com/INTERSECT-SDK/python-sdk/commit/e09f13f9b244b92b6bcecc814df49c81340dcc02#diff-725ea87422115a87ba1869854601d413f1fcac6bea0c965ce5a14e2fcb0461b1) [commit which adds campaign IDs](https://github.com/INTERSECT-SDK/python-sdk/commit/ef8db5415c97af80df267277f8ddca6347440b5e)) (Lance Drane)
+
+### Added
+
+- Added MQTT 5.0 support ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/e09f13f9b244b92b6bcecc814df49c81340dcc02)) (Lance Drane)
+
+
+### Removed
+
+- Dropped MQTT 3.1.1 support ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/e09f13f9b244b92b6bcecc814df49c81340dcc02)) (Lance Drane)
+
 ## [0.8.4] - 2026-02-05
 
 ### Fixed
