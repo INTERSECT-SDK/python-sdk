@@ -9,7 +9,45 @@
   "defaultContentType": "application/json",
   "capabilities": {
     "intersect_sdk": {
-      "endpoints": {},
+      "endpoints": {
+        "get_public_key": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object",
+                "title": "get_public_key"
+              }
+            },
+            "description": "Returns the public key for clients / services to use for encryption"
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "encryption_schemes": [
+                "NONE",
+                "RSA"
+              ],
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              }
+            },
+            "description": "Returns the public key for clients / services to use for encryption"
+          }
+        }
+      },
       "events": {},
       "status": {
         "$ref": "#/components/schemas/IntersectCoreStatus"

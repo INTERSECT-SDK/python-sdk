@@ -14,7 +14,7 @@ from .aes_cypher import AESCipher
 from .models import IntersectEncryptedPayload, IntersectEncryptionPublicKey
 from ..logger import logger
 
-def intersect_client_encryption(
+def intersect_payload_encrypt(
     key_payload: IntersectEncryptionPublicKey,
     unencrypted_model: str,
 ) -> IntersectEncryptedPayload:

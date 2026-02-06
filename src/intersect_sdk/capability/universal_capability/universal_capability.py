@@ -6,11 +6,9 @@ NOTE: While users should generally not need to ever import this class directly, 
 """
 
 import datetime
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
 import os
 import time
-from typing import final
+from typing import Dict, final
 
 import psutil
 
@@ -38,24 +36,6 @@ class IntersectSdkCoreCapability(IntersectBaseCapabilityImplementation):
         super().__init__()
         self.process = psutil.Process(os.getpid())
         """psutil.Process caches most functions it calls after it calls the function once, so just save the object itself"""
-
-        # Generate a key pair for encryption
-        self._private_key: rsa.RSAPrivateKey = rsa.generate_private_key(
-            public_exponent=65537, key_size=2048
-        )
-        self._public_key = self._private_key.public_key()
-
-        # Get the PEM encoded public key
-        self._public_key_pem = self._public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        ).decode()
-
-        self._private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        )
 
 
     @intersect_status

@@ -16,7 +16,7 @@ from .models import IntersectEncryptedPayload, IntersectDecryptedPayload
 from ..logger import logger
 
 
-def intersect_service_decryption(
+def intersect_payload_decrypt(
     rsa_private_key: rsa.RSAPrivateKey,
     encrypted_payload: IntersectEncryptedPayload,
     model: Type[BaseModel],

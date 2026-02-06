@@ -13,8 +13,8 @@ from pydantic import BaseModel
 
 from intersect_sdk._internal.encryption import (
     AESCipher,
-    intersect_client_encryption,
-    intersect_service_decryption,
+    intersect_payload_encrypt,
+    intersect_payload_decrypt,
 )
 from intersect_sdk._internal.encryption.models import (
     IntersectEncryptedPayload,
@@ -173,7 +173,7 @@ def test_client_encryption_basic(public_key_pem):
     model_data = SampleModel(message="hello", value=42)
     unencrypted_json = model_data.model_dump_json()
 
-    result = intersect_client_encryption(key_payload, unencrypted_json)
+    result = intersect_payload_encrypt(key_payload, unencrypted_json)
 
     assert isinstance(result, IntersectEncryptedPayload)
     assert result.key  # Encrypted AES key
@@ -185,7 +185,7 @@ def test_client_encryption_produces_base64(public_key_pem):
     key_payload = IntersectEncryptionPublicKey(public_key=public_key_pem)
     unencrypted_json = '{"test": "data"}'
 
-    result = intersect_client_encryption(key_payload, unencrypted_json)
+    result = intersect_payload_encrypt(key_payload, unencrypted_json)
 
     # All fields should be valid base64
     base64.b64decode(result.key.encode())
@@ -196,8 +196,8 @@ def test_client_encryption_different_plaintext(public_key_pem):
     """Test that different plaintext produces different ciphertexts"""
     key_payload = IntersectEncryptionPublicKey(public_key=public_key_pem)
 
-    result1 = intersect_client_encryption(key_payload, '{"text": "first"}')
-    result2 = intersect_client_encryption(key_payload, '{"text": "second"}')
+    result1 = intersect_payload_encrypt(key_payload, '{"text": "first"}')
+    result2 = intersect_payload_encrypt(key_payload, '{"text": "second"}')
 
     # Data should be different
     assert result1.data != result2.data
@@ -207,8 +207,8 @@ def test_client_encryption_same_plaintext_different_outputs(public_key_pem):
     key_payload = IntersectEncryptionPublicKey(public_key=public_key_pem)
     plaintext = '{"test": "data"}'
 
-    result1 = intersect_client_encryption(key_payload, plaintext)
-    result2 = intersect_client_encryption(key_payload, plaintext)
+    result1 = intersect_payload_encrypt(key_payload, plaintext)
+    result2 = intersect_payload_encrypt(key_payload, plaintext)
 
     # Due to random key and IV generation, outputs should differ
     assert result1.key != result2.key
@@ -224,7 +224,7 @@ def test_client_encryption_complex_model(public_key_pem):
     )
     unencrypted_json = model_data.model_dump_json()
 
-    result = intersect_client_encryption(key_payload, unencrypted_json)
+    result = intersect_payload_encrypt(key_payload, unencrypted_json)
 
     assert isinstance(result, IntersectEncryptedPayload)
     assert result.key and result.initial_vector and result.data
@@ -235,7 +235,7 @@ def test_client_encryption_large_payload(public_key_pem):
     large_data = {"data": "x" * 100000}
     unencrypted_json = json.dumps(large_data)
 
-    result = intersect_client_encryption(key_payload, unencrypted_json)
+    result = intersect_payload_encrypt(key_payload, unencrypted_json)
 
     assert isinstance(result, IntersectEncryptedPayload)
     assert result.key and result.initial_vector and result.data
@@ -250,10 +250,10 @@ def test_service_decryption_basic(rsa_keypair, public_key_pem):
     unencrypted_json = model_data.model_dump_json()
 
     # Encrypt with client
-    encrypted = intersect_client_encryption(key_payload, unencrypted_json)
+    encrypted = intersect_payload_encrypt(key_payload, unencrypted_json)
 
     # Decrypt with service
-    result = intersect_service_decryption(private_key, encrypted, SampleModel)
+    result = intersect_payload_decrypt(private_key, encrypted, SampleModel)
 
     assert isinstance(result, IntersectDecryptedPayload)
     assert isinstance(result.model, SampleModel)
@@ -266,8 +266,8 @@ def test_service_decryption_returns_aes_key_and_iv(rsa_keypair, public_key_pem):
     key_payload = IntersectEncryptionPublicKey(public_key=public_key_pem)
     unencrypted_json = '{"message": "test", "value": 10}'
 
-    encrypted = intersect_client_encryption(key_payload, unencrypted_json)
-    result = intersect_service_decryption(private_key, encrypted, SampleModel)
+    encrypted = intersect_payload_encrypt(key_payload, unencrypted_json)
+    result = intersect_payload_decrypt(private_key, encrypted, SampleModel)
 
     assert result.aes_key is not None
     assert result.aes_initialization_vector is not None
@@ -285,8 +285,8 @@ def test_service_decryption_complex_model(rsa_keypair, public_key_pem):
     )
     unencrypted_json = model_data.model_dump_json()
 
-    encrypted = intersect_client_encryption(key_payload, unencrypted_json)
-    result = intersect_service_decryption(private_key, encrypted, ComplexSampleModel)
+    encrypted = intersect_payload_encrypt(key_payload, unencrypted_json)
+    result = intersect_payload_decrypt(private_key, encrypted, ComplexSampleModel)
 
     assert isinstance(result.model, ComplexSampleModel)
     assert result.model.name == "complex"
@@ -311,16 +311,16 @@ def test_service_decryption_wrong_private_key_fails(rsa_keypair):
     unencrypted_json = '{"message": "test", "value": 10}'
 
     # Encrypt with private_key1's public key
-    encrypted = intersect_client_encryption(key_payload, unencrypted_json)
+    encrypted = intersect_payload_encrypt(key_payload, unencrypted_json)
 
     # Verify decryption works with correct private key
-    result = intersect_service_decryption(private_key1, encrypted, SampleModel)
+    result = intersect_payload_decrypt(private_key1, encrypted, SampleModel)
     assert result.model.message == "test"
     assert result.model.value == 10
 
     # Try to decrypt with private_key2 (should fail)
     with pytest.raises(Exception):  # Will raise decryption error
-        intersect_service_decryption(private_key2, encrypted, SampleModel)
+        intersect_payload_decrypt(private_key2, encrypted, SampleModel)
 
 def test_service_decryption_corrupted_payload_fails(rsa_keypair, public_key_pem):
     """Test that decryption fails with corrupted payload"""
@@ -328,7 +328,7 @@ def test_service_decryption_corrupted_payload_fails(rsa_keypair, public_key_pem)
     key_payload = IntersectEncryptionPublicKey(public_key=public_key_pem)
     unencrypted_json = '{"message": "test", "value": 10}'
 
-    encrypted = intersect_client_encryption(key_payload, unencrypted_json)
+    encrypted = intersect_payload_encrypt(key_payload, unencrypted_json)
 
     # Corrupt the encrypted data
     corrupted = IntersectEncryptedPayload(
@@ -338,7 +338,7 @@ def test_service_decryption_corrupted_payload_fails(rsa_keypair, public_key_pem)
     )
 
     with pytest.raises(Exception):  # Will raise decryption/validation error
-        intersect_service_decryption(private_key, corrupted, SampleModel)
+        intersect_payload_decrypt(private_key, corrupted, SampleModel)
 
 # Integration Tests
 def test_full_roundtrip_simple_model(rsa_keypair, public_key_pem):
@@ -350,10 +350,10 @@ def test_full_roundtrip_simple_model(rsa_keypair, public_key_pem):
     original_json = original.model_dump_json()
 
     # Encrypt
-    encrypted = intersect_client_encryption(key_payload, original_json)
+    encrypted = intersect_payload_encrypt(key_payload, original_json)
 
     # Decrypt
-    decrypted = intersect_service_decryption(private_key, encrypted, SampleModel)
+    decrypted = intersect_payload_decrypt(private_key, encrypted, SampleModel)
 
     assert decrypted.model.message == original.message
     assert decrypted.model.value == original.value
@@ -370,8 +370,8 @@ def test_full_roundtrip_complex_model(rsa_keypair, public_key_pem):
     )
     original_json = original.model_dump_json()
 
-    encrypted = intersect_client_encryption(key_payload, original_json)
-    decrypted = intersect_service_decryption(private_key, encrypted, ComplexSampleModel)
+    encrypted = intersect_payload_encrypt(key_payload, original_json)
+    decrypted = intersect_payload_decrypt(private_key, encrypted, ComplexSampleModel)
 
     assert decrypted.model == original
 
@@ -388,8 +388,8 @@ def test_multiple_messages_same_key(rsa_keypair, public_key_pem):
 
     results = []
     for msg in messages:
-        encrypted = intersect_client_encryption(key_payload, msg.model_dump_json())
-        decrypted = intersect_service_decryption(private_key, encrypted, SampleModel)
+        encrypted = intersect_payload_encrypt(key_payload, msg.model_dump_json())
+        decrypted = intersect_payload_decrypt(private_key, encrypted, SampleModel)
         results.append(decrypted.model)
 
     for original, result in zip(messages, results):

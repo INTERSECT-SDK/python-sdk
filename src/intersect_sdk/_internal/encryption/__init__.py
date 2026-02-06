@@ -1,10 +1,10 @@
 from .aes_cypher import AESCipher
-from .client_encryption import intersect_client_encryption
-from .service_decryption import intersect_service_decryption
+from .client_encryption import intersect_payload_encrypt
+from .service_decryption import intersect_payload_decrypt
 
 
 __all__ = (
     'AESCipher',
-    'intersect_client_encryption',
-    'intersect_service_decryption',
+    'intersect_payload_encrypt',
+    'intersect_payload_decrypt',
 )
