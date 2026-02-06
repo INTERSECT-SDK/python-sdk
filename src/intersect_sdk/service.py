@@ -1039,7 +1039,9 @@ class IntersectService(IntersectEventObserver):
                 # Convert bytes back to string if needed (since intersect_payload_encrypt expects a string)
                 unencrypted_string = request if isinstance(request, str) else request.decode()
                 request = intersect_payload_encrypt(
-                    key_payload=key_payload,
+                    key_payload=IntersectEncryptionPublicKey(
+                        public_key=key_payload.public_key,
+                    ),
                     unencrypted_model=unencrypted_string,
                 )
             case _:
