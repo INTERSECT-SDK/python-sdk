@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+      - candidate-*
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - main
+      - candidate-*
   workflow_dispatch:
 
 permissions:
