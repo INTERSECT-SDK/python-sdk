@@ -2,7 +2,9 @@
 
 We follow [Common Changelog](https://common-changelog.org/) formatting for this document.
 
-## Unreleased
+## [0.9.0] - 2026-02-11
+
+_If you are upgrading: please see [`UPGRADING.md`](UPGRADING.md)._
 
 ### Fixed
 
@@ -94,6 +96,8 @@ _If you are upgrading: please see [`UPGRADING.md`](UPGRADING.md)._
 
 - **Breaking:** Added service-to-service request/response mechanism ([!9](https://github.com/INTERSECT-SDK/python-sdk/pull/9)) (Michael Brim, Lance Drane)
 
+[0.9.0]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.9.0
+[0.8.4]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.4
 [0.8.3]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.3
 [0.8.2]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.2
 [0.8.1]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.8.1
