@@ -5,19 +5,11 @@ from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
     IntersectDataHandler,
     IntersectEventDefinition,
-    IntersectMimeType,
-    intersect_event,
+    get_schema_from_capability_implementations,
     intersect_message,
     intersect_status,
 )
-from intersect_sdk._internal.constants import (
-    REQUEST_CONTENT,
-    RESPONSE_CONTENT,
-    RESPONSE_DATA,
-    STRICT_VALIDATION,
-)
 from intersect_sdk._internal.schema import get_schema_and_functions_from_capability_implementations
-from intersect_sdk.schema import get_schema_from_capability_implementations
 from tests.fixtures.example_schema import (
     FAKE_HIERARCHY_CONFIG,
     DummyCapabilityImplementation,
@@ -33,7 +25,7 @@ def get_fixture_path(fixture: str):
 # MINIMAL ANNOTATION TESTS ######################
 
 
-def test_minimal_intersect_annotations():
+def test_minimal_intersect_annotations() -> None:
     class CapWithMessage(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'CapWithMessage'
 
@@ -43,8 +35,8 @@ def test_minimal_intersect_annotations():
 
     class CapWithEvent(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'CapWithEvent'
+        intersect_sdk_events = {'event': IntersectEventDefinition(event_type=str)}
 
-        @intersect_event(events={'event': IntersectEventDefinition(event_type=str)})
         def event_function(self):
             self.intersect_sdk_emit_event('event', 'emitted_value')
 
@@ -63,7 +55,8 @@ def test_minimal_intersect_annotations():
         ],
         FAKE_HIERARCHY_CONFIG,
     )
-    assert len(schemas['capabilities']) == 3
+    # this will also include the universal capability
+    assert len(schemas['capabilities']) == 4
 
 
 # FIXTURE TESTS ##################
@@ -79,56 +72,86 @@ def test_schema_comparison():
     assert expected_schema == actual_schema
 
 
-def test_verify_status_fn():
-    (schema, function_map, _, status_fn_capability, status_fn_name, status_type_adapter) = (
+def test_verify_status_fn() -> None:
+    # NOTE: this construction will not include the default intersect_sdk capability, however this is an internal function which is normally only called after that capability is injected
+    (schema, function_map, _, status_list) = (
         get_schema_and_functions_from_capability_implementations(
             [DummyCapabilityImplementation], FAKE_HIERARCHY_CONFIG, set()
         )
     )
-    assert status_fn_capability is DummyCapabilityImplementation
-    assert status_fn_name == 'get_status'
-    assert status_fn_name not in schema['capabilities']
 
-    scoped_name = f'{status_fn_capability.intersect_sdk_capability_name}.{status_fn_name}'
+    dummy_capability = status_list[0]
+
+    assert (
+        dummy_capability.capability_name
+        is DummyCapabilityImplementation.intersect_sdk_capability_name
+    )
+    assert dummy_capability.function_name == 'get_status'
+    assert (
+        dummy_capability.capability_name
+        not in schema['capabilities']['DummyCapability']['endpoints']
+    )
+
+    scoped_name = f'{dummy_capability.capability_name}.{dummy_capability.function_name}'
     assert scoped_name in function_map
-    assert status_type_adapter == function_map[scoped_name].response_adapter
+    assert dummy_capability.serializer == function_map[scoped_name].response_adapter
     assert function_map[scoped_name].request_adapter is None
-    assert status_type_adapter.json_schema() == schema['components']['schemas']['DummyStatus']
+    assert (
+        dummy_capability.serializer.json_schema() == schema['components']['schemas']['DummyStatus']
+    )
 
 
 def test_verify_attributes():
-    _, function_map, _, _, _, _ = get_schema_and_functions_from_capability_implementations(
+    (
+        _,
+        function_map,
+        _,
+        _,
+    ) = get_schema_and_functions_from_capability_implementations(
         [DummyCapabilityImplementation], FAKE_HIERARCHY_CONFIG, set()
     )
     # test defaults
     assert (
-        getattr(function_map['DummyCapability.verify_float_dict'].method, RESPONSE_DATA)
+        function_map['DummyCapability.verify_float_dict'].response_data_transfer_handler
         == IntersectDataHandler.MESSAGE
     )
-    assert (
-        getattr(function_map['DummyCapability.verify_nested'].method, REQUEST_CONTENT)
-        == IntersectMimeType.JSON
-    )
-    assert (
-        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_CONTENT)
-        == IntersectMimeType.JSON
-    )
-    assert getattr(function_map['DummyCapability.verify_nested'].method, STRICT_VALIDATION) is False
+    assert function_map['DummyCapability.verify_nested'].request_content_type == 'application/json'
+    assert function_map['DummyCapability.verify_nested'].response_content_type == 'application/json'
+    assert function_map['DummyCapability.verify_nested'].strict_validation is False
 
     # test non-defaults
     assert (
-        getattr(function_map['DummyCapability.verify_nested'].method, RESPONSE_DATA)
+        function_map['DummyCapability.verify_nested'].response_data_transfer_handler
         == IntersectDataHandler.MINIO
     )
-    assert (
-        getattr(function_map['DummyCapability.ip4_to_ip6'].method, RESPONSE_CONTENT)
-        == IntersectMimeType.STRING
+    assert function_map['DummyCapability.ip4_to_ip6'].response_content_type == 'application/json'
+    assert function_map['DummyCapability.test_path'].request_content_type == 'application/json'
+    assert function_map['DummyCapability.calculate_3n_plus_1'].strict_validation is True
+
+
+def test_multiple_status_functions_across_capabilities() -> None:
+    class CapabilityName1(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = '1'
+
+        @intersect_message()
+        def valid_function_1(self, param: str) -> str: ...
+
+        @intersect_status
+        def status_function_1(self) -> str: ...
+
+    class CapabilityName2(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = '2'
+
+        @intersect_message()
+        def valid_function_2(self, param: str) -> str: ...
+
+        @intersect_status
+        def status_function_2(self) -> str: ...
+
+    schema = get_schema_from_capability_implementations(
+        [CapabilityName1, CapabilityName2], FAKE_HIERARCHY_CONFIG
     )
-    assert (
-        getattr(function_map['DummyCapability.test_path'].method, REQUEST_CONTENT)
-        == IntersectMimeType.STRING
-    )
-    assert (
-        getattr(function_map['DummyCapability.calculate_weird_algorithm'].method, STRICT_VALIDATION)
-        is True
-    )
+
+    assert len(schema['capabilities']) == 3
+    for capability in schema['capabilities'].values():
+        assert 'status' in capability

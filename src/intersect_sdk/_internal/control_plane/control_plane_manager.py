@@ -1,27 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Literal
-
-from pydantic import TypeAdapter
+from typing import TYPE_CHECKING, Literal
 
 from ..exceptions import IntersectInvalidBrokerError
 from ..logger import logger
-from .brokers.mqtt_client import MQTTClient
 from .topic_handler import TopicHandler
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ...config.shared import ControlPlaneConfig
     from .brokers.broker_client import BrokerClient
-
-GENERIC_MESSAGE_SERIALIZER: TypeAdapter[Any] = TypeAdapter(Any)
-
-
-def serialize_message(message: Any) -> bytes:
-    """Serialize a message to bytes, in preparation for publishing it on a message broker.
-
-    Works as a generic serializer/deserializer
-    """
-    return GENERIC_MESSAGE_SERIALIZER.dump_json(message, warnings=False)
+    from .definitions import MessageCallback
 
 
 def create_control_provider(
@@ -31,7 +21,9 @@ def create_control_provider(
     if config.protocol == 'amqp0.9.1':
         # only try to import the AMQP client if the user is using an AMQP broker
         try:
-            from .brokers.amqp_client import AMQPClient
+            from .brokers.amqp_client import (  # noqa: PLC0415 (lazy load all AMQP modules)
+                AMQPClient,
+            )
 
             return AMQPClient(
                 host=config.host,
@@ -43,7 +35,10 @@ def create_control_provider(
         except ImportError as e:
             msg = "Configuration includes AMQP broker, but AMQP dependencies were not installed. Install intersect with the 'amqp' optional dependency to use this backend. (i.e. `pip install intersect_sdk[amqp]`)"
             raise IntersectInvalidBrokerError(msg) from e
+
     # MQTT
+    from .brokers.mqtt_client import MQTTClient  # noqa: PLC0415 (lazy load MQTT modules)
+
     return MQTTClient(
         host=config.host,
         port=config.port or 1883,
@@ -78,7 +73,7 @@ class ControlPlaneManager:
         self._topics_to_handlers: dict[str, TopicHandler] = {}
 
     def add_subscription_channel(
-        self, channel: str, callbacks: set[Callable[[bytes], None]], persist: bool
+        self, channel: str, callbacks: set[MessageCallback], persist: bool
     ) -> None:
         """Start listening for messages on a channel on all configured brokers.
 
@@ -149,13 +144,20 @@ class ControlPlaneManager:
         for provider in self._control_providers:
             provider.disconnect()
 
-    def publish_message(self, channel: str, msg: Any, persist: bool) -> None:
+    def publish_message(
+        self,
+        channel: str,
+        payload: bytes,
+        content_type: str,
+        headers: dict[str, str],
+        persist: bool,
+    ) -> None:
         """Publish message on channel for all brokers."""
         if self.is_connected():
-            serialized_message = serialize_message(msg)
             for provider in self._control_providers:
-                provider.publish(channel, serialized_message, persist)
+                provider.publish(channel, payload, content_type, headers, persist)
         else:
+            # TODO may want more robust error handling here
             logger.error('Cannot send message, providers are not connected')
 
     def is_connected(self) -> bool:

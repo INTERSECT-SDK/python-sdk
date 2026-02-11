@@ -21,7 +21,7 @@ class HelloServiceCapabilityImplementation(IntersectBaseCapabilityImplementation
     but we do not use it here.
 
     The operation we are calling is `say_hello_to_name` , so the message being sent will need to have
-    an operationId of `say_hello_to_name`. The operation expects a string sent to it in the payload,
+    an operation_id of `say_hello_to_name`. The operation expects a string sent to it in the payload,
     and will send a string back in its own payload.
     """
 
@@ -50,7 +50,7 @@ if __name__ == '__main__':
                 'username': 'intersect_username',
                 'password': 'intersect_password',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
             },
         ],
     }

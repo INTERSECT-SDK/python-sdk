@@ -3,10 +3,7 @@
 See: https://docs.pydantic.dev/latest/api/json_schema/#pydantic.json_schema.GenerateJsonSchema
 """
 
-from __future__ import annotations
-
 from typing import (
-    TYPE_CHECKING,
     Any,
 )
 
@@ -20,10 +17,7 @@ from pydantic.json_schema import (
     JsonSchemaValue,
 )
 from pydantic.type_adapter import _type_has_config
-from pydantic_core import PydanticSerializationError, to_jsonable_python
-
-if TYPE_CHECKING:
-    from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema, PydanticSerializationError, core_schema, to_jsonable_python
 
 
 # build nested dictionary from list of keys. i.e. if keys = ['one', 'two', 'three']

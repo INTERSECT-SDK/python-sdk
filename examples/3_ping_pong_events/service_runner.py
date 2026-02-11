@@ -33,7 +33,7 @@ def run_service(capability: P_ngBaseCapabilityImplementation) -> None:
                 'username': 'intersect_username',
                 'password': 'intersect_password',
                 'port': 1883,
-                'protocol': 'mqtt3.1.1',
+                'protocol': 'mqtt5.0',
             },
         ],
     }

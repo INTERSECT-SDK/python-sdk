@@ -16,22 +16,20 @@ General rules of "invalids":
 import datetime
 import sys
 from collections import namedtuple
+from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Any, Dict, FrozenSet, Generator, List, NamedTuple, Set, Tuple, TypeVar
+from typing import Annotated, Any, NamedTuple, TypeVar
 
 import pytest
 from annotated_types import Gt
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated, TypeAliasType, TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 from intersect_sdk import (
     HierarchyConfig,
     IntersectBaseCapabilityImplementation,
-    IntersectDataHandler,
     IntersectEventDefinition,
-    IntersectMimeType,
     get_schema_from_capability_implementations,
-    intersect_event,
     intersect_message,
     intersect_status,
 )
@@ -46,15 +44,15 @@ TEST_HIERARCHY_CONFIG = HierarchyConfig(
 )
 
 
-def get_schema_helper(test_type: List[type]):
+def get_schema_helper(test_type: list[type]) -> dict[str, Any]:
     return get_schema_from_capability_implementations(test_type, TEST_HIERARCHY_CONFIG)
 
 
 # MESSAGE TESTS ###########################
 
 
-def test_disallow_missing_annotation(caplog: pytest.LogCaptureFixture):
-    # this class has no @intersect_message or @intersect_event annotation
+def test_disallow_missing_annotation(caplog: pytest.LogCaptureFixture) -> None:
+    # this class has no @intersect_message or @intersect_status annotation, and no intersect_sdk_evnts configuration
     class MissingIntersectMessage(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
 
@@ -65,7 +63,7 @@ def test_disallow_missing_annotation(caplog: pytest.LogCaptureFixture):
     assert 'has no function annotated' in caplog.text
 
 
-def test_disallow_too_many_parameters(caplog: pytest.LogCaptureFixture):
+def test_disallow_too_many_parameters(caplog: pytest.LogCaptureFixture) -> None:
     # more than one parameter is forbidden
     class TooManyParametersOnIntersectMessage(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
@@ -164,7 +162,7 @@ def test_disallow_object_subtyping(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self) -> List[object]: ...
+        def mock_message(self) -> list[object]: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockObjectSubtype])
@@ -192,7 +190,7 @@ def test_disallow_dynamic_list_subtyping(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: List[Any]) -> None: ...
+        def mock_message(self, param: list[Any]) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyList])
@@ -207,7 +205,7 @@ def test_disallow_dynamic_list_subtyping_complex(caplog: pytest.LogCaptureFixtur
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: List[namedtuple('Point', ['x', 'y'])]) -> None:  # noqa: PYI024 (this is the point of testing this...)
+        def mock_message(self, param: list[namedtuple('Point', ['x', 'y'])]) -> None:  # noqa: PYI024 (this is the point of testing this...)
             ...
 
     with pytest.raises(SystemExit):
@@ -222,7 +220,7 @@ def test_disallow_dynamic_set_subtyping(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: Set[Any]) -> None: ...
+        def mock_message(self, param: set[Any]) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnySet])
@@ -236,7 +234,7 @@ def test_disallow_dynamic_frozenset_subtyping(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: FrozenSet[Any]) -> None: ...
+        def mock_message(self, param: frozenset[Any]) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyFrozenSet])
@@ -266,7 +264,7 @@ def test_disallow_non_str_dict_key_type(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: Dict[List[int], str]) -> None: ...
+        def mock_message(self, param: dict[list[int], str]) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockNonStrDictKey])
@@ -283,7 +281,7 @@ def test_disallow_dynamic_dict_value_type(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: Dict[str, Any]) -> None: ...
+        def mock_message(self, param: dict[str, Any]) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyDictValue])
@@ -297,7 +295,7 @@ def test_disallow_dynamic_tuple_subtyping(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: Tuple[int, str, Any, bool]) -> None: ...
+        def mock_message(self, param: tuple[int, str, Any, bool]) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockAnyTuple])
@@ -377,7 +375,7 @@ def test_disallow_ambiguous_tuple(caplog: pytest.LogCaptureFixture):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: Tuple[()]) -> None: ...
+        def mock_message(self, param: tuple[()]) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockAmbiguousTuple])
@@ -461,7 +459,7 @@ def test_disallow_ambiguous_typealiastype(caplog: pytest.LogCaptureFixture):
     class AmbiguousTypeAliasType(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
         T = TypeVar('T')
-        PositiveList = TypeAliasType('PositiveList', List[Annotated[T, Gt(0)]], type_params=(T,))
+        PositiveList = TypeAliasType('PositiveList', list[Annotated[T, Gt(0)]], type_params=(T,))
 
         @intersect_message()
         def mock_message(self, param: PositiveList) -> None: ...
@@ -542,7 +540,10 @@ def test_disallow_missing_return_annotation_status(caplog: pytest.LogCaptureFixt
 
     with pytest.raises(SystemExit):
         get_schema_helper([MissingReturnAnnotationOnStatus])
-    assert "'missing_return_annotation' should have a valid return annotation." in caplog.text
+    assert (
+        "capability status function 'missing_return_annotation' should have a valid return annotation and should not be null."
+        in caplog.text
+    )
 
 
 def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixture):
@@ -569,106 +570,29 @@ def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixt
 # EVENTS TESTS #####################################
 
 
-def test_disallow_same_event_different_types(caplog: pytest.LogCaptureFixture):
-    # this fails because the event with the same key 'mykey' is mapped to an integer in function 1, and a string in function 2
-    class EventTypedDifferentlyAcrossFunctions(IntersectBaseCapabilityImplementation):
-        intersect_sdk_capability_name = 'unused'
-
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=int)})
-        def function_1(self) -> None: ...
-
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=str)})
-        def function_2(self) -> None: ...
-
-    with pytest.raises(SystemExit):
-        get_schema_helper([EventTypedDifferentlyAcrossFunctions])
-    assert (
-        "On capability 'EventTypedDifferentlyAcrossFunctions', event key 'mykey' on function 'function_2' was previously defined differently. \nevent_type mismatch: current=<class 'str'>, previous=<class 'int'>"
-        in caplog.text
-    )
-
-
-def test_disallow_same_event_different_content_types(caplog: pytest.LogCaptureFixture):
-    # NOTE: @intersect_message functions are always evaluated before @intersect_event functions, regardless of their order in the class.
+def test_disallow_event_type_without_schema(caplog: pytest.LogCaptureFixture) -> None:
     class CapImp(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
 
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=int)})
-        def function_2(self) -> None: ...
-
-        @intersect_message(
-            events={
-                'mykey': IntersectEventDefinition(
-                    event_type=int, content_type=IntersectMimeType.STRING
-                )
-            }
-        )
-        def function_1(self, param: int) -> None: ...
-
-    with pytest.raises(SystemExit):
-        get_schema_helper([CapImp])
-    assert (
-        "On capability 'CapImp', event key 'mykey' on function 'function_2' was previously defined differently. \ncontent_type mismatch: current=IntersectMimeType.JSON, previous=IntersectMimeType.STRING"
-        in caplog.text
-    )
-
-
-def test_disallow_same_event_different_data_handlers(caplog: pytest.LogCaptureFixture):
-    # NOTE: @intersect_message functions are always evaluated before @intersect_event functions, regardless of their order in the class.
-    class CapImp(IntersectBaseCapabilityImplementation):
-        intersect_sdk_capability_name = 'unused'
-
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=int)})
-        def function_2(self) -> None: ...
-
-        @intersect_message(
-            events={
-                'mykey': IntersectEventDefinition(
-                    event_type=int, data_handler=IntersectDataHandler.MINIO
-                )
-            }
-        )
-        def function_1(self, param: int) -> None: ...
-
-    with pytest.raises(SystemExit):
-        get_schema_helper([CapImp])
-    assert (
-        "On capability 'CapImp', event key 'mykey' on function 'function_2' was previously defined differently. \ndata_handler mismatch: current=IntersectDataHandler.MESSAGE, previous=IntersectDataHandler.MINIO"
-        in caplog.text
-    )
-
-
-def test_disallow_event_type_without_schema(caplog: pytest.LogCaptureFixture):
-    class CapImp(IntersectBaseCapabilityImplementation):
-        intersect_sdk_capability_name = 'unused'
-
+        # this is not parsable by Pydantic, so will not be accepted
         class Inner:
             one: int
 
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=Inner)})
-        def myfunc(self) -> None: ...
+        intersect_sdk_events = {'mykey': IntersectEventDefinition(event_type=Inner)}
 
     with pytest.raises(SystemExit):
         get_schema_helper([CapImp])
-    assert (
-        "event key 'mykey' on function 'myfunc' has an invalid value in the events mapping"
-        in caplog.text
-    )
+    assert "event key 'mykey' has an invalid value in the events mapping" in caplog.text
 
 
-def test_disallow_dynamic_event_type(caplog: pytest.LogCaptureFixture):
+def test_disallow_dynamic_event_type(caplog: pytest.LogCaptureFixture) -> None:
     class CapImp(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
-
-        @intersect_event(events={'mykey': IntersectEventDefinition(event_type=List[Any])})
-        def myfunc(self) -> None: ...
+        intersect_sdk_events = {'mykey': IntersectEventDefinition(event_type=list[Any])}
 
     with pytest.raises(SystemExit):
         get_schema_helper([CapImp])
-    assert (
-        "event key 'mykey' on function 'myfunc' has an invalid value in the events mapping"
-        in caplog.text
-    )
+    assert "event key 'mykey' has an invalid value in the events mapping" in caplog.text
 
 
 # KEYWORD ARGUMENT TESTS ##############################
@@ -952,28 +876,54 @@ def test_duplicate_capability_names(caplog: pytest.LogCaptureFixture):
     assert '"dup" is a duplicate and has already appeared in another capability.' in caplog.text
 
 
-# XXX this should probably pass at some point in the future, move it to a valid test file if so
-def test_multiple_status_functions_across_capabilities(caplog: pytest.LogCaptureFixture):
-    # fails because there can only be one @intersect_status function between ALL capabilities
+def test_input_param_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
+    # fails because request_content_type is not application/json, but request param is not bytes
 
-    class CapabilityName1(IntersectBaseCapabilityImplementation):
-        intersect_sdk_capability_name = '1'
+    class BinaryCapability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'binary'
 
-        @intersect_message()
-        def valid_function_1(self, param: str) -> str: ...
-
-        @intersect_status
-        def status_function_1(self) -> str: ...
-
-    class CapabilityName2(IntersectBaseCapabilityImplementation):
-        intersect_sdk_capability_name = '2'
-
-        @intersect_message()
-        def valid_function_2(self, param: str) -> str: ...
-
-        @intersect_status
-        def status_function_2(self) -> str: ...
+        @intersect_message(request_content_type='image/png')
+        def param_not_bytes(self, param: int) -> str: ...
 
     with pytest.raises(SystemExit):
-        get_schema_helper([CapabilityName1, CapabilityName2])
-    assert 'Only one capability may have an @intersect_status function' in caplog.text
+        get_schema_helper([BinaryCapability])
+    assert (
+        "parameter 'param' type annotation 'int' on function 'param_not_bytes' must be 'bytes' if request_content_type is not 'application/json'"
+        in caplog.text
+    )
+
+
+def test_return_type_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
+    # fails because response_content_type is not application/json, but return type is not bytes
+
+    class BinaryCapability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'binary'
+
+        @intersect_message(response_content_type='image/png')
+        def return_not_bytes(self, param: int) -> int: ...
+
+    with pytest.raises(SystemExit):
+        get_schema_helper([BinaryCapability])
+    assert (
+        "return annotation 'int' on function 'return_not_bytes' must be 'bytes' if response_content_type is not 'application/json'"
+        in caplog.text
+    )
+
+
+def test_event_type_must_be_bytes_if_content_type_is_binary(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # fails because a binary (non-JSON) event content type must use "bytes" as its event type
+
+    class BinaryCapability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'binary'
+        intersect_sdk_events = {
+            'name': IntersectEventDefinition(event_type=int, content_type='image/png')
+        }
+
+    with pytest.raises(SystemExit):
+        get_schema_helper([BinaryCapability])
+    assert (
+        "event key 'name' must have EventDefinition event_type be 'bytes' if content_type is not 'application/json'"
+        in caplog.text
+    )

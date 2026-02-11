@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+      - candidate-*
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - main
+      - candidate-*
   workflow_dispatch:
 
 permissions:
@@ -22,7 +24,7 @@ jobs:
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.8"
+          python-version: "3.12"
           cache: true
       - name: Install dependencies
         run: |
@@ -38,7 +40,7 @@ jobs:
     name: Windows/MacOS unit tests
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         os:
           - macos-latest
           - windows-latest
@@ -61,13 +63,13 @@ jobs:
     name: Test with coverage
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         os:
           - ubuntu-latest
     runs-on: ${{ matrix.os }}
     services:
       rabbitmq:
-        image: "bitnamilegacy/rabbitmq:3.13.3"
+        image: "bitnamilegacy/rabbitmq:4.1"
         env:
           # space-delimited list of plugins
           RABBITMQ_PLUGINS: "rabbitmq_mqtt"
