@@ -143,8 +143,8 @@ def test_call_user_function() -> None:
 
     assert msg[0] == b'[5,8,13]'
     # make sure header IDs were not modified
-    assert msg[2]['request_id'] == request_id
-    assert msg[2]['campaign_id'] == campaign_id
+    assert msg[2].request_id == request_id
+    assert msg[2].campaign_id == campaign_id
 
 
 # call a @staticmethod user function, which should work as normal

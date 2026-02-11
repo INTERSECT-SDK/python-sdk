@@ -881,7 +881,7 @@ class IntersectService(IntersectEventObserver):
             )
             return
 
-        extreq = self._get_external_request(headers.message_id)
+        extreq = self._get_external_request(headers.request_id)
         if extreq is not None:
             error_msg: str | None = None
             try:

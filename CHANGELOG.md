@@ -24,6 +24,7 @@ We follow [Common Changelog](https://common-changelog.org/) formatting for this 
 ### Removed
 
 - Dropped MQTT 3.1.1 support ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/e09f13f9b244b92b6bcecc814df49c81340dcc02)) (Lance Drane)
+- Dropped support for Python versions <= 3.9
 
 ## [0.8.4] - 2026-02-05
 

@@ -1,6 +1,6 @@
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List
 
 from referencing import Registry, Resource
 from referencing.exceptions import Unresolvable
@@ -30,7 +30,7 @@ def assert_refs_resolve(schema: dict) -> None:
     resource = Resource.from_contents(schema, default_specification=DRAFT202012)
     base_uri = ''
     resolver = Registry().with_resource(base_uri, resource).resolver(base_uri)
-    unresolved: List[str] = []
+    unresolved: list[str] = []
     for ref in iter_ref_values(schema):
         try:
             resolver.lookup(ref)
