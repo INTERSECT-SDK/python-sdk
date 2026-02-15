@@ -8,7 +8,13 @@ from pydantic import TypeAdapter, ValidationError
 from ...core_definitions import IntersectDataHandler, IntersectMimeType
 from ..exceptions import IntersectError
 from ..logger import logger
-from .minio_utils import MinioPayload, create_minio_store, get_minio_object, send_minio_object
+from .minio_utils import (
+    MinioPayload,
+    create_minio_store,
+    delete_minio_object,
+    get_minio_object,
+    send_minio_object,
+)
 
 if TYPE_CHECKING:
     from ...config.shared import DataStoreConfigMap, HierarchyConfig
@@ -111,3 +117,35 @@ class DataPlaneManager:
             f'No support implemented for code {data_handler}, please upgrade your intersect-sdk version.'
         )
         raise IntersectError
+
+    def remove_remote_data(
+        self, message: bytes, request_data_handler: IntersectDataHandler
+    ) -> None:
+        """Removes data from the request data provider.
+
+        This does not raise an exception if unable to remove the data, just logs the problem.
+        In general, this should only be called if you can verify an issue in the headers
+
+        Params:
+          message: the message sent externally to this location
+        Returns:
+          the actual data we want to submit to the user function
+        """
+        if request_data_handler == IntersectDataHandler.MINIO:
+            # TODO - we may want to send additional provider information in the payload
+            try:
+                payload: MinioPayload = MINIO_ADAPTER.validate_json(message)
+            except ValidationError as e:
+                logger.warning('remove_remote - invalid params', e)
+                return
+            provider = None
+            for store in self._minio_providers:
+                if store._base_url._url.geturl() == payload['minio_url']:  # noqa: SLF001 (only way to get URL from MINIO API)
+                    provider = store
+                    break
+            if not provider:
+                logger.error(
+                    f"You did not configure listening to MINIO instance '{payload['minio_url']}'. You must fix this to handle this data."
+                )
+                return
+            delete_minio_object(provider, payload)

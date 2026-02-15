@@ -12,6 +12,8 @@ Most useful definitions and typings will be found in the client_callback_definit
 
 from __future__ import annotations
 
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 import time
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -19,7 +21,12 @@ from uuid import uuid4
 from pydantic import ValidationError
 from typing_extensions import Self, final
 
-from intersect_sdk._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
+from ._internal.encryption.models.public_key import IntersectEncryptionPublicKey
+from ._internal.encryption import (
+    intersect_payload_decrypt,
+    intersect_payload_encrypt,
+)
+from ._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
 
 from ._internal.control_plane.control_plane_manager import (
     ControlPlaneManager,
@@ -59,6 +66,7 @@ class IntersectClient:
     - startup()
     - shutdown()
     - is_connected()
+    - considered_unrecoverable()
 
     No other functions or parameters are guaranteed to remain stable.
 
@@ -148,6 +156,24 @@ class IntersectClient:
 
         self._campaign_id = uuid4()
 
+        # Generate a key pair for encryption
+        self._private_key: rsa.RSAPrivateKey = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048
+        )
+        self._public_key = self._private_key.public_key()
+
+        # Get the PEM encoded public key
+        self._public_key_pem = self._public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        ).decode()
+
+        self._private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
     @final
     def startup(self) -> Self:
         """This function connects the client to all INTERSECT systems.
@@ -224,6 +250,69 @@ class IntersectClient:
         """
         return self._control_plane_manager.considered_unrecoverable()
 
+    def _fetch_service_public_key(self, destination: str) -> str | None:
+        """Fetch the public key from a destination service via intersect_sdk.get_public_key.
+        
+        Args:
+            destination: The hierarchy string of the destination service
+            
+        Returns:
+            The PEM-encoded public key from the service, or None if fetching failed
+        """
+        # Create a temporary request ID for tracking the public key request
+        public_key_request_id = uuid4()
+        
+        # Build and send the public key request
+        headers = create_userspace_message_headers(
+            source=self._hierarchy.hierarchy_string('.'),
+            destination=destination,
+            operation_id='intersect_sdk.get_public_key',
+            campaign_id=uuid4(),
+            request_id=public_key_request_id,
+            encryption_scheme='NONE',
+        )
+        
+        # Send the request to get the public key
+        request_channel = f'{destination.replace(".", "/")}/request'
+        self._control_plane_manager.publish_message(
+            request_channel, b'null', 'application/json', headers, persist=False
+        )
+        
+        # Poll for the response with timeout
+        start_time = time.time()
+        timeout = 30.0
+        poll_interval = 0.1
+        response_data = None
+        
+        while time.time() - start_time < timeout:
+            # Check if we have received a response for this request
+            # We'll store responses temporarily in a dict keyed by request_id
+            if hasattr(self, '_public_key_responses') and str(public_key_request_id) in self._public_key_responses:
+                response_data = self._public_key_responses.pop(str(public_key_request_id))
+                break
+            time.sleep(poll_interval)
+        
+        if response_data is None:
+            logger.error(f'Failed to retrieve public key from {destination} within timeout')
+            return None
+        
+        # Extract the public key from the response
+        try:
+            if isinstance(response_data, dict):
+                public_key = response_data.get('public_key')
+            else:
+                # If it's already parsed as IntersectEncryptionPublicKey
+                public_key = response_data.public_key if hasattr(response_data, 'public_key') else None
+            
+            if public_key is None:
+                logger.error(f'No public_key field in response from {destination}')
+                return None
+                
+            return public_key
+        except (KeyError, AttributeError) as e:
+            logger.error(f'Failed to extract public key from response: {e}')
+            return None
+
     def _handle_userspace_message(
         self, payload: bytes, content_type: str, raw_headers: dict[str, str]
     ) -> None:
@@ -264,6 +353,32 @@ class IntersectClient:
             request_params = self._data_plane_manager.incoming_message_data_handler(
                 payload, headers.data_handler
             )
+            
+            # Check if this is a response to a public key request (before processing as user message)
+            if headers.operation_id == 'intersect_sdk.get_public_key':
+                if not hasattr(self, '_public_key_responses'):
+                    self._public_key_responses = {}
+                self._public_key_responses[str(headers.message_id)] = request_params
+                return
+            
+            if not headers.has_error:
+                match headers.encryption_scheme:
+                    case 'RSA':
+                        from pydantic import BaseModel
+                        
+                        # Create a simple wrapper model for bytes deserialization
+                        class _BytesWrapper(BaseModel):
+                            data: str = ""
+                        
+                        decrypted = intersect_payload_decrypt(
+                            rsa_private_key=self._private_key,
+                            encrypted_payload=request_params,
+                            model=_BytesWrapper,
+                        )
+                        # Extract the decrypted data and return as bytes
+                        request_params = decrypted.model.data.encode()
+                    case _:
+                        pass
             if content_type == 'application/json':
                 request_params = GENERIC_MESSAGE_SERIALIZER.validate_json(request_params)
         except ValidationError as e:
@@ -417,7 +532,27 @@ class IntersectClient:
                 return
             serialized_msg = params.payload
 
-        # TWO: SEND DATA TO APPROPRIATE DATA STORE
+        # TWO: encrypt message
+        match params.encryption_scheme:
+            case 'RSA':
+                # Fetch the destination service's public key
+                public_key_pem = self._fetch_service_public_key(params.destination)
+                if public_key_pem is None:
+                    logger.error(f'Failed to fetch public key from {params.destination}')
+                    return
+                
+                # Convert bytes to string if needed (since intersect_payload_encrypt expects a string)
+                unencrypted_string = serialized_msg if isinstance(serialized_msg, str) else serialized_msg.decode()
+                serialized_msg = intersect_payload_encrypt(
+                    key_payload=IntersectEncryptionPublicKey(
+                        public_key=public_key_pem
+                    ),
+                    unencrypted_model=unencrypted_string,
+                )
+            case _:
+                pass
+
+        # THREE: SEND DATA TO APPROPRIATE DATA STORE
         try:
             payload = self._data_plane_manager.outgoing_message_data_handler(
                 serialized_msg, params.content_type, params.data_handler
@@ -429,7 +564,7 @@ class IntersectClient:
             send_os_signal()
             return
 
-        # THREE: SEND MESSAGE
+        # FOUR: SEND MESSAGE
         headers = create_userspace_message_headers(
             source=self._hierarchy.hierarchy_string('.'),
             destination=params.destination,
@@ -437,6 +572,7 @@ class IntersectClient:
             operation_id=params.operation,
             campaign_id=self._campaign_id,
             request_id=uuid4(),
+            encryption_scheme=params.encryption_scheme,
         )
         logger.debug(f'Send userspace message:\n{headers}')
         channel = f'{params.destination.replace(".", "/")}/request'

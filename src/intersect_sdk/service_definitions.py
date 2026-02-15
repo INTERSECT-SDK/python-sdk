@@ -13,7 +13,7 @@ If you are not able to create a schema, the service will refuse to start.
 
 import functools
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any
+from typing import Any, get_args
 
 from pydantic import BaseModel, ConfigDict, field_validator, validate_call
 from typing_extensions import final
@@ -21,13 +21,14 @@ from typing_extensions import final
 from ._internal.constants import (
     BASE_RESPONSE_ATTR,
     BASE_STATUS_ATTR,
+    ENCRYPTION_SCHEMES,
     REQUEST_CONTENT,
     RESPONSE_CONTENT,
     RESPONSE_DATA,
     SHUTDOWN_KEYS,
     STRICT_VALIDATION,
 )
-from .core_definitions import IntersectDataHandler, IntersectMimeType
+from .core_definitions import IntersectDataHandler, IntersectEncryptionScheme, IntersectMimeType
 
 
 @final
@@ -85,6 +86,7 @@ def intersect_message(
     response_data_transfer_handler: IntersectDataHandler = IntersectDataHandler.MESSAGE,
     response_content_type: IntersectMimeType = 'application/json',
     strict_request_validation: bool = False,
+    encryption_schemes: set[IntersectEncryptionScheme] | None = None,
 ) -> Callable[..., Any]:
     """Use this annotation to mark your capability method as an entrypoint to external requests.
 
@@ -133,6 +135,8 @@ def intersect_message(
       - strict_request_validation: if this is set to True, use pydantic strict validation for requests - otherwise, use lenient validation (default: False)
         See https://docs.pydantic.dev/latest/concepts/conversion_table/ for more info about this.
         NOTE: If you are using a Mapping type (i.e. Dict) with integer or float keys, you MUST leave this on False.
+      - encryption_schemes: This is a set of the encryption schemes the endpoint will support. If no encryption scheme is specified, all encryption schemes (including no encryption scheme) will be supported.
+        This is a way to either enforce encrypted data for a specific endpoint, or to enforce that a specific endpoint is _not_ encrypted.
     """
 
     def inner_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -153,6 +157,13 @@ def intersect_message(
         setattr(__intersect_sdk_wrapper, RESPONSE_DATA, response_data_transfer_handler)
         setattr(__intersect_sdk_wrapper, STRICT_VALIDATION, strict_request_validation)
         setattr(__intersect_sdk_wrapper, SHUTDOWN_KEYS, set(ignore_keys) if ignore_keys else set())
+        setattr(
+            __intersect_sdk_wrapper,
+            ENCRYPTION_SCHEMES,
+            set(encryption_schemes)
+            if encryption_schemes
+            else set(get_args(IntersectEncryptionScheme)),
+        )
 
         return __intersect_sdk_wrapper
 
@@ -178,6 +189,7 @@ def intersect_status(
     A status message MUST NOT send events out. It should be a simple query of the general service (no specifics).
     A status message MUST send its response back in a value which can be serialized into JSON.
     A status message MUST have a fairly small response size (no large data).
+    A status message MUST be able to be sent out unencrypted (encryption is not supported). Use @intersect_message if you want to manually get status information which is potentially sensitive.
     """
 
     def inner_decorator(func: Callable[..., Any]) -> Callable[..., Any]:

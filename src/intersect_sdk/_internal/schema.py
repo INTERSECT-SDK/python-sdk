@@ -23,6 +23,7 @@ from ..version import version_string
 from .constants import (
     BASE_RESPONSE_ATTR,
     BASE_STATUS_ATTR,
+    ENCRYPTION_SCHEMES,
     REQUEST_CONTENT,
     RESPONSE_CONTENT,
     RESPONSE_DATA,
@@ -411,6 +412,7 @@ def _introspection_baseline(
 
         request_content = getattr(method, REQUEST_CONTENT)
         response_content = getattr(method, RESPONSE_CONTENT)
+        encryption_schemes = getattr(method, ENCRYPTION_SCHEMES)
 
         docstring = inspect.cleandoc(method.__doc__) if method.__doc__ else None
         signature = inspect.signature(method)
@@ -434,6 +436,7 @@ def _introspection_baseline(
                 'message': {
                     'schemaFormat': f'application/vnd.aai.asyncapi+json;version={ASYNCAPI_VERSION}',
                     'contentType': request_content,
+                    'encryption_schemes': sorted(encryption_schemes),
                     'traits': {'$ref': '#/components/messageTraits/commonHeaders'},
                 }
             },
@@ -441,6 +444,7 @@ def _introspection_baseline(
                 'message': {
                     'schemaFormat': f'application/vnd.aai.asyncapi+json;version={ASYNCAPI_VERSION}',
                     'contentType': response_content,
+                    'encryption_schemes': sorted(encryption_schemes),
                     'traits': {'$ref': '#/components/messageTraits/commonHeaders'},
                 }
             },
@@ -532,6 +536,7 @@ def _introspection_baseline(
             request_content,
             response_content,
             data_handler,
+            encryption_schemes,
             getattr(method, STRICT_VALIDATION),
             getattr(method, SHUTDOWN_KEYS),
         )
@@ -561,6 +566,7 @@ def _introspection_baseline(
             getattr(status_fn, REQUEST_CONTENT),
             getattr(status_fn, RESPONSE_CONTENT),
             getattr(status_fn, RESPONSE_DATA),
+            {'NONE'},  # status functions should always be assumed to send out unencrypted messages.
             getattr(status_fn, STRICT_VALIDATION),
             getattr(status_fn, SHUTDOWN_KEYS),
         )

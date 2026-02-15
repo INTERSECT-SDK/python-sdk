@@ -134,6 +134,7 @@ def test_call_user_function() -> None:
             operation_id='DummyCapability.calculate_fibonacci',
             campaign_id=campaign_id,
             request_id=request_id,
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -177,6 +178,7 @@ def test_call_static_user_function() -> None:
             operation_id='DummyCapability.test_generator',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -216,6 +218,7 @@ def test_call_user_function_with_default_and_empty_payload() -> None:
             operation_id='DummyCapability.valid_default_argument',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -256,6 +259,7 @@ def test_call_user_function_with_invalid_payload() -> None:
             operation_id='DummyCapability.calculate_fibonacci',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -299,6 +303,7 @@ def test_call_nonexistent_user_function() -> None:
             operation_id='DummyCapability.THIS_FUNCTION_DOES_NOT_EXIST',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -339,6 +344,7 @@ def test_exception_propagation() -> None:
             operation_id='DummyCapability.divide_by_zero_exceptions',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -354,6 +360,7 @@ def test_exception_propagation() -> None:
             operation_id='DummyCapability.divide_by_zero_exceptions',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -369,6 +376,7 @@ def test_exception_propagation() -> None:
             operation_id='DummyCapability.raise_exception_no_param',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -417,6 +425,7 @@ def test_call_minio_user_function() -> None:
             operation_id='DummyCapability.test_datetime',
             campaign_id=uuid4(),
             request_id=uuid4(),
+            encryption_scheme='NONE',
         ),
         True,
     )
@@ -470,6 +479,7 @@ def test_lifecycle_messages() -> None:
             destination='test.test.test.test.test',
             data_handler=IntersectDataHandler.MESSAGE,
             operation_id='DummyCapability.verify_float_dict',
+            encryption_scheme='NONE',
             # note that the dict key MUST be a string, even though the input wants a float key
             campaign_id=uuid4(),
             request_id=uuid4(),

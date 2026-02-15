@@ -5,7 +5,7 @@ from typing import Annotated, Any, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field
 
 from .constants import CAPABILITY_REGEX, SYSTEM_OF_SYSTEM_REGEX
-from .core_definitions import IntersectDataHandler, IntersectMimeType
+from .core_definitions import IntersectDataHandler, IntersectEncryptionScheme, IntersectMimeType
 
 INTERSECT_JSON_VALUE: TypeAlias = (
     list['INTERSECT_JSON_VALUE']
@@ -68,6 +68,13 @@ class IntersectDirectMessageParams(BaseModel):
     The IntersectDataHandler you want to use (most people can just use IntersectDataHandler.MESSAGE here, unless your data is very large)
 
     default: IntersectDataHandler.MESSAGE
+    """
+
+    encryption_scheme: IntersectEncryptionScheme = 'NONE'
+    """
+    The encryption scheme used for messaging.
+
+    default: 'NONE'
     """
 
     # pydantic config

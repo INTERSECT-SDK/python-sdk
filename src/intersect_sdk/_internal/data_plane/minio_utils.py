@@ -152,3 +152,27 @@ def get_minio_object(provider: Minio, payload: MinioPayload) -> bytes:
         raise IntersectError from e
     else:
         return response.data
+
+
+def delete_minio_object(provider: Minio, payload: MinioPayload) -> None:
+    """Delete an object from the bucket, without returning it.
+
+    Params:
+      provider: a pre-cached MinIO provider from the data provider store
+      payload: the payload from the message (at this point, the minio_url should exist)
+
+    Raises:
+      IntersectException - if any non-fatal MinIO error is caught
+    """
+    try:
+        provider.remove_object(
+            bucket_name=payload['minio_bucket'], object_name=payload['minio_object_id']
+        )
+    except MaxRetryError as e:
+        logger.warning(
+            f'Non-fatal MinIO error when retrieving object, the server may be under stress but you should double-check your configuration. Details: \n{e}'
+        )
+    except MinioException as e:
+        logger.error(
+            f'Important MinIO error when retrieving object, this usually indicates a problem with your configuration. Details: \n{e}'
+        )

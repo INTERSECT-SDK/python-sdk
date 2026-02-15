@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 from threading import Lock
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal
@@ -31,6 +33,8 @@ from ._internal.control_plane.control_plane_manager import (
     ControlPlaneManager,
 )
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
+from ._internal.encryption import intersect_payload_decrypt, intersect_payload_encrypt
+from ._internal.encryption.models import IntersectEncryptionPublicKey
 from ._internal.exceptions import IntersectApplicationError, IntersectError
 from ._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
 from ._internal.interfaces import IntersectEventObserver
@@ -306,6 +310,24 @@ class IntersectService(IntersectEventObserver):
         )
         self._control_plane_manager.add_subscription_channel(
             self._client_channel_name, {self._handle_client_message}, persist=True
+        )
+
+        # Generate a key pair for encryption
+        self._private_key: rsa.RSAPrivateKey = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048
+        )
+        self._public_key = self._private_key.public_key()
+
+        # Get the PEM encoded public key
+        self._public_key_pem = self._public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        ).decode()
+
+        self._private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
     def _get_capability(self, target: str) -> IntersectBaseCapabilityImplementation | None:
@@ -815,12 +837,31 @@ class IntersectService(IntersectEventObserver):
                 self._make_error_message_headers(headers),
             )
 
+        # FOUR: DECRYPT DATA
+        if not headers.has_error:
+            if headers.encryption_scheme not in operation_meta.encryption_schemes:
+                return (
+                    f'Invalid encryption scheme {headers.encryption_scheme}, supported encryption schemes are: {operation_meta.encryption_schemes}'.encode(),
+                    'text/plain',
+                    self._make_error_message_headers(headers),
+                )
+            match headers.encryption_scheme:
+                case 'RSA':
+                    request_params = intersect_payload_decrypt(
+                        rsa_private_key=self._private_key,
+                        encrypted_payload=request_params,
+                        model=bytes,
+                    )
+                    pass
+                case _:
+                    pass
+
         try:
-            # FOUR: CALL USER FUNCTION AND GET MESSAGE
+            # FIVE: CALL USER FUNCTION AND GET MESSAGE
             response = self._call_user_function(
                 target_capability, operation_method, operation_meta, request_params
             )
-            # FIVE: SEND DATA TO APPROPRIATE DATA STORE
+            # SIX: SEND DATA TO APPROPRIATE DATA STORE
             response_data_handler = operation_meta.response_data_transfer_handler
             response_content_type = operation_meta.response_content_type
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
@@ -854,7 +895,7 @@ class IntersectService(IntersectEventObserver):
                 self._make_error_message_headers(headers),
             )
 
-        # SIX: SEND MESSAGE
+        # SEVEN: SEND MESSAGE
         response_headers = create_userspace_message_headers(
             source=headers.destination,
             destination=headers.source,
@@ -862,6 +903,7 @@ class IntersectService(IntersectEventObserver):
             operation_id=headers.operation_id,
             request_id=headers.request_id,
             campaign_id=headers.campaign_id,
+            encryption_scheme=headers.encryption_scheme,
         )
         return (response_payload, response_content_type, response_headers)
 
@@ -884,36 +926,47 @@ class IntersectService(IntersectEventObserver):
         extreq = self._get_external_request(headers.request_id)
         if extreq is not None:
             error_msg: str | None = None
-            try:
-                msg_payload = self._data_plane_manager.incoming_message_data_handler(
-                    payload, headers.data_handler
-                )
-                if content_type == 'application/json':
-                    msg_payload = GENERIC_MESSAGE_SERIALIZER.validate_json(msg_payload)
-            except ValidationError as e:
-                error_msg = f'Service sent back invalid response:\n{e}'
-                logger.warning(error_msg)
-            except IntersectError:
-                error_msg = 'INTERNAL ERROR: failed to get message payload from data handler'
-                logger.error(error_msg)
-
-            if error_msg:
-                # we did not get a valid INTERSECT message back, so just mark it for cleanup
-                extreq.request_state = 'finalized'
+            if (
+                not headers.has_error
+                and headers.encryption_scheme != extreq.request.encryption_scheme
+            ):
+                error_msg = f'Invalid encryption scheme {headers.encryption_scheme}, expected {extreq.request.encryption_scheme}'
+                self._data_plane_manager.remove_remote_data(payload, headers.data_handler)
             elif (
                 extreq.request.destination != headers.source
                 or extreq.request.operation != headers.operation_id
             ):
-                logger.warning(
-                    'Possible spoof message, discarding. Target destination',
-                    extreq.request.destination,
-                    'Actual source',
-                    headers.source,
-                    'Target operation',
-                    extreq.request.operation,
-                    'Actual operation',
-                    headers.operation_id,
-                )
+                error_msg = f'Possible spoof message, discarding. Target destination: {extreq.request.destination} -- actual source: {headers.source} -- target operation: {extreq.request.operation} -- actual operation: {headers.operation_id}'
+                self._data_plane_manager.remove_remote_data(payload, headers.data_handler)
+                logger.warning(error_msg)
+            else:
+                try:
+                    msg_payload = self._data_plane_manager.incoming_message_data_handler(
+                        payload, headers.data_handler
+                    )
+                    if not headers.has_error:
+                        # error messages should never be encrypted
+                        match headers.encryption_scheme:
+                            case 'RSA':
+                                msg_payload = intersect_payload_decrypt(
+                                    rsa_private_key=self._private_key,
+                                    encrypted_payload=msg_payload,
+                                    model=bytes,
+                                )
+                                pass
+                            case _:
+                                pass
+                    if content_type == 'application/json':
+                        msg_payload = GENERIC_MESSAGE_SERIALIZER.validate_json(msg_payload)
+                except ValidationError as e:
+                    error_msg = f'Service sent back invalid response:\n{e}'
+                    logger.warning(error_msg)
+                except IntersectError:
+                    error_msg = 'INTERNAL ERROR: failed to get message payload from data handler'
+                    logger.error(error_msg)
+
+            if error_msg:
+                # we did not get a valid INTERSECT message back, so just mark it for cleanup
                 extreq.request_state = 'finalized'
             else:
                 # success
@@ -931,12 +984,68 @@ class IntersectService(IntersectEventObserver):
         if params.content_type == 'application/json':
             request = GENERIC_MESSAGE_SERIALIZER.dump_json(params.payload, warnings=False)
         else:
-            if not isinstance(params.content_type, bytes):
+            if not isinstance(params.payload, bytes):
                 logger.error(
                     'service-to-service message must be bytes if content-type is not application/json'
                 )
                 return False
             request = params.payload
+
+        match params.encryption_scheme:
+            case 'RSA':
+                # Get the public key from the destination service
+                # The destination service has the public key through its universal capability
+                public_key_request = IntersectDirectMessageParams(
+                    destination=params.destination,
+                    operation='intersect_sdk.get_public_key',
+                    payload=None,
+                )
+                
+                # Create the external request to fetch the public key
+                public_key_request_id = self.create_external_request(
+                    public_key_request,
+                    response_handler=None,
+                    timeout=30.0,  # shorter timeout for key fetching
+                )
+                
+                # Poll for the response with timeout
+                start_time = time.time()
+                timeout = 30.0
+                poll_interval = 0.1
+                
+                public_key_payload = None
+                while time.time() - start_time < timeout:
+                    extreq = self._get_external_request(public_key_request_id)
+                    if extreq and extreq.request_state == 'received':
+                        public_key_payload = extreq.response_payload
+                        extreq.request_state = 'finalized'
+                        break
+                    time.sleep(poll_interval)
+                
+                if public_key_payload is None:
+                    logger.error(
+                        f'Failed to retrieve public key from {params.destination} within timeout'
+                    )
+                    return False
+                
+                # public_key_payload should be an IntersectEncryptionPublicKey instance (as a dict)
+                # Parse it if it's a dict, otherwise use it as-is
+                if isinstance(public_key_payload, dict):
+                    key_payload = IntersectEncryptionPublicKey(**public_key_payload)
+                else:
+                    key_payload = public_key_payload
+                
+                # Now encrypt the request using the retrieved public key
+                # Convert bytes back to string if needed (since intersect_payload_encrypt expects a string)
+                unencrypted_string = request if isinstance(request, str) else request.decode()
+                request = intersect_payload_encrypt(
+                    key_payload=IntersectEncryptionPublicKey(
+                        public_key=key_payload.public_key,
+                    ),
+                    unencrypted_model=unencrypted_string,
+                )
+            case _:
+                pass
 
         # TWO: SEND DATA TO APPROPRIATE DATA STORE
         try:
@@ -954,6 +1063,7 @@ class IntersectService(IntersectEventObserver):
             operation_id=params.operation,
             request_id=request_id,
             campaign_id=self._campaign_id,
+            encryption_scheme=params.encryption_scheme,
         )
         logger.debug(f'Sending client message:\n{headers}')
         request_channel = f'{params.destination.replace(".", "/")}/request'
@@ -1154,6 +1264,7 @@ class IntersectService(IntersectEventObserver):
             operation_id=original_headers.operation_id,
             campaign_id=original_headers.campaign_id,
             request_id=original_headers.request_id,
+            encryption_scheme='NONE',
             has_error=True,
         )
 
