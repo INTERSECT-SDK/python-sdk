@@ -20,20 +20,19 @@ jobs:
     name: Ruff linting, formating, MyPy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+      - uses: actions/checkout@v6
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
-          cache: true
       - name: Install dependencies
         run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm sync --dev -G:all
-      - run: |
-          pdm run ruff format --check
-          pdm run ruff check
-          pdm run lint-mypy
+          uv sync --locked --all-extras --all-groups
+      - name: Run linters and type checks
+        run: |
+          uv run ruff format --check
+          uv run ruff check
+          uv run mypy src/intersect_sdk/
 
   # Run unit tests only on Windows/MacOS, we can run the full test suite on Linux
   test-unit:
@@ -47,16 +46,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-          cache: true
       - name: Install dependencies
         run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm sync --dev -G:all
-      - run: pdm run test-unit
+          uv sync --locked --all-extras --all-groups
+      - name: Run tests
+        run: uv run pytest tests/unit/ --cov=src/intersect_sdk/ --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage_report.xml --junitxml=reports/junit.xml
 
   # we can only run our full test suite on Ubuntu due to the Github Actions services requirement
   test-complete:
@@ -91,13 +89,12 @@ jobs:
           - "9001:9001" # web UI
     steps:
       - uses: actions/checkout@v4
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-          cache: true
       - name: Install dependencies
         run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm sync --dev -G:all
-      - run: pdm run test-all
+          uv sync --locked --all-extras --all-groups
+      - name: Run tests
+        run: uv run pytest tests/ --cov=src/intersect_sdk/ --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage_report.xml --junitxml=reports/junit.xml

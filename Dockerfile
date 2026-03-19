@@ -1,32 +1,23 @@
-# container for CI/CD or development - NOT meant to be an extensible Docker image with the installed package
+# Development Dockerfile. Installs all development dependencies, runs as root (so the environment is mutable), intends for you to mount the directory as a volume if you're developing inside of it.
+#
+FROM ghcr.io/astral-sh/uv:python3.12-trixie-slim
 
-ARG REPO=
+WORKDIR /app
 
-# use this stage for development
-FROM ${REPO}python:3.8-slim as minimal
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_TOOL_BIN_DIR=/usr/local/bin
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PDM_VERSION=2.17.3 \
-    PDM_HOME=/usr/local
-# uncomment to allow prereleases to be installed
-#ENV PDM_PRERELEASE=1
-ENV PATH="/root/.local/bin:$PATH"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --no-install-project --all-groups --all-extras
 
-RUN apt update \
-    && apt install -y curl make \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python -
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --all-groups --all-extras
 
-WORKDIR /sdk
-# add minimal files needed for build
-COPY pyproject.toml pdm.lock README.md ./
-COPY src/intersect_sdk/version.py src/intersect_sdk/version.py
-RUN pdm sync --dev -G:all
+ENV PATH="/app/.venv/bin:$PATH"
 
-# use this stage in CI/CD, not useful in development
-FROM minimal as complete
-COPY . .
+ENTRYPOINT ["uv", "run"]
+CMD ["/bin/bash"]

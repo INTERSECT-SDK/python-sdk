@@ -13,19 +13,17 @@ repos:
       - id: ruff
         args: [ --fix ]
       - id: ruff-format
-  - repo: https://github.com/pdm-project/pdm
-    rev: 2.17.2
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.10.6
     hooks:
-      - id: pdm-export
-        args: ['--without-hashes']
-      - id: pdm-lock-check
-      - id: pdm-sync
+      - id: uv-lock
+      #- id: uv-export
   - repo: local
     hooks:
       - id: mypy
         name: MyPy
         description: use MyPy for static type checking
-        entry: pdm run lint-mypy
+        entry: uv run mypy src/intersect_sdk/
         pass_filenames: false
         language: system
   - repo: https://github.com/codespell-project/codespell

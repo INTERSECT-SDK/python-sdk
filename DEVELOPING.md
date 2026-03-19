@@ -8,15 +8,18 @@ Documentation for the INTERSECT Python SDK can be viewed at https://intersect-py
 
 ## Quickstart (developers)
 
-This project uses [PDM](https://pdm.fming.dev/latest/) for Python tooling. Install PDM and run `pdm install -G:all`, or `pdm update` if resyncing the repository.
+This project uses UV for Python tooling. For initial setup:
 
-To install pre-commit hooks, run `pdm run pre-commit install` after installation.
-
-Main commands are specified under `tool.pdm.scripts` in `pyproject.toml`
+```bash
+uv venv .venv
+source .venv/bin/activate
+uv sync --all-extras --all-groups
+uv run pre-commit install
+```
 
 ### Docker build instructions
 
-`docker build --target minimal -t intersect-sdk-python .`
+`docker build -t intersect-sdk-python .`
 
 You will only need to rebuild this image if you need to add/update dependencies.
 
@@ -28,25 +31,28 @@ If you don't want to use this docker-compose file, note that running a full Serv
 
 ## Adding dependencies
 
-- **Required dependency**: `pdm add <dependency>`
-- **Optional dependency**: `pdm add -G <group> <dependency>`
-- **Dev dependency** `pdm add --dev -G <dev-group> <dependency>`
+- **Required dependency**: `uv add <dependency>`
+- **Optional dependency**: `uv add <dependency> --optional`
+- **Dev dependency** `uv add --dev <dependency>`
 
-For dev dependencies, please always specify the dev group as one of `lint`, `test`, or `doc`.
+Regarding development dependencies:
+
+- install documentation dependencies with `uv add <dependency> --optional docs`
 
 ## Linting
 
-Run `pdm run lint` to quickly run all linters. The pre-commit hooks will also catch this.
+- Formatting: `uv run ruff format`
+- Linting: `uv run ruff check --fix`
+- Type analysis: `uv run mypy src/`
+
+The pre-commit hooks will also lint for you.
 
 ## Testing
 
-Note that for the integration and e2e tests, you will need to spin up the docker-compose instance.
+If you are running the integration tests or the e2e tests, you will need to spin up the docker-compose instance.
 
-`pdm run test-all` - run all tests in standard format.
-`pdm run test-all-debug` - run tests allowing debug output (i.e. print statements in tests)
-`pdm run test-unit` - run only the unit tests (no backing services required for these)
-
-Tests are run with pytest if you'd like to customize how they are run. The full `pdm run test...` scripts can be found in `pyproject.toml`
+`uv run pytest tests/` - run all tests in standard format.
+`uv run pytest tests/unit/` - run only the unit tests (no backing services required for these)
 
 ## Examples
 

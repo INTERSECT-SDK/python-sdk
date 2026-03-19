@@ -3,10 +3,12 @@
 These values are often used programmatically by the SDK, but can be used by application developers as well.
 """
 
+from importlib.metadata import version
+
 from ._internal.version import strip_version_metadata
 
 # may include build metadata
-__version__ = '0.9.0'
+__version__ = version('intersect-sdk')
 
 version_string = strip_version_metadata(__version__)
 """

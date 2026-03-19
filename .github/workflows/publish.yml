@@ -2,28 +2,30 @@ name: Release to PyPi
 
 on:
   push:
-    tags: "v[0-9]+.[0-9]+.[0-9]+*"
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
   workflow_dispatch:
-
-permissions:
-  contents: write
-  id-token: write
 
 jobs:
   build:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/intersect-sdk
     steps:
       - uses: actions/checkout@v4
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.8"
-          cache: true
+          python-version: "3.12"
+      - name: "Build package"
+        run: uv build --no-create-gitignore
       - name: Publish package to PyPI
-        env:
-          PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: pdm publish --username __token__ --repository pypi
+        run: uv publish
       - name: upload to github release
         uses: docker://antonyurchenko/git-release:v5
         env:

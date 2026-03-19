@@ -14,11 +14,11 @@ authors = [
     { name = "Rick Archibald", email = "archibaldrk@ornl.gov" },
     { name = "Addi Malviya Thakur", email = "malviyaa@ornl.gov" },
 ]
+version = "0.9.0"
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.10,<4.0"
 keywords = ["intersect"]
-dynamic = ["version"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -44,7 +44,25 @@ Documentation = "https://intersect-python-sdk.readthedocs.io/en/latest/"
 Issues = "https://github.com/INTERSECT-SDK/python-sdk/issues"
 
 [project.optional-dependencies]
-docs = ["sphinx>=5.3.0", "furo>=2023.3.27"]
+docs = [
+    "sphinx>=5.3.0",
+    "furo>=2023.3.27",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=3.3.1",
+    "ruff==0.12.7",
+    "mypy>=1.10.0",
+    "codespell>=2.3.0",
+    "pytest>=7.3.2",
+    "pytest-cov>=4.1.0",
+    "httpretty>=1.1.4"
+]
+
+[build-system]
+requires = ["uv_build>=0.10.2,<0.11.0"]
+build-backend = "uv_build"
 
 [tool.ruff]
 line-length = 100
@@ -171,40 +189,6 @@ exclude_also = [
   'raise NotImplementedError',     # it's not implemented so shouldn't be covered
   'except.* ImportError',          # these are usually used to throw a "friendlier" error and are not really worth testing
 ]
-
-
-[tool.pdm.dev-dependencies]
-lint = [
-    "pre-commit>=3.3.1",
-    "ruff==0.12.7",
-    "mypy>=1.10.0",
-    "codespell>=2.3.0",
-]
-test = ["pytest>=7.3.2", "pytest-cov>=4.1.0", "httpretty>=1.1.4"]
-
-
-[tool.pdm.scripts]
-test-all = "pytest tests/ --cov=src/intersect_sdk/ --cov-fail-under=80 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage_report.xml --junitxml=reports/junit.xml"
-test-all-debug = "pytest tests/ --cov=src/intersect_sdk/ --cov-fail-under=80 --cov-report=html:reports/htmlcov/ --cov-report=xml:reports/coverage_report.xml --junitxml=reports/junit.xml -s"
-test-unit = "pytest tests/unit --cov=src/intersect_sdk/"
-test-e2e = "pytest tests/e2e --cov=src/intersect_sdk/"
-lint = { composite = ["lint-format", "lint-ruff", "lint-mypy", "lint-spelling", "lint-docs"] }
-lint-docs = "sphinx-build -W --keep-going docs docs/_build"
-lint-format = "ruff format"
-lint-ruff = "ruff check --fix"
-lint-mypy = "mypy src/intersect_sdk/"
-lint-spelling = "codespell -w docs examples src tests *.md -S docs/_build"
-
-[tool.pdm.build]
-package-dir = "src"
-
-[tool.pdm.version]
-source = "file"
-path = "src/intersect_sdk/version.py"
-
-[build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file

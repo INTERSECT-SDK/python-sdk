@@ -423,6 +423,7 @@
                 "$ref": "#/components/messageTraits/commonHeaders"
               },
               "payload": {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string",
                 "title": "test_decimal"
               }
@@ -442,6 +443,7 @@
                     "type": "number"
                   },
                   {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                     "type": "string"
                   }
                 ],
@@ -580,7 +582,6 @@
               },
               "payload": {
                 "format": "path",
-                "pattern": "([\\w-]+/)*([\\w-]+)\\.[\\w]+",
                 "type": "string",
                 "title": "path"
               }

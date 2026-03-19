@@ -6,7 +6,7 @@ Read the sections below if you would like to contribute to the development of th
 Installing for package development
 ----------------------------------
 
-Follow the steps discussed in this section to install the intersect-sdk package in a Python development environment. First, install Python and PDM on your local machine. See the :doc:`installation` page for more details. Next, clone the sdk repository as follows:
+Follow the steps discussed in this section to install the intersect-sdk package in a Python development environment. First, install Python and UV on your local machine. See the :doc:`installation` page for more details. Next, clone the sdk repository as follows:
 
 .. code-block:: bash
 
@@ -17,16 +17,16 @@ Create a Python virtual environment in the root level of the repository and acti
 .. code-block:: bash
 
    # Create a virtual environment and activate it
-   cd sdk
-   python -m venv venv
-   source venv/bin/activate
+   cd python-sdk
+   uv venv .venv
+   source .venv/bin/activate
 
-Use PDM to install the intersect-sdk package and its dependencies into the virtual environment.
+Use UV to install the intersect-sdk package and its dependencies into the virtual environment.
 
 .. code-block:: bash
 
-   # Install the intersect-sdk package into the virtual environment using PDM
-   pdm install
+   # Install the intersect-sdk package into the virtual environment using UV
+   uv sync --all-extras --all-groups
 
 Check the installation by running one of the examples, such as the :doc:`examples/hello-world` example. Use the command shown below to deactivate the virtual environment:
 
@@ -34,10 +34,10 @@ Check the installation by running one of the examples, such as the :doc:`example
 
    deactivate
 
-PDM
+UV
 ------
 
-The `PDM <https://pdm.fming.dev/latest/>`_ packaging and dependency management tool is used to install the intersect-sdk package in editable (developer) mode. It is also used to run linter checks, formatter checks, and unit tests. Download and install PDM using the instructions on the PDM website.
+The `UV <https://docs.astral.sh/uv//>`_ packaging and dependency management tool is used to install the intersect-sdk package in editable (developer) mode. It is also used to run linter checks, formatter checks, and unit tests. Download and install UV using the instructions on the UV website.
 
 Documentation
 -------------
