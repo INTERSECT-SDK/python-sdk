@@ -1,7 +1,5 @@
 """Definitions supporting the 'core status' functionality of the core capability."""
 
-from __future__ import annotations
-
 import datetime
 from typing import Annotated
 
