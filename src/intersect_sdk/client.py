@@ -10,10 +10,7 @@ Users do not need to interact with the client other than through its constructor
 Most useful definitions and typings will be found in the client_callback_definitions module.
 """
 
-from __future__ import annotations
-
 import time
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -37,17 +34,13 @@ from ._internal.messages.userspace import (
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
 from .client_callback_definitions import (
+    INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
+    INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
     IntersectClientCallback,
 )
 from .config.client import IntersectClientConfig
 from .config.shared import HierarchyConfig
-
-if TYPE_CHECKING:
-    from .client_callback_definitions import (
-        INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
-        INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,
-    )
-    from .shared_callback_definitions import IntersectDirectMessageParams
+from .shared_callback_definitions import IntersectDirectMessageParams
 
 
 @final

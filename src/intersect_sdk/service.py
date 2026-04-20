@@ -14,13 +14,11 @@ message brokers or the data layer beyond defining credentials in their "Intersec
 Most useful definitions and typings will be found in the service_definitions module.
 """
 
-from __future__ import annotations
-
 import time
 from collections import defaultdict
 from threading import Lock
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 from uuid import UUID, uuid1, uuid3, uuid4
 
 from pydantic import ConfigDict, ValidationError, validate_call
@@ -32,6 +30,7 @@ from ._internal.control_plane.control_plane_manager import (
 )
 from ._internal.data_plane.data_plane_manager import DataPlaneManager
 from ._internal.exceptions import IntersectApplicationError, IntersectError
+from ._internal.function_metadata import FunctionMetadata
 from ._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
 from ._internal.interfaces import IntersectEventObserver
 from ._internal.logger import logger
@@ -67,9 +66,6 @@ from .shared_callback_definitions import (
     IntersectDirectMessageParams,
 )
 from .version import version_string
-
-if TYPE_CHECKING:
-    from ._internal.function_metadata import FunctionMetadata
 
 
 @final
@@ -686,7 +682,7 @@ class IntersectService(IntersectEventObserver):
             del extreq
         self._external_requests_lock.release_lock()
 
-    def _process_external_request(self, extreq: IntersectService._ExternalRequest) -> None:
+    def _process_external_request(self, extreq: _ExternalRequest) -> None:
         if extreq.request_state == 'unhandled':
             # use temporary intermediate state to avoid sending message twice
             extreq.request_state = 'sending'
