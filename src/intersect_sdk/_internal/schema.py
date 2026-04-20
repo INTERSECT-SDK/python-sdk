@@ -619,7 +619,7 @@ def get_schema_and_functions_from_capability_implementations(
             or not re.fullmatch(CAPABILITY_REGEX, cap_name)
         ):
             die(
-                f'Invalid intersect_sdk_capability_name on capability {capability_type.__name__} - must be a non-empty string with only alphanumeric characters and hyphens (you must explicitly set this, and do so on the class and not an instance).'
+                f'Invalid intersect_sdk_capability_name on capability {capability_type.__name__} - must be a non-empty string with only alphanumeric characters and underscores (you must explicitly set this, and do so on the class and not an instance).'
             )
         if cap_name in capability_schemas:
             die(

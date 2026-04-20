@@ -853,7 +853,7 @@ def test_invalid_capability_regex(caplog: pytest.LogCaptureFixture):
     with pytest.raises(SystemExit):
         get_schema_helper([BadCapabilityName])
     assert 'Invalid intersect_sdk_capability_name on capability' in caplog.text
-    assert 'only alphanumeric characters and hyphens' in caplog.text
+    assert 'only alphanumeric characters and underscores' in caplog.text
 
 
 def test_duplicate_capability_names(caplog: pytest.LogCaptureFixture):
