@@ -35,6 +35,51 @@ Please see the :doc:`pydantic` page for more information about valid types.
 
 Arguments to the ``@intersect_message()`` decorator can be used to specify specific details about your function; for example, the Content-Types of both the request and response parameter, the data provider for the response data, and whether you want to allow type coercion in the request.
 
+Exception Handling
+^^^^^^^^^^^^^^^^^^
+
+By default, if a Capability raises an Exception, unhandled or otherwise, it will be logged server-side but the information will NOT be sent to the Client. To send a more detailed message to the Client, catch error messages yourself and raise ``IntersectCapabilityError`` with your error string as the argument:
+
+Note that you should be very careful about what Exception information you include when you raise ``IntersectCapabilityError``.
+
+Here is an example
+
+.. code-block:: python
+
+    from pydantic import BaseModel
+    from intersect_sdk import IntersectBaseCapabilityImplementation, IntersectCapabilityError
+
+    class InputType(BaseModel):
+        # ...
+        pass
+
+    class OutputType(BaseModel):
+        # ...
+        pass
+
+    class YourCapability(IntersectBaseCapabilityImplementation):
+
+        # assume that the "debug" parameter is a configuration value
+        def __init__(self, debug: bool):
+            super().__init__()
+            self.debug = debug
+
+        def _internal_function(self, request: InputType) -> OutputType:
+            # this function may raise an exception
+            pass
+
+        @intersect_message()
+        def my_message(self, request: InputType) -> OutputType:
+            # if "request" is not an integer,
+            try:
+                self._internal_function(request)
+            except (FileNotFoundError, ValueError) as e:  # only raising specific kinds of exceptions, let other exceptions propagate (they will be caught by the INTERSECT-SDK)
+                if self.debug:
+                    # propagate the exception message to the client
+                    raise IntersectCapabilityError(f'An error occurred in my_message: {str(e)}')
+                # do NOT propagate the exception message to the client
+                raise
+
 CapabilityImplementation - Events
 ---------------------------------
 
