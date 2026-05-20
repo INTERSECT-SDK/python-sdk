@@ -1,9 +1,9 @@
 """Public exceptions API."""
 
-from ._internal.exceptions import IntersectError
+from intersect_sdk_common import IntersectApplicationError
 
 
-class IntersectCapabilityError(IntersectError):
+class IntersectCapabilityError(IntersectApplicationError):
     """This is a marker for a special kind of Capability Exception. WARNING: USE THIS WITH CARE.
 
     When the SDK catches an Exception from Capability code, it has to decide whether to send information about the Exception in the message, or a generic "Application raised Exception" message.

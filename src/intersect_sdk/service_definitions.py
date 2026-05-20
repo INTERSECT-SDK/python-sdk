@@ -15,6 +15,7 @@ import functools
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
+from intersect_sdk_common import IntersectDataHandler, IntersectMimeType
 from pydantic import BaseModel, ConfigDict, field_validator, validate_call
 from typing_extensions import final
 
@@ -27,7 +28,6 @@ from ._internal.constants import (
     SHUTDOWN_KEYS,
     STRICT_VALIDATION,
 )
-from .core_definitions import IntersectDataHandler, IntersectMimeType
 
 
 @final

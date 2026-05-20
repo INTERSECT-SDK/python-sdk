@@ -1,10 +1,13 @@
 """Service specific configuration types."""
 
-from typing import Annotated, Literal
+from typing import Annotated
 
+from intersect_sdk_common import (
+    ControlPlaneConfig,
+    DataStoreConfigMap,
+    HierarchyConfig,
+)
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat
-
-from .shared import ControlPlaneConfig, DataStoreConfigMap, HierarchyConfig
 
 
 class IntersectServiceConfig(BaseModel):
@@ -15,7 +18,7 @@ class IntersectServiceConfig(BaseModel):
     Configuration of the System-of-System representation
     """
 
-    brokers: Annotated[list[ControlPlaneConfig], Field(min_length=1)] | Literal['discovery']
+    brokers: Annotated[list[ControlPlaneConfig], Field(min_length=1)]
     """
     Configurations for any message brokers the application should attach to
 

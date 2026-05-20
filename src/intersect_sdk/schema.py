@@ -38,7 +38,7 @@ from .capability.base import IntersectBaseCapabilityImplementation
 from .capability.universal_capability.universal_capability import IntersectSdkCoreCapability
 
 if TYPE_CHECKING:
-    from .config.shared import HierarchyConfig
+    from intersect_sdk_common import HierarchyConfig
 
 
 def get_schema_from_capability_implementations(

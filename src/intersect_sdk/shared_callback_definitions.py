@@ -2,10 +2,12 @@
 
 from typing import Annotated, Any, TypeAlias
 
+from intersect_sdk_common import (
+    IntersectDataHandler,
+    IntersectMimeType,
+)
+from intersect_sdk_common.constants import CAPABILITY_REGEX, SYSTEM_OF_SYSTEM_REGEX
 from pydantic import BaseModel, ConfigDict, Field
-
-from .constants import CAPABILITY_REGEX, SYSTEM_OF_SYSTEM_REGEX
-from .core_definitions import IntersectDataHandler, IntersectMimeType
 
 INTERSECT_JSON_VALUE: TypeAlias = (
     list['INTERSECT_JSON_VALUE']

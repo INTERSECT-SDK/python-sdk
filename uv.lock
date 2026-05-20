@@ -601,13 +601,10 @@ name = "intersect-sdk"
 version = "0.9.0"
 source = { editable = "." }
 dependencies = [
+    { name = "intersect-sdk-common" },
     { name = "jsonschema", extra = ["format-nongpl"] },
-    { name = "minio" },
-    { name = "paho-mqtt" },
-    { name = "pika" },
     { name = "psutil" },
     { name = "pydantic" },
-    { name = "retrying" },
 ]
 
 [package.optional-dependencies]
@@ -632,13 +629,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2023.3.27" },
+    { name = "intersect-sdk-common", specifier = ">=0.9.4,<0.10.0" },
     { name = "jsonschema", extras = ["format-nongpl"], specifier = ">=4.21.1" },
-    { name = "minio", specifier = ">=7.2.3" },
-    { name = "paho-mqtt", specifier = ">=2.1.0,<3.0.0" },
-    { name = "pika", specifier = ">=1.3.2,<2.0.0" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pydantic", specifier = ">=2.7.0" },
-    { name = "retrying", specifier = ">=1.3.4,<2.0.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=5.3.0" },
 ]
 provides-extras = ["docs"]
@@ -652,6 +646,21 @@ dev = [
     { name = "pytest", specifier = ">=7.3.2" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "ruff", specifier = "==0.12.7" },
+]
+
+[[package]]
+name = "intersect-sdk-common"
+version = "0.9.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "minio" },
+    { name = "paho-mqtt" },
+    { name = "pika" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/14/b4/af8fe2f4eb026af8a5e7b83bf7be9f257fb623b9662acd1faee4966ed045/intersect_sdk_common-0.9.4.tar.gz", hash = "sha256:c5fb6ae7bd25691ff6d495d265a9b26135903eba4a4c3a261d1e68e7d6797dbd", size = 31479, upload-time = "2026-03-31T21:19:08.277Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/ab/5212a9463e7d83db1abefcae96e2ef136a1692b9f9c9dcf9837b4f45443d/intersect_sdk_common-0.9.4-py3-none-any.whl", hash = "sha256:4bb5488f74d111fd95a3cea162d3bdee5231b0bcface531461d08006ea4747f9", size = 43869, upload-time = "2026-03-31T21:19:07.291Z" },
 ]
 
 [[package]]
@@ -1418,15 +1427,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c9/74/b3ff8e6c8446842c3f5c837e9c3dfcfe2018ea6ecef224c710c85ef728f4/requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf", size = 134517, upload-time = "2025-08-18T20:46:02.573Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6", size = 64738, upload-time = "2025-08-18T20:46:00.542Z" },
-]
-
-[[package]]
-name = "retrying"
-version = "1.4.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c8/5a/b17e1e257d3e6f2e7758930e1256832c9ddd576f8631781e6a072914befa/retrying-1.4.2.tar.gz", hash = "sha256:d102e75d53d8d30b88562d45361d6c6c934da06fab31bd81c0420acb97a8ba39", size = 11411, upload-time = "2025-08-03T03:35:25.189Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/f3/6cd296376653270ac1b423bb30bd70942d9916b6978c6f40472d6ac038e7/retrying-1.4.2-py3-none-any.whl", hash = "sha256:bbc004aeb542a74f3569aeddf42a2516efefcdaff90df0eb38fbfbf19f179f59", size = 10859, upload-time = "2025-08-03T03:35:23.829Z" },
 ]
 
 [[package]]

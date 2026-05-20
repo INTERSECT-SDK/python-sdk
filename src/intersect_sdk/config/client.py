@@ -1,19 +1,19 @@
 """Client specific configuration types."""
 
-from typing import Annotated, Literal
+from typing import Annotated
 
+from intersect_sdk_common import ControlPlaneConfig, DataStoreConfigMap
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import final
 
 from ..client_callback_definitions import IntersectClientCallback
-from .shared import ControlPlaneConfig, DataStoreConfigMap
 
 
 @final
 class IntersectClientConfig(BaseModel):
     """The user-provided configuration needed to integrate with INTERSECT as a client."""
 
-    brokers: Annotated[list[ControlPlaneConfig], Field(min_length=1)] | Literal['discovery']
+    brokers: Annotated[list[ControlPlaneConfig], Field(min_length=1)]
     """
     Configurations for any message brokers the application should attach to
 

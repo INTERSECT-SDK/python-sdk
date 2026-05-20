@@ -12,6 +12,16 @@ from typing import TYPE_CHECKING
 
 # import everything eagerly for IDEs/LSPs
 if TYPE_CHECKING:
+    from intersect_sdk_common import (
+        ControlPlaneConfig,
+        ControlProvider,
+        DataStoreConfig,
+        DataStoreConfigMap,
+        HierarchyConfig,
+        IntersectDataHandler,
+        IntersectMimeType,
+    )
+
     from .app_lifecycle import default_intersect_lifecycle_loop
     from .capability.base import IntersectBaseCapabilityImplementation
     from .client import IntersectClient
@@ -22,14 +32,6 @@ if TYPE_CHECKING:
     )
     from .config.client import IntersectClientConfig
     from .config.service import IntersectServiceConfig
-    from .config.shared import (
-        ControlPlaneConfig,
-        ControlProvider,
-        DataStoreConfig,
-        DataStoreConfigMap,
-        HierarchyConfig,
-    )
-    from .core_definitions import IntersectDataHandler, IntersectMimeType
     from .exceptions import IntersectCapabilityError
     from .schema import get_schema_from_capability_implementations
     from .service import IntersectService
@@ -82,44 +84,47 @@ __all__ = (
 )
 
 # PEP 562 stuff: do lazy imports for people who just want to import from the top-level module
-
+# [0] = package, [1] = path to module within package
 __lazy_imports = {
-    'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE': '.client_callback_definitions',
-    'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE': '.client_callback_definitions',
-    'INTERSECT_JSON_VALUE': '.shared_callback_definitions',
-    'INTERSECT_RESPONSE_VALUE': '.shared_callback_definitions',
-    'INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE': '.service_callback_definitions',
-    'ControlPlaneConfig': '.config.shared',
-    'ControlProvider': '.config.shared',
-    'DataStoreConfig': '.config.shared',
-    'DataStoreConfigMap': '.config.shared',
-    'HierarchyConfig': '.config.shared',
-    'IntersectBaseCapabilityImplementation': '.capability.base',
-    'IntersectCapabilityError': '.exceptions',
-    'IntersectClient': '.client',
-    'IntersectClientCallback': '.client_callback_definitions',
-    'IntersectClientConfig': '.config.client',
-    'IntersectDataHandler': '.core_definitions',
-    'IntersectDirectMessageParams': '.shared_callback_definitions',
-    'IntersectEventDefinition': '.service_definitions',
-    'IntersectEventMessageParams': '.shared_callback_definitions',
-    'IntersectMimeType': '.core_definitions',
-    'IntersectService': '.service',
-    'IntersectServiceConfig': '.config.service',
-    '__version__': '.version',
-    'default_intersect_lifecycle_loop': '.app_lifecycle',
-    'get_schema_from_capability_implementations': '.schema',
-    'intersect_message': '.service_definitions',
-    'intersect_status': '.service_definitions',
-    'version_info': '.version',
-    'version_string': '.version',
+    # COMMON: core types
+    'IntersectDataHandler': ('intersect_sdk_common', ''),
+    'IntersectMimeType': ('intersect_sdk_common', ''),
+    # COMMON: config types
+    'ControlPlaneConfig': ('intersect_sdk_common', ''),
+    'ControlProvider': ('intersect_sdk_common', ''),
+    'DataStoreConfig': ('intersect_sdk_common', ''),
+    'DataStoreConfigMap': ('intersect_sdk_common', ''),
+    'HierarchyConfig': ('intersect_sdk_common', ''),
+    # imports not in common
+    'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE': (__spec__.parent, '.client_callback_definitions'),
+    'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE': (__spec__.parent, '.client_callback_definitions'),
+    'INTERSECT_JSON_VALUE': (__spec__.parent, '.shared_callback_definitions'),
+    'INTERSECT_RESPONSE_VALUE': (__spec__.parent, '.shared_callback_definitions'),
+    'INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE': (__spec__.parent, '.service_callback_definitions'),
+    'IntersectBaseCapabilityImplementation': (__spec__.parent, '.capability.base'),
+    'IntersectCapabilityError': (__spec__.parent, '.exceptions'),
+    'IntersectClient': (__spec__.parent, '.client'),
+    'IntersectClientCallback': (__spec__.parent, '.client_callback_definitions'),
+    'IntersectClientConfig': (__spec__.parent, '.config.client'),
+    'IntersectDirectMessageParams': (__spec__.parent, '.shared_callback_definitions'),
+    'IntersectEventDefinition': (__spec__.parent, '.service_definitions'),
+    'IntersectEventMessageParams': (__spec__.parent, '.shared_callback_definitions'),
+    'IntersectService': (__spec__.parent, '.service'),
+    'IntersectServiceConfig': (__spec__.parent, '.config.service'),
+    '__version__': (__spec__.parent, '.version'),
+    'default_intersect_lifecycle_loop': (__spec__.parent, '.app_lifecycle'),
+    'get_schema_from_capability_implementations': (__spec__.parent, '.schema'),
+    'intersect_message': (__spec__.parent, '.service_definitions'),
+    'intersect_status': (__spec__.parent, '.service_definitions'),
+    'version_info': (__spec__.parent, '.version'),
+    'version_string': (__spec__.parent, '.version'),
 }
 
 
 def __getattr__(attr_name: str) -> object:
     attr_module = __lazy_imports.get(attr_name)
     if attr_module:
-        module = import_module(attr_module, package=__spec__.parent)
+        module = import_module(attr_module[1], package=attr_module[0])
         return getattr(module, attr_name)
 
     msg = f'module {__name__!r} has no attribute {attr_name!r}'

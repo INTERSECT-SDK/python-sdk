@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Any, Protocol
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from intersect_sdk_common import HierarchyConfig
+
     from ..client_callback_definitions import INTERSECT_CLIENT_EVENT_CALLBACK_TYPE
-    from ..config.shared import HierarchyConfig
     from ..service_callback_definitions import (
         INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
     )
