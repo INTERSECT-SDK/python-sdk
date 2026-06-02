@@ -2,6 +2,18 @@
 
 We follow [Common Changelog](https://common-changelog.org/) formatting for this document.
 
+## 0.9.1 - 2026-06-02
+
+This release works on standardizing functionality across all INTERSECT Python applications.
+
+### Fixed
+
+- fix error message for capability names ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/675c427629f2e38b8a70a3459102605f14210a39)) (Lance Drane)
+
+### Changed
+
+- Several pieces of functionality are now imported from the `intersect-sdk-common` package, this relates mostly to lower-level control plane and data plane communication protocols ([commit 1](https://github.com/INTERSECT-SDK/python-sdk/commit/8fa4eb4952ed2585321aa80029c5e3ac7a056363) [commit 2](https://github.com/INTERSECT-SDK/python-sdk/commit/46a3c04d173a011402df7b7d1ced0c664546b28f) [commit 3](https://github.com/INTERSECT-SDK/python-sdk/commit/35f7dadfa48e04b12ab0884408e88a81068dc8d6) [commit 4](https://github.com/INTERSECT-SDK/python-sdk/commit/2674d824d6ed0c11771d5a73a479046819f8ae84) [commit 5](https://github.com/INTERSECT-SDK/python-sdk/commit/46380e5bfb26f0bc4cf82bcb6dea86d489b46662)) (Lance Drane)
+
 ## [0.9.0] - 2026-02-11
 
 _If you are upgrading: please see [`UPGRADING.md`](UPGRADING.md)._
