@@ -629,7 +629,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "furo", marker = "extra == 'docs'", specifier = ">=2023.3.27" },
-    { name = "intersect-sdk-common", specifier = ">=0.9.5,<0.10.0" },
+    { name = "intersect-sdk-common", specifier = ">=0.9.6,<0.10.0" },
     { name = "jsonschema", extras = ["format-nongpl"], specifier = ">=4.21.1" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pydantic", specifier = ">=2.7.0" },
@@ -650,7 +650,7 @@ dev = [
 
 [[package]]
 name = "intersect-sdk-common"
-version = "0.9.5"
+version = "0.9.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "minio" },
@@ -658,9 +658,9 @@ dependencies = [
     { name = "pika" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/39/4d/283e91e55fb23a7f95c9c5fe9fe95826bc9691ea7ea345efe338638230c0/intersect_sdk_common-0.9.5.tar.gz", hash = "sha256:d36a099f4b53b2e61e8db8e218ac011ae887a00d3975484f74bd59e11f01c646", size = 31602, upload-time = "2026-05-28T21:57:14.573Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d7/65/83884f05d52241d0fe3362baaca4b08bfd447b9360daeb52dcfa9bfa8b63/intersect_sdk_common-0.9.6.tar.gz", hash = "sha256:b46e2a155f9f73c2fa621c0a1c212f97dd90f53f856e61d30faa5dc7986f7ecd", size = 32223, upload-time = "2026-06-02T21:23:19.529Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/97/1128c72328d79656619a89c9e16e4c3b785714d97013deba9cba228307fe/intersect_sdk_common-0.9.5-py3-none-any.whl", hash = "sha256:48d91f06d3f217b4cf08425ebd47cf49ab2a0423728547c8669c6ec2840d05f7", size = 44014, upload-time = "2026-05-28T21:57:15.397Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/2a/3085cce8374b733c0255cc1d35889d42d1452bf33e681a996754bec77ebb/intersect_sdk_common-0.9.6-py3-none-any.whl", hash = "sha256:8947769d54eab04c4da3adbb403f0c224c07faf76a45f98e372ae112130adaf8", size = 45082, upload-time = "2026-06-02T21:23:20.407Z" },
 ]
 
 [[package]]

@@ -18,6 +18,7 @@ from intersect_sdk_common import (
     DataPlaneManager,
     HierarchyConfig,
     IntersectError,
+    resolve_user_version,
 )
 from intersect_sdk_common.control_plane.messages.event import (
     validate_event_message_headers,
@@ -35,7 +36,6 @@ from intersect_sdk._internal.generic_serializer import (
 
 from ._internal.logger import logger
 from ._internal.utils import die, send_os_signal
-from ._internal.version_resolver import resolve_user_version
 from .client_callback_definitions import (
     INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
     INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE,

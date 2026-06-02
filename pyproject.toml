@@ -28,7 +28,7 @@ classifiers = [
 ]
 dependencies = [
   "pydantic>=2.7.0",
-  "intersect-sdk-common>=0.9.5,<0.10.0",
+  "intersect-sdk-common>=0.9.6,<0.10.0",
   "jsonschema[format-nongpl]>=4.21.1",   # extras necessary for enforcing formats
   #"brotli>=1.1.0", # TODO - add this dependency when we add compression
   "psutil>=7.0.0",

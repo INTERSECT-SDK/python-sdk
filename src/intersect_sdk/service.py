@@ -29,6 +29,7 @@ from intersect_sdk_common import (
     IntersectDataHandler,
     IntersectError,
     intersect_sdk_version_string,
+    resolve_user_version,
 )
 from intersect_sdk_common.control_plane.messages.event import (
     create_event_message_headers,
@@ -57,7 +58,6 @@ from ._internal.schema import (
 from ._internal.service_queue_name import get_service_queue_name
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die, send_os_signal
-from ._internal.version_resolver import resolve_user_version
 from .capability.base import IntersectBaseCapabilityImplementation
 from .capability.universal_capability.universal_capability import (
     IntersectSdkCoreCapability,
