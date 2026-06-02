@@ -1,4 +1,5 @@
-from ..core_definitions import IntersectDataHandler
+from intersect_sdk_common import IntersectDataHandler
+
 from ..version import version_info, version_string
 from .logger import logger
 
@@ -38,7 +39,9 @@ def _resolve_user_version(
 
 
 def resolve_user_version(
-    their_version: str, their_source: str, their_data_handler: IntersectDataHandler
+    their_version: str,
+    their_source: str,
+    their_data_handler: IntersectDataHandler,
 ) -> bool:
     """This function handles all version compatibilities between our SDK version and an incoming message's SDK version.
 

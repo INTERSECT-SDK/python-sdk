@@ -2,17 +2,17 @@
 name = "intersect-sdk"
 description = "Python SDK to interact with INTERSECT"
 authors = [
-    { name = "Lance Drane", email = "dranelt@ornl.gov" },
-    { name = "Marshall McDonnell", email = "mcdonnellmt@ornl.gov" },
-    { name = "Seth Hitefield", email = "hitefieldsd@ornl.gov" },
-    { name = "Andrew Ayres", email = "ayresaf@ornl.gov" },
-    { name = "Gregory Cage", email = "cagege@ornl.gov" },
-    { name = "Jesse McGaha", email = "mcgahajr@ornl.gov" },
-    { name = "Robert Smith", email = "smithrw@ornl.gov" },
-    { name = "Gavin Wiggins", email = "wigginsg@ornl.gov" },
-    { name = "Michael Brim", email = "brimmj@ornl.gov" },
-    { name = "Rick Archibald", email = "archibaldrk@ornl.gov" },
-    { name = "Addi Malviya Thakur", email = "malviyaa@ornl.gov" },
+  { name = "Lance Drane", email = "dranelt@ornl.gov" },
+  { name = "Marshall McDonnell", email = "mcdonnellmt@ornl.gov" },
+  { name = "Seth Hitefield", email = "hitefieldsd@ornl.gov" },
+  { name = "Andrew Ayres", email = "ayresaf@ornl.gov" },
+  { name = "Gregory Cage", email = "cagege@ornl.gov" },
+  { name = "Jesse McGaha", email = "mcgahajr@ornl.gov" },
+  { name = "Robert Smith", email = "smithrw@ornl.gov" },
+  { name = "Gavin Wiggins", email = "wigginsg@ornl.gov" },
+  { name = "Michael Brim", email = "brimmj@ornl.gov" },
+  { name = "Rick Archibald", email = "archibaldrk@ornl.gov" },
+  { name = "Addi Malviya Thakur", email = "malviyaa@ornl.gov" },
 ]
 version = "0.9.0"
 readme = "README.md"
@@ -20,18 +20,18 @@ license = { text = "BSD-3-Clause" }
 requires-python = ">=3.10,<4.0"
 keywords = ["intersect"]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "pydantic>=2.7.0",
-    "intersect-sdk-common>=0.9.4,<0.10.0",
-    "jsonschema[format-nongpl]>=4.21.1",               # extras necessary for enforcing formats
-    #"brotli>=1.1.0", # TODO - add this dependency when we add compression
-    "psutil>=7.0.0",
+  "pydantic>=2.7.0",
+  "intersect-sdk-common>=0.9.5,<0.10.0",
+  "jsonschema[format-nongpl]>=4.21.1",   # extras necessary for enforcing formats
+  #"brotli>=1.1.0", # TODO - add this dependency when we add compression
+  "psutil>=7.0.0",
 ]
 
 [project.urls]
@@ -41,20 +41,17 @@ Documentation = "https://intersect-python-sdk.readthedocs.io/en/latest/"
 Issues = "https://github.com/INTERSECT-SDK/python-sdk/issues"
 
 [project.optional-dependencies]
-docs = [
-    "sphinx>=5.3.0",
-    "furo>=2023.3.27",
-]
+docs = ["sphinx>=5.3.0", "furo>=2023.3.27"]
 
 [dependency-groups]
 dev = [
-    "pre-commit>=3.3.1",
-    "ruff==0.12.7",
-    "mypy>=1.10.0",
-    "codespell>=2.3.0",
-    "pytest>=7.3.2",
-    "pytest-cov>=4.1.0",
-    "httpretty>=1.1.4"
+  "pre-commit>=3.3.1",
+  "ruff==0.12.7",
+  "mypy>=1.10.0",
+  "codespell>=2.3.0",
+  "pytest>=7.3.2",
+  "pytest-cov>=4.1.0",
+  "httpretty>=1.1.4",
 ]
 
 [build-system]
@@ -73,88 +70,94 @@ mccabe = { max-complexity = 20 }
 pylint = { max-args = 10, max-branches = 20, max-returns = 15, max-statements = 75 }
 # pyflakes and the relevant pycodestyle rules are already configured
 extend-select = [
-    'C90',   # mccabe complexity
-    'I',     # isort
-    'N',     # pep8-naming
-    'D',     # pydocstyle
-    'UP',    # pyupgrade
-    'YTT',   # flake8-2020
-    'ANN',   # flake8-annotations
-    'ASYNC', # flake8-async
-    'S',     # flake8-bandit
-    'BLE',   # flake8-blind-except
-    'B',     # flake8-bugbear
-    'A',     # flake8-builtins
-    'COM',   # flake8-commas
-    'C4',    # flake8-comprehensions
-    'DTZ',   # flake8-datetimez
-    'T10',   # flake8-debugger
-    'EM',    # flake8-error-message
-    'FA',    # flake8-future-annotations
-    'ISC',   # flake8-implicit-string-concat
-    'ICN',   # flake8-import-conventions
-    'G',     # flake8-logging-format
-    'INP',   # flake8-no-pep420
-    'PIE',   # flake8-PIE
-    'T20',   # flake8-T20
-    'PYI',   # flake8-pyi
-    'PT',    # flake8-pytest-style
-    'Q',     # flake8-quotes
-    'RSE',   # flake8-raise
-    'RET',   # flake8-return
-    'SLF',   # flake8-self
-    'SLOT',  # flake8-slots
-    'SIM',   # flake8-simplify
-    'TC',   # flake8-type-checking
-    'ARG',   # flake8-unused-arguments
-    'PTH',   # flake8-use-pathlib
-    'PGH',   # pygrep-hooks
-    'PL',    # pylint
-    'TRY',   # tryceratops
-    'FLY',   # flynt
-    'RUF',   # RUFF additional rules
-    'INT',   # flake8-gettext
+  'C90',   # mccabe complexity
+  'I',     # isort
+  'N',     # pep8-naming
+  'D',     # pydocstyle
+  'UP',    # pyupgrade
+  'YTT',   # flake8-2020
+  'ANN',   # flake8-annotations
+  'ASYNC', # flake8-async
+  'S',     # flake8-bandit
+  'BLE',   # flake8-blind-except
+  'B',     # flake8-bugbear
+  'A',     # flake8-builtins
+  'COM',   # flake8-commas
+  'C4',    # flake8-comprehensions
+  'DTZ',   # flake8-datetimez
+  'T10',   # flake8-debugger
+  'EM',    # flake8-error-message
+  'FA',    # flake8-future-annotations
+  'ISC',   # flake8-implicit-string-concat
+  'ICN',   # flake8-import-conventions
+  'G',     # flake8-logging-format
+  'INP',   # flake8-no-pep420
+  'PIE',   # flake8-PIE
+  'T20',   # flake8-T20
+  'PYI',   # flake8-pyi
+  'PT',    # flake8-pytest-style
+  'Q',     # flake8-quotes
+  'RSE',   # flake8-raise
+  'RET',   # flake8-return
+  'SLF',   # flake8-self
+  'SLOT',  # flake8-slots
+  'SIM',   # flake8-simplify
+  'TC',    # flake8-type-checking
+  'ARG',   # flake8-unused-arguments
+  'PTH',   # flake8-use-pathlib
+  'PGH',   # pygrep-hooks
+  'PL',    # pylint
+  'TRY',   # tryceratops
+  'FLY',   # flynt
+  'RUF',   # RUFF additional rules
+  'INT',   # flake8-gettext
 ]
 # If you're seeking to disable a rule, first consider whether the rule is overbearing, or if it should only be turned off for your usecase.
 ignore = [
-    'COM812',  # formatter, handled by Ruff format
-    'ISC001',  # formatter, handled by Ruff format
-    'SIM105',  # "with contextlib.suppress():" is slower than try-except-pass
-    'ANN401',  # allow explicit "Any" typing, use with care
-    'PLR2004', # allow "magic numbers"
+  'COM812',  # formatter, handled by Ruff format
+  'ISC001',  # formatter, handled by Ruff format
+  'SIM105',  # "with contextlib.suppress():" is slower than try-except-pass
+  'ANN401',  # allow explicit "Any" typing, use with care
+  'PLR2004', # allow "magic numbers"
 ]
 
 [tool.ruff.lint.flake8-type-checking]
-runtime-evaluated-base-classes = ["pydantic.BaseModel", "intersect_sdk.IntersectBaseCapabilityImplementation"]
-runtime-evaluated-decorators = ["pydantic.dataclasses.dataclass","pydantic.validate_call"]
+runtime-evaluated-base-classes = [
+  "pydantic.BaseModel",
+  "intersect_sdk.IntersectBaseCapabilityImplementation",
+]
+runtime-evaluated-decorators = [
+  "pydantic.dataclasses.dataclass",
+  "pydantic.validate_call",
+]
 
 [tool.ruff.lint.extend-per-file-ignores]
 '__init__.py' = [
-    'F401', # __init__.py commonly has unused imports
-    'TC004', # do lazy imports when importing from the base module
+  'F401',  # __init__.py commonly has unused imports
+  'TC004', # do lazy imports when importing from the base module
 ]
 'docs/*' = [
-    'D',      # the documentation folder does not need documentation
-    'INP001', # docs are not a namespace package
+  'D',      # the documentation folder does not need documentation
+  'INP001', # docs are not a namespace package
 ]
 'examples/*' = [
-    'N999',   # module names for examples are not standard
-    'T20',    # allow print/pprint statements in examples
-    'S106',   # don't care about credentials in examples
-    'D100',   # documenting modules in examples is unhelpful
-    'D104',   # documenting packages in examples is unhelpful
-    'TRY002', # examples can raise their own exception
+  'N999',   # module names for examples are not standard
+  'T20',    # allow print/pprint statements in examples
+  'S106',   # don't care about credentials in examples
+  'D100',   # documenting modules in examples is unhelpful
+  'D104',   # documenting packages in examples is unhelpful
+  'TRY002', # examples can raise their own exception
 ]
 'tests/*' = [
-    'S101',   # allow assert statements in tests
-    'S106',   # don't care about credentials in tests
-    'S311',   # don't care about cryptographic security in tests
-    'SLF001', # allow private member access in tests
-    'ANN',    # tests in general don't need types, unless they are runtime types.
-    'ARG',    # allow unused parameters in tests
-    'D',      # ignore documentation in tests
-    'RUF012', # permit "mutable" class attributes to not be annotated with typing.ClassVar (these shouldn't be mutated anyways...)
- ]
+  'S101',   # allow assert statements in tests
+  'S106',   # don't care about credentials in tests
+  'S311',   # don't care about cryptographic security in tests
+  'SLF001', # allow private member access in tests
+  'ANN',    # tests in general don't need types, unless they are runtime types.
+  'ARG',    # allow unused parameters in tests
+  'D',      # ignore documentation in tests
+  'RUF012', # permit "mutable" class attributes to not be annotated with typing.ClassVar (these shouldn't be mutated anyways...)
+]
 
 # see https://mypy.readthedocs.io/en/stable/config_file.html for a complete reference
 [tool.mypy]
@@ -175,8 +178,8 @@ addopts = "-ra"
 
 [tool.coverage.report]
 omit = [
-    '*__init__*', # __init__ files should just re-export other classes and functions
-    '*/discovery_service.py', # currently unused
+  '*__init__*',             # __init__ files should just re-export other classes and functions
+  '*/discovery_service.py', # currently unused
 ]
 exclude_also = [
   'pragma: no-cover',              # standard

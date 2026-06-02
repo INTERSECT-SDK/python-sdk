@@ -113,16 +113,18 @@ def test_missing_client_config():
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
     assert len(errors) == 2
     assert {'type': 'missing', 'loc': ('brokers',)} in errors
-    assert {'type': 'missing', 'loc': ('initial_message_event_config',)} in errors
+    assert {
+        'type': 'missing',
+        'loc': ('initial_message_event_config',),
+    } in errors
 
 
 def test_empty_client_config():
     with pytest.raises(ValidationError) as ex:
         IntersectClientConfig(brokers=[], initial_message_event_config=IntersectClientCallback())
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 2
+    assert len(errors) == 1
     assert {'loc': ('brokers', 'list[ControlPlaneConfig]'), 'type': 'too_short'}
-    assert {'loc': ('brokers', "literal['discovery']"), 'type': 'literal_error'} in errors
 
 
 def test_missing_service_config():
@@ -143,10 +145,12 @@ def test_invalid_service_config():
             status_interval=1,
         )
     errors = [{'type': e['type'], 'loc': e['loc']} for e in ex.value.errors()]
-    assert len(errors) == 4
+    assert len(errors) == 3
     assert {'loc': ('hierarchy',), 'type': 'model_type'} in errors
-    assert {'loc': ('brokers', 'list[ControlPlaneConfig]'), 'type': 'too_short'} in errors
-    assert {'loc': ('brokers', "literal['discovery']"), 'type': 'literal_error'} in errors
+    assert {
+        'loc': ('brokers',),
+        'type': 'too_short',
+    } in errors
     assert {'loc': ('status_interval',), 'type': 'greater_than_equal'} in errors
 
 
@@ -181,7 +185,10 @@ def test_valid_service_config():
             minio=[
                 DataStoreConfig(username='idc', password='idc', host='idc', port='6'),
                 DataStoreConfig(
-                    username='idc', password='idc', host='somewhereelse.com', port='9999'
+                    username='idc',
+                    password='idc',
+                    host='somewhereelse.com',
+                    port='9999',
                 ),
             ]
         ),

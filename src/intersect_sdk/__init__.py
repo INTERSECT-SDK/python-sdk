@@ -87,28 +87,52 @@ __all__ = (
 # [0] = package, [1] = path to module within package
 __lazy_imports = {
     # COMMON: core types
-    'IntersectDataHandler': ('intersect_sdk_common', ''),
-    'IntersectMimeType': ('intersect_sdk_common', ''),
+    'IntersectDataHandler': ('intersect_sdk_common', '.'),
+    'IntersectMimeType': ('intersect_sdk_common', '.'),
     # COMMON: config types
-    'ControlPlaneConfig': ('intersect_sdk_common', ''),
-    'ControlProvider': ('intersect_sdk_common', ''),
-    'DataStoreConfig': ('intersect_sdk_common', ''),
-    'DataStoreConfigMap': ('intersect_sdk_common', ''),
-    'HierarchyConfig': ('intersect_sdk_common', ''),
+    'ControlPlaneConfig': ('intersect_sdk_common', '.'),
+    'ControlProvider': ('intersect_sdk_common', '.'),
+    'DataStoreConfig': ('intersect_sdk_common', '.'),
+    'DataStoreConfigMap': ('intersect_sdk_common', '.'),
+    'HierarchyConfig': ('intersect_sdk_common', '.'),
     # imports not in common
-    'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE': (__spec__.parent, '.client_callback_definitions'),
-    'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE': (__spec__.parent, '.client_callback_definitions'),
+    'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE': (
+        __spec__.parent,
+        '.client_callback_definitions',
+    ),
+    'INTERSECT_CLIENT_RESPONSE_CALLBACK_TYPE': (
+        __spec__.parent,
+        '.client_callback_definitions',
+    ),
     'INTERSECT_JSON_VALUE': (__spec__.parent, '.shared_callback_definitions'),
-    'INTERSECT_RESPONSE_VALUE': (__spec__.parent, '.shared_callback_definitions'),
-    'INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE': (__spec__.parent, '.service_callback_definitions'),
-    'IntersectBaseCapabilityImplementation': (__spec__.parent, '.capability.base'),
+    'INTERSECT_RESPONSE_VALUE': (
+        __spec__.parent,
+        '.shared_callback_definitions',
+    ),
+    'INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE': (
+        __spec__.parent,
+        '.service_callback_definitions',
+    ),
+    'IntersectBaseCapabilityImplementation': (
+        __spec__.parent,
+        '.capability.base',
+    ),
     'IntersectCapabilityError': (__spec__.parent, '.exceptions'),
     'IntersectClient': (__spec__.parent, '.client'),
-    'IntersectClientCallback': (__spec__.parent, '.client_callback_definitions'),
+    'IntersectClientCallback': (
+        __spec__.parent,
+        '.client_callback_definitions',
+    ),
     'IntersectClientConfig': (__spec__.parent, '.config.client'),
-    'IntersectDirectMessageParams': (__spec__.parent, '.shared_callback_definitions'),
+    'IntersectDirectMessageParams': (
+        __spec__.parent,
+        '.shared_callback_definitions',
+    ),
     'IntersectEventDefinition': (__spec__.parent, '.service_definitions'),
-    'IntersectEventMessageParams': (__spec__.parent, '.shared_callback_definitions'),
+    'IntersectEventMessageParams': (
+        __spec__.parent,
+        '.shared_callback_definitions',
+    ),
     'IntersectService': (__spec__.parent, '.service'),
     'IntersectServiceConfig': (__spec__.parent, '.config.service'),
     '__version__': (__spec__.parent, '.version'),
