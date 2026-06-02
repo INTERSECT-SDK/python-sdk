@@ -1,6 +1,9 @@
-from intersect_sdk_common import IntersectDataHandler
+from intersect_sdk_common import (
+    IntersectDataHandler,
+    intersect_sdk_version_info,
+    intersect_sdk_version_string,
+)
 
-from ..version import version_info, version_string
 from .logger import logger
 
 
@@ -57,6 +60,6 @@ def resolve_user_version(
         their_version,
         their_source,
         their_data_handler,
-        our_version=version_string,
-        our_version_info=version_info,
+        our_version=intersect_sdk_version_string,
+        our_version_info=intersect_sdk_version_info,
     )

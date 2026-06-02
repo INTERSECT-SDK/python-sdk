@@ -28,6 +28,7 @@ from intersect_sdk_common import (
     IntersectApplicationError,
     IntersectDataHandler,
     IntersectError,
+    intersect_sdk_version_string,
 )
 from intersect_sdk_common.control_plane.messages.event import (
     create_event_message_headers,
@@ -50,13 +51,17 @@ from ._internal.function_metadata import FunctionMetadata
 from ._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
 from ._internal.interfaces import IntersectEventObserver
 from ._internal.logger import logger
-from ._internal.schema import get_schema_and_functions_from_capability_implementations
+from ._internal.schema import (
+    get_schema_and_functions_from_capability_implementations,
+)
 from ._internal.service_queue_name import get_service_queue_name
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
 from .capability.base import IntersectBaseCapabilityImplementation
-from .capability.universal_capability.universal_capability import IntersectSdkCoreCapability
+from .capability.universal_capability.universal_capability import (
+    IntersectSdkCoreCapability,
+)
 from .client_callback_definitions import (
     INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
 )
@@ -70,7 +75,6 @@ from .shared_callback_definitions import (
     INTERSECT_RESPONSE_VALUE,
     IntersectDirectMessageParams,
 )
-from .version import version_string
 
 
 @final
@@ -117,7 +121,12 @@ class IntersectService(IntersectEventObserver):
         """
 
         RequestState = Literal[
-            'unhandled', 'sending', 'sent', 'received', 'processing', 'finalized'
+            'unhandled',
+            'sending',
+            'sent',
+            'received',
+            'processing',
+            'finalized',
         ]
         """
         - unhandled = message has not been sent yet
@@ -763,7 +772,10 @@ class IntersectService(IntersectEventObserver):
             )
 
     def _handle_service_message_inner(
-        self, payload: bytes, content_type: str, headers: UserspaceMessageHeaders
+        self,
+        payload: bytes,
+        content_type: str,
+        headers: UserspaceMessageHeaders,
     ) -> tuple[bytes, str, dict[str, str]] | None:
         """Main logic for handling a userspace message, minus all broker logic.
 
@@ -782,7 +794,7 @@ class IntersectService(IntersectEventObserver):
             return None
         if not resolve_user_version(headers.sdk_version, headers.source, headers.data_handler):
             return (
-                f'SDK version incompatibility. Service version: {version_string} . Sender version: {headers.sdk_version}'.encode(),
+                f'SDK version incompatibility. Service version: {intersect_sdk_version_string} . Sender version: {headers.sdk_version}'.encode(),
                 'text/plain',
                 self._make_error_message_headers(headers),
             )
@@ -793,24 +805,40 @@ class IntersectService(IntersectEventObserver):
         if operation_meta is None:
             err_msg = f'Tried to call non-existent operation {operation}'
             logger.debug(err_msg)
-            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
+            return (
+                err_msg.encode(),
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
 
         if operation_meta.request_content_type != content_type:
             err_msg = f'For operation {operation}, request content type {content_type} differs from actual content type {operation_meta.request_content_type}'
             logger.debug(err_msg)
-            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
+            return (
+                err_msg.encode(),
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
 
         if self._function_keys & operation_meta.shutdown_keys:
             err_msg = f"Function '{operation}' is currently not available for use."
             logger.error(err_msg)
-            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
+            return (
+                err_msg.encode(),
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
 
         operation_capability, operation_method = operation.split('.')
         target_capability = self._get_capability(operation_capability)
         if target_capability is None:
             err_msg = f"Could not locate service capability providing '{operation_capability}' for operation {operation}."
             logger.error(err_msg)
-            return (err_msg.encode(), 'text/plain', self._make_error_message_headers(headers))
+            return (
+                err_msg.encode(),
+                'text/plain',
+                self._make_error_message_headers(headers),
+            )
 
         # THREE: GET DATA FROM APPROPRIATE DATA STORE
         try:
@@ -829,7 +857,10 @@ class IntersectService(IntersectEventObserver):
         try:
             # FOUR: CALL USER FUNCTION AND GET MESSAGE
             response = self._call_user_function(
-                target_capability, operation_method, operation_meta, request_params
+                target_capability,
+                operation_method,
+                operation_meta,
+                request_params,
             )
             # FIVE: SEND DATA TO APPROPRIATE DATA STORE
             response_data_handler = operation_meta.response_data_transfer_handler
@@ -969,7 +1000,11 @@ class IntersectService(IntersectEventObserver):
         logger.debug(f'Sending client message:\n{headers}')
         request_channel = f'{params.destination.replace(".", "/")}/request'
         self._control_plane_manager.publish_message(
-            request_channel, request_payload, params.content_type, headers, persist=True
+            request_channel,
+            request_payload,
+            params.content_type,
+            headers,
+            persist=True,
         )
         return True
 
@@ -1127,7 +1162,9 @@ class IntersectService(IntersectEventObserver):
 
         try:
             response_payload = self._data_plane_manager.outgoing_message_data_handler(
-                response, event_meta.content_type, event_meta.data_transfer_handler
+                response,
+                event_meta.content_type,
+                event_meta.data_transfer_handler,
             )
         except IntersectError:
             # error should already be logged from the outgoing_message_data_handler function
@@ -1178,7 +1215,11 @@ class IntersectService(IntersectEventObserver):
         # Lifecycle messages are meant to be short-lived, only the latest message has any usage for systems uninterested in logging,
         # and queues will be regularly polled about these. Do not persist them.
         self._control_plane_manager.publish_message(
-            self._lifecycle_channel_name, payload, 'application/json', headers, persist=False
+            self._lifecycle_channel_name,
+            payload,
+            'application/json',
+            headers,
+            persist=False,
         )
 
     def _status_retrieval_fn(self, fail_harshly: bool) -> dict[str, Any]:

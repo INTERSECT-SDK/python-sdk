@@ -20,6 +20,8 @@ if TYPE_CHECKING:
         HierarchyConfig,
         IntersectDataHandler,
         IntersectMimeType,
+        intersect_sdk_version_info,
+        intersect_sdk_version_string,
     )
 
     from .app_lifecycle import default_intersect_lifecycle_loop
@@ -49,7 +51,7 @@ if TYPE_CHECKING:
         IntersectDirectMessageParams,
         IntersectEventMessageParams,
     )
-    from .version import __version__, version_info, version_string
+    from .version import __version__
 
 __all__ = (
     'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE',
@@ -78,9 +80,9 @@ __all__ = (
     'default_intersect_lifecycle_loop',
     'get_schema_from_capability_implementations',
     'intersect_message',
+    'intersect_sdk_version_info',
+    'intersect_sdk_version_string',
     'intersect_status',
-    'version_info',
-    'version_string',
 )
 
 # PEP 562 stuff: do lazy imports for people who just want to import from the top-level module
@@ -95,6 +97,9 @@ __lazy_imports = {
     'DataStoreConfig': ('intersect_sdk_common', '.'),
     'DataStoreConfigMap': ('intersect_sdk_common', '.'),
     'HierarchyConfig': ('intersect_sdk_common', '.'),
+    # COMMON: version
+    'intersect_sdk_version_info': ('intersect_sdk_common', '.'),
+    'intersect_sdk_version_string': ('intersect_sdk_common', '.'),
     # imports not in common
     'INTERSECT_CLIENT_EVENT_CALLBACK_TYPE': (
         __spec__.parent,
@@ -140,8 +145,6 @@ __lazy_imports = {
     'get_schema_from_capability_implementations': (__spec__.parent, '.schema'),
     'intersect_message': (__spec__.parent, '.service_definitions'),
     'intersect_status': (__spec__.parent, '.service_definitions'),
-    'version_info': (__spec__.parent, '.version'),
-    'version_string': (__spec__.parent, '.version'),
 }
 
 

@@ -14,14 +14,18 @@ from typing import (
     get_origin,
 )
 
+from intersect_sdk_common import intersect_sdk_version_string
 from intersect_sdk_common.constants import CAPABILITY_REGEX
-from intersect_sdk_common.control_plane.messages.event import EventMessageHeaders
-from intersect_sdk_common.control_plane.messages.userspace import UserspaceMessageHeaders
+from intersect_sdk_common.control_plane.messages.event import (
+    EventMessageHeaders,
+)
+from intersect_sdk_common.control_plane.messages.userspace import (
+    UserspaceMessageHeaders,
+)
 from pydantic import Field, PydanticUserError, TypeAdapter
 from typing_extensions import TypeAliasType
 
 from ..service_definitions import IntersectEventDefinition
-from ..version import version_string
 from .constants import (
     BASE_RESPONSE_ATTR,
     BASE_STATUS_ATTR,
@@ -658,7 +662,7 @@ def get_schema_and_functions_from_capability_implementations(
 
     asyncapi_spec = {
         'asyncapi': ASYNCAPI_VERSION,
-        'x-intersect-version': version_string,
+        'x-intersect-version': intersect_sdk_version_string,
         'info': {
             'title': service_name.hierarchy_string('.'),
             'description': 'INTERSECT schema',

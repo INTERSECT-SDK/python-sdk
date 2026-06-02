@@ -5,17 +5,5 @@ These values are often used programmatically by the SDK, but can be used by appl
 
 from importlib.metadata import version
 
-from ._internal.version import strip_version_metadata
-
 # may include build metadata
 __version__ = version('intersect-sdk')
-
-version_string = strip_version_metadata(__version__)
-"""
-Version string in the format <MAJOR>.<MINOR>.<DEBUG> . Follows semantic versioning rules, strips out additional build metadata.
-"""
-
-version_info: tuple[int, int, int] = tuple([int(x) for x in version_string.split('.')])  # type: ignore[assignment]
-"""
-Integer tuple in the format <MAJOR>,<MINOR>,<DEBUG> . Follows semantic versioning rules.
-"""
