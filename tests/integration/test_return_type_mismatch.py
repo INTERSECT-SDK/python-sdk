@@ -10,6 +10,14 @@ instead, initialize an array with one value in it, then change the value inside 
 import time
 from uuid import uuid4
 
+from intersect_sdk_common import (
+    ControlPlaneManager,
+)
+from intersect_sdk_common.control_plane.messages.userspace import (
+    create_userspace_message_headers,
+    validate_userspace_message_headers,
+)
+
 from intersect_sdk import (
     ControlPlaneConfig,
     DataStoreConfig,
@@ -19,13 +27,6 @@ from intersect_sdk import (
     IntersectService,
     IntersectServiceConfig,
     intersect_message,
-)
-from intersect_sdk._internal.control_plane.control_plane_manager import (
-    ControlPlaneManager,
-)
-from intersect_sdk._internal.messages.userspace import (
-    create_userspace_message_headers,
-    validate_userspace_message_headers,
 )
 from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG
 
@@ -96,10 +97,17 @@ def test_call_user_function_with_invalid_payload() -> None:
     def userspace_msg_callback(
         payload: bytes, content_type: str, raw_headers: dict[str, str]
     ) -> None:
-        msg[0] = (payload, content_type, validate_userspace_message_headers(raw_headers))
+        msg[0] = (
+            payload,
+            content_type,
+            validate_userspace_message_headers(raw_headers),
+        )
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()

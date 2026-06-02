@@ -13,24 +13,27 @@ Most useful definitions and typings will be found in the client_callback_definit
 import time
 from uuid import uuid4
 
-from pydantic import ValidationError
-from typing_extensions import Self, final
-
-from intersect_sdk._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
-
-from ._internal.control_plane.control_plane_manager import (
+from intersect_sdk_common import (
     ControlPlaneManager,
+    DataPlaneManager,
+    HierarchyConfig,
+    IntersectError,
 )
-from ._internal.data_plane.data_plane_manager import DataPlaneManager
-from ._internal.exceptions import IntersectError
-from ._internal.logger import logger
-from ._internal.messages.event import (
+from intersect_sdk_common.control_plane.messages.event import (
     validate_event_message_headers,
 )
-from ._internal.messages.userspace import (
+from intersect_sdk_common.control_plane.messages.userspace import (
     create_userspace_message_headers,
     validate_userspace_message_headers,
 )
+from pydantic import ValidationError
+from typing_extensions import Self, final
+
+from intersect_sdk._internal.generic_serializer import (
+    GENERIC_MESSAGE_SERIALIZER,
+)
+
+from ._internal.logger import logger
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
 from .client_callback_definitions import (
@@ -39,7 +42,6 @@ from .client_callback_definitions import (
     IntersectClientCallback,
 )
 from .config.client import IntersectClientConfig
-from .config.shared import HierarchyConfig
 from .shared_callback_definitions import IntersectDirectMessageParams
 
 
@@ -124,6 +126,7 @@ class IntersectClient:
                     f'{self._hierarchy.hierarchy_string("/")}/response',
                     {self._handle_userspace_message},
                     persist=False,
+                    queue_name=self._hierarchy.service,
                 )
             if event_callback:
                 # Do not persist, as event messages are meant to be short-lived.
@@ -135,6 +138,7 @@ class IntersectClient:
                         f'{service.hierarchy.replace(".", "/")}/events/{service.capability_name}/{service.event_name}',
                         {self._handle_event_message},
                         persist=False,
+                        queue_name=self._hierarchy.service,
                     )
         self._user_callback = user_callback
         self._event_callback = event_callback
@@ -386,6 +390,7 @@ class IntersectClient:
                 self._control_plane_manager.add_subscription_channel(
                     f'{add_event.hierarchy.replace(".", "/")}/events/{add_event.capability_name}/{add_event.event_name}',
                     {self._handle_event_message},
+                    queue_name=self._hierarchy.service,
                     persist=False,
                 )
             for remove_event in validated_result.services_to_stop_listening_for_events:

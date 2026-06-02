@@ -11,6 +11,19 @@ import json
 import time
 from uuid import uuid4
 
+from intersect_sdk_common import ControlPlaneManager
+from intersect_sdk_common.control_plane.messages.lifecycle import (
+    validate_lifecycle_message_headers,
+)
+from intersect_sdk_common.control_plane.messages.userspace import (
+    create_userspace_message_headers,
+    validate_userspace_message_headers,
+)
+from intersect_sdk_common.data_plane.minio_utils import (
+    MinioPayload,
+    get_minio_object,
+)
+
 from intersect_sdk import (
     ControlPlaneConfig,
     DataStoreConfig,
@@ -19,16 +32,10 @@ from intersect_sdk import (
     IntersectService,
     IntersectServiceConfig,
 )
-from intersect_sdk._internal.control_plane.control_plane_manager import ControlPlaneManager
-from intersect_sdk._internal.data_plane.minio_utils import MinioPayload, get_minio_object
-from intersect_sdk._internal.messages.lifecycle import (
-    validate_lifecycle_message_headers,
+from tests.fixtures.example_schema import (
+    FAKE_HIERARCHY_CONFIG,
+    DummyCapabilityImplementation,
 )
-from intersect_sdk._internal.messages.userspace import (
-    create_userspace_message_headers,
-    validate_userspace_message_headers,
-)
-from tests.fixtures.example_schema import FAKE_HIERARCHY_CONFIG, DummyCapabilityImplementation
 
 # HELPERS #############################
 
@@ -87,18 +94,18 @@ def test_control_plane_connections() -> None:
     time.sleep(1.0)
     assert intersect_service.is_connected() is False
 
-    channels = intersect_service._control_plane_manager.get_subscription_channels()
+    channels = list(intersect_service._control_plane_manager.get_all_subscription_channels())
     # we have two channels (even if we're disconnected) ...
     assert len(channels) == 2
     # ... and one callback function for each channel
     channel_keys = []
-    for channel_key in iter(channels):
+    for channel_key, topic_handler in iter(channels):
         channel_keys.append(channel_key)
-        assert len(channels[channel_key].callbacks) == 1
+        assert len(topic_handler.callbacks) == 1
 
     for channel_key in channel_keys:
         intersect_service._control_plane_manager.remove_subscription_channel(channel_key)
-    assert len(intersect_service._control_plane_manager.get_subscription_channels()) == 0
+    assert len(list(intersect_service._control_plane_manager.get_all_subscription_channels())) == 0
 
 
 # normal test that the user function can be called
@@ -118,7 +125,10 @@ def test_call_user_function() -> None:
         msg[2] = validate_userspace_message_headers(raw_headers)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -161,7 +171,10 @@ def test_call_static_user_function() -> None:
         msg[2] = validate_userspace_message_headers(raw_headers)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -200,7 +213,10 @@ def test_call_user_function_with_default_and_empty_payload() -> None:
         msg[2] = validate_userspace_message_headers(raw_headers)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -240,7 +256,10 @@ def test_call_user_function_with_invalid_payload() -> None:
         msg[2] = validate_userspace_message_headers(raw_headers)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -283,7 +302,10 @@ def test_call_nonexistent_user_function() -> None:
         msg[2] = validate_userspace_message_headers(raw_headers)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -319,10 +341,19 @@ def test_exception_propagation() -> None:
     def userspace_msg_callback(
         payload: bytes, content_type: str, raw_headers: dict[str, str]
     ) -> None:
-        msg.append((payload, content_type, validate_userspace_message_headers(raw_headers)))
+        msg.append(
+            (
+                payload,
+                content_type,
+                validate_userspace_message_headers(raw_headers),
+            )
+        )
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -401,7 +432,10 @@ def test_call_minio_user_function() -> None:
         msg[2] = validate_userspace_message_headers(raw_headers)
 
     message_interceptor.add_subscription_channel(
-        'msg/msg/msg/msg/msg/response', {userspace_msg_callback}, False
+        'msg/msg/msg/msg/msg/response',
+        {userspace_msg_callback},
+        False,
+        'my_queue_name',
     )
     message_interceptor.connect()
     intersect_service.startup()
@@ -446,14 +480,26 @@ def test_lifecycle_messages() -> None:
         payload: bytes, content_type: str, raw_headers: dict[str, str]
     ) -> None:
         messages.append(
-            (json.loads(payload), content_type, validate_lifecycle_message_headers(raw_headers))
+            (
+                json.loads(payload),
+                content_type,
+                validate_lifecycle_message_headers(raw_headers),
+            )
         )
 
     message_interceptor.add_subscription_channel(
-        'test/test/test/test/test/lifecycle', {lifecycle_msg_callback}, False
+        'test/test/test/test/test/lifecycle',
+        {lifecycle_msg_callback},
+        False,
+        'my_lifecycle_queue',
     )
     # we do not really care about the userspace message response, but we'll listen to it to consume it
-    message_interceptor.add_subscription_channel('msg/msg/msg/msg/msg/response', set(), False)
+    message_interceptor.add_subscription_channel(
+        'msg/msg/msg/msg/msg/response',
+        set(),
+        False,
+        'my_lifecycle_queue',
+    )
     message_interceptor.connect()
     # sleep a moment to make sure message_interceptor catches the startup message
     time.sleep(1.0)
@@ -497,7 +543,10 @@ def test_lifecycle_messages() -> None:
 
     # make sure both the universal capability and the test capability show up in the first two messages
     for i in range(2):
-        assert list(messages[i][0]['status'].keys()) == ['intersect_sdk', 'DummyCapability']
+        assert list(messages[i][0]['status'].keys()) == [
+            'intersect_sdk',
+            'DummyCapability',
+        ]
 
     # check the status values of the DummyCapability (the INTERSECT-SDK capability's status values are too variable)
     assert messages[0][0]['status']['DummyCapability'] == {

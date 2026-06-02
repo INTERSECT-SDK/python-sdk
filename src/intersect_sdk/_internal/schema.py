@@ -14,10 +14,12 @@ from typing import (
     get_origin,
 )
 
+from intersect_sdk_common.constants import CAPABILITY_REGEX
+from intersect_sdk_common.control_plane.messages.event import EventMessageHeaders
+from intersect_sdk_common.control_plane.messages.userspace import UserspaceMessageHeaders
 from pydantic import Field, PydanticUserError, TypeAdapter
 from typing_extensions import TypeAliasType
 
-from ..constants import CAPABILITY_REGEX
 from ..service_definitions import IntersectEventDefinition
 from ..version import version_string
 from .constants import (
@@ -32,18 +34,15 @@ from .constants import (
 from .event_metadata import EventMetadata, definition_metadata_differences
 from .function_metadata import FunctionMetadata
 from .logger import logger
-from .messages.event import EventMessageHeaders
-from .messages.userspace import UserspaceMessageHeaders
 from .pydantic_schema_generator import GenerateTypedJsonSchema
 from .status_metadata import StatusMetadata
 from .utils import die
 
 if TYPE_CHECKING:
+    from intersect_sdk_common import HierarchyConfig, IntersectDataHandler
     from pydantic.json_schema import JsonSchemaMode
 
     from ..capability.base import IntersectBaseCapabilityImplementation
-    from ..config.shared import HierarchyConfig
-    from ..core_definitions import IntersectDataHandler
 
 ASYNCAPI_VERSION = '2.6.0'
 

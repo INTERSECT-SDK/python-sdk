@@ -21,30 +21,37 @@ from types import MappingProxyType
 from typing import Any, Literal
 from uuid import UUID, uuid1, uuid3, uuid4
 
-from pydantic import ConfigDict, ValidationError, validate_call
-from pydantic_core import PydanticSerializationError
-from typing_extensions import Self, final
-
-from ._internal.control_plane.control_plane_manager import (
+from intersect_sdk_common import (
     ControlPlaneManager,
+    DataPlaneManager,
+    HierarchyConfig,
+    IntersectApplicationError,
+    IntersectDataHandler,
+    IntersectError,
 )
-from ._internal.data_plane.data_plane_manager import DataPlaneManager
-from ._internal.exceptions import IntersectApplicationError, IntersectError
-from ._internal.function_metadata import FunctionMetadata
-from ._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
-from ._internal.interfaces import IntersectEventObserver
-from ._internal.logger import logger
-from ._internal.messages.event import (
+from intersect_sdk_common.control_plane.messages.event import (
     create_event_message_headers,
     validate_event_message_headers,
 )
-from ._internal.messages.lifecycle import LifecycleType, create_lifecycle_message_headers
-from ._internal.messages.userspace import (
+from intersect_sdk_common.control_plane.messages.lifecycle import (
+    LifecycleType,
+    create_lifecycle_message_headers,
+)
+from intersect_sdk_common.control_plane.messages.userspace import (
     UserspaceMessageHeaders,
     create_userspace_message_headers,
     validate_userspace_message_headers,
 )
+from pydantic import ConfigDict, ValidationError, validate_call
+from pydantic_core import PydanticSerializationError
+from typing_extensions import Self, final
+
+from ._internal.function_metadata import FunctionMetadata
+from ._internal.generic_serializer import GENERIC_MESSAGE_SERIALIZER
+from ._internal.interfaces import IntersectEventObserver
+from ._internal.logger import logger
 from ._internal.schema import get_schema_and_functions_from_capability_implementations
+from ._internal.service_queue_name import get_service_queue_name
 from ._internal.stoppable_thread import StoppableThread
 from ._internal.utils import die, send_os_signal
 from ._internal.version_resolver import resolve_user_version
@@ -54,8 +61,6 @@ from .client_callback_definitions import (
     INTERSECT_CLIENT_EVENT_CALLBACK_TYPE,
 )
 from .config.service import IntersectServiceConfig
-from .config.shared import HierarchyConfig
-from .core_definitions import IntersectDataHandler
 from .exceptions import IntersectCapabilityError
 from .service_callback_definitions import (
     INTERSECT_SERVICE_RESPONSE_CALLBACK_TYPE,
@@ -298,10 +303,16 @@ class IntersectService(IntersectEventObserver):
         )
         # our userspace queue should be able to survive shutdown
         self._control_plane_manager.add_subscription_channel(
-            self._service_channel_name, {self._handle_service_message}, persist=True
+            self._service_channel_name,
+            {self._handle_service_message},
+            persist=True,
+            queue_name=get_service_queue_name(self._service_channel_name),
         )
         self._control_plane_manager.add_subscription_channel(
-            self._client_channel_name, {self._handle_client_message}, persist=True
+            self._client_channel_name,
+            {self._handle_client_message},
+            persist=True,
+            queue_name=get_service_queue_name(self._client_channel_name),
         )
 
     def _get_capability(self, target: str) -> IntersectBaseCapabilityImplementation | None:
@@ -563,10 +574,14 @@ class IntersectService(IntersectEventObserver):
         hierarchy = service.hierarchy_string('.')
         self._svc2svc_events[hierarchy][f'{capability_name}.{event_name}'].add(response_handler)
 
+        event_channel_name = (
+            f'{service.hierarchy_string("/")}/events/{capability_name}/{event_name}'
+        )
         self._control_plane_manager.add_subscription_channel(
-            f'{service.hierarchy_string("/")}/events/{capability_name}/{event_name}',
+            event_channel_name,
             {self._svc2svc_event_callback},
             persist=True,
+            queue_name=get_service_queue_name(event_channel_name),
         )
 
     def _svc2svc_event_callback(

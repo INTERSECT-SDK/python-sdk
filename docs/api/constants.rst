@@ -1,6 +1,6 @@
 Constants
 =========
 
-.. automodule:: intersect_sdk.constants
+.. automodule:: intersect_sdk_common.constants
    :members:
    :undoc-members:
