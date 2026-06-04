@@ -26,6 +26,7 @@ This site provides documentation for INTERSECT's Python SDK. See the getting sta
    examples/counting
    examples/counting-events
    examples/ping-pong-events
+   examples/fastapi
 
 .. toctree::
    :maxdepth: 2

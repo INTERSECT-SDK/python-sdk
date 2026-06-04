@@ -28,7 +28,7 @@ def path_to_pymodule(p: Path) -> str:
     return str(p).replace(os.path.sep, '.')[:-3]
 
 
-def run_example_test(example: str, timeout: int = 60) -> str:
+def run_example_test(example: str, timeout: int = 60, client_wait_time: float = 1.0) -> str:
     # convert all files to module syntax
     service_modules = [
         path_to_pymodule(f) for f in Path(f'examples/{example}/').glob('*_service.py')
@@ -37,7 +37,7 @@ def run_example_test(example: str, timeout: int = 60) -> str:
 
     service_procs = [subprocess.Popen([sys.executable, '-m', file]) for file in service_modules]  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
     # make sure all service processes have been initialized before starting client process
-    time.sleep(1.0)
+    time.sleep(client_wait_time)
     try:
         client_output = subprocess.run(  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
             [sys.executable, '-m', client_module],
@@ -149,4 +149,12 @@ def test_example_4_service_to_service_events():
     assert run_example_test('4_service_to_service_events') == (
         'From event "internal_service_event", received message "not_feeling_creative" from "example-organization.example-facility.example-system.example-subsystem.internal-service"\n'
         'From event "internal_service_event", received message "not_feeling_creative" from "example-organization.example-facility.example-system.example-subsystem.internal-service"\n'
+    )
+
+
+def test_example_5_fastapi_example():
+    assert run_example_test('5_fastapi_example') == (
+        'Origin from INTERSECT\n'
+        'Origin from FastAPI - HTTP response\n'
+        'Origin from FastAPI - INTERSECT\n'
     )
