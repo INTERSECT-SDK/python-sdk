@@ -5,7 +5,7 @@ This Client will submit one request over INTERSECT and one request over HTTP. Bo
 
 import argparse
 import logging
-import urllib
+import time
 import urllib.request
 
 from intersect_sdk import (
@@ -78,14 +78,17 @@ def generate_mock_input() -> MockInputType:
 class Poster:
     """Wrapper class to be able to POST a message after startup."""
 
-    def __init__(self, server_uri: str) -> None:
-        """Server URI determined from CLI args."""
+    def __init__(self, server_uri: str, wait_time: int = 0) -> None:
+        """Server URI determined from CLI args. Wait_time parameter is only used to ensure ordering of output in tests, it delays the HTTP POST but not the INTERSECT request/response."""
         self.server_uri = server_uri
+        self.wait_time = wait_time
 
     def publish_one_message(self) -> None:
         """Called once by internal INTERSECT logic. This is called AFTER making the HTTP request."""
         data = generate_mock_input().model_dump_json().encode()
-        request = urllib.request.Request(  # noqa: S310
+        if self.wait_time:
+            time.sleep(self.wait_time)
+        request = urllib.request.Request(  # noqa: S310 (validate the URI more carefully in a real world example)
             self.server_uri, data, headers={'Content-Type': 'application/json'}
         )
         with urllib.request.urlopen(request) as req:  # noqa: S310
@@ -97,10 +100,11 @@ if __name__ == '__main__':
     parser.add_argument('--server-scheme', default='http')
     parser.add_argument('--server-host', default='127.0.0.1')
     parser.add_argument('--server-port', type=int, default=8000)
+    parser.add_argument('--wait-time', type=int, default=0)
     args = parser.parse_args()
 
     server_uri = f'{args.server_scheme}://{args.server_host}:{args.server_port}'
-    poster = Poster(server_uri)
+    poster = Poster(server_uri, args.wait_time)
 
     from_config_file = {
         'brokers': [

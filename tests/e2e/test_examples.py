@@ -28,19 +28,29 @@ def path_to_pymodule(p: Path) -> str:
     return str(p).replace(os.path.sep, '.')[:-3]
 
 
-def run_example_test(example: str, timeout: int = 60, client_wait_time: float = 1.0) -> str:
+def run_example_test(
+    example: str,
+    timeout: int = 60,
+    client_wait_time: float = 1.0,
+    client_command_args: list[str] | None = None,
+) -> str:
     # convert all files to module syntax
     service_modules = [
         path_to_pymodule(f) for f in Path(f'examples/{example}/').glob('*_service.py')
     ]
     client_module = path_to_pymodule(next(Path(f'examples/{example}/').glob('*_client.py')))
+    if client_command_args is None:
+        client_command_args = []
 
-    service_procs = [subprocess.Popen([sys.executable, '-m', file]) for file in service_modules]  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
+    service_procs = [
+        subprocess.Popen([sys.executable, '-m', file])  # noqa: S603
+        for file in service_modules
+    ]
     # make sure all service processes have been initialized before starting client process
     time.sleep(client_wait_time)
     try:
         client_output = subprocess.run(  # noqa: S603 (make sure repository is arranged such that this command is safe to run)
-            [sys.executable, '-m', client_module],
+            [sys.executable, '-m', client_module, *client_command_args],
             check=True,
             capture_output=True,
             text=True,
@@ -153,7 +163,7 @@ def test_example_4_service_to_service_events():
 
 
 def test_example_5_fastapi_example():
-    assert run_example_test('5_fastapi_example') == (
+    assert run_example_test('5_fastapi_example', client_command_args=['--wait-time', '1']) == (
         'Origin from INTERSECT\n'
         'Origin from FastAPI - HTTP response\n'
         'Origin from FastAPI - INTERSECT\n'

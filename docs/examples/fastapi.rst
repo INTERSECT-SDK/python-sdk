@@ -6,7 +6,7 @@ This example showcases how to make your FastAPI Server an INTERSECT Service as w
 Service walkthrough
 -------------------
 
-The below code is an example of what you can initialize with uvicorn.
+The below code is an example of what you can initialize with uvicorn. FastAPI routes and the INTERSECT capability should be able to interact via a two-way data binding. You can use the FastAPI `lifespan events <https://fastapi.tiangolo.com/advanced/events/>`_ to startup and shutdown the INTERSECT Service. You can attach the INTERSECT Capability to the global FastAPI state, and interact with the Capability from FastAPI routes.
 
 .. literalinclude:: ../../examples/5_fastapi_example/app/main.py
 
@@ -33,11 +33,11 @@ Running it yourself: Using a Python environment
    # to the end of your command on UNIX systems
 
    # Start the service in your first terminal
-   # Runs on port 8000 and 127.0.0.1 by default, change this with --port <PORT> and --host <HOST> respectively (if running in Docker, need to use 0.0.0.0 host)
+   # Runs on port 8000 and 127.0.0.1 by default, change this with --port <PORT> and --host <HOST> respectively
    python -m examples.5_fastapi_example.fastapi_service
 
    # Finally, run the client in a second terminal
-   # By default this assumes the service runs on port 8000 on host 127.0.0.1,
+   # By default this assumes the service runs on port 8000 on host 127.0.0.1, change this with --server-port <PORT> and --server-host <HOST> respectively
    python -m examples.5_fastapi_example.fastapi_client
 
 After a few seconds, the output from ``fastapi_client`` will look something like this:
@@ -47,6 +47,8 @@ After a few seconds, the output from ``fastapi_client`` will look something like
    Origin from INTERSECT
    Origin from FastAPI - HTTP response
    Origin from FastAPI - INTERSECT
+
+The ordering of the lines may vary.
 
 The client will exit automatically; you will have to use Ctrl+C on the terminal running the service process.
 
@@ -72,7 +74,7 @@ Then you can run the examples like this:
    docker run --rm -it --name intersect-service --network host intersect-sdk python -m examples.5_fastapi_example.fastapi_service --host 0.0.0.0
 
    # Finally, run the client in a second terminal
-   # By default this assumes the service runs on port 8000 on host 127.0.0.1,
+   # By default this assumes the service runs on port 8000 on host 127.0.0.1, change this with --server-port <PORT> and --server-host <HOST> respectively (need to use 0.0.0.0 host in Docker)
    docker run --rm -it --name intersect-client --network host intersect-sdk python -m examples.5_fastapi_example.fastapi_client --server-host 0.0.0.0
 
 After several seconds, the output from ``fastapi_client`` will look something like this:
@@ -82,6 +84,8 @@ After several seconds, the output from ``fastapi_client`` will look something li
    Origin from INTERSECT
    Origin from FastAPI - HTTP response
    Origin from FastAPI - INTERSECT
+
+The ordering of the lines may vary.
 
 The client will exit automatically; you will have to use Ctrl+C on the terminal running the service process.
 
