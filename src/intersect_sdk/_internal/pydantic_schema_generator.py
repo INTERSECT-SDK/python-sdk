@@ -28,6 +28,7 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
+from referencing.exceptions import Unresolvable
 
 
 # build nested dictionary from list of keys. i.e. if keys = ['one', 'two', 'three']
@@ -383,17 +384,22 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
                 f"Default value '{default}' is not JSON serializable; use pydantic.Field's 'default_factory' argument for this.",
             )
 
-        # check if the schema has $ref in it directly, or if it has a boolean schema composition keyword
-        # if it does, we must validate this during $ref construction
-        if '$ref' in json_schema or 'oneOf' in json_schema or 'anyOf' in json_schema:
-            # IMPORTANT!!! You must send the "json_schema" object itself, it will be modified later internally by Pydantic
+        def postpone_default_validation(json_schema: Any, encoded_default: Any) -> dict[str, Any]:
             self.intersect_sdk_postgeneration_defaults.append((encoded_default, json_schema))
             # Since reference schemas do not support child keys, we wrap the reference schema in a single-case allOf:
             return {'allOf': [json_schema], 'default': encoded_default}
 
-        # if this schema does not have a $ref, we should instead validate immediately
+        # check if the schema has $ref in it directly
+        # if it does, we must validate this during $ref construction
+        if '$ref' in json_schema:
+            return postpone_default_validation(json_schema, encoded_default)
+
         try:
             validate_against_schema(json_schema, encoded_default)
+        except Unresolvable:
+            # this will sometimes happen with boolean schema composition keywords, i.e. oneOf or anyOf, IF these contain $ref keywords themselves
+            # we can recover from this by postponing validation
+            return postpone_default_validation(json_schema, encoded_default)
         except SchemaValidationError as e:
             err_msg = f"Default value '{default}' does not validate against schema\n{e}"
             raise PydanticInvalidForJsonSchema(err_msg) from e

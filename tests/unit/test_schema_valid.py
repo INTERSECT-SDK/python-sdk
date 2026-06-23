@@ -1,5 +1,8 @@
 import json
 from pathlib import Path
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, Field
 
 from intersect_sdk import (
     IntersectBaseCapabilityImplementation,
@@ -9,7 +12,9 @@ from intersect_sdk import (
     intersect_message,
     intersect_status,
 )
-from intersect_sdk._internal.schema import get_schema_and_functions_from_capability_implementations
+from intersect_sdk._internal.schema import (
+    get_schema_and_functions_from_capability_implementations,
+)
 from tests.fixtures.example_schema import (
     FAKE_HIERARCHY_CONFIG,
     DummyCapabilityImplementation,
@@ -155,3 +160,26 @@ def test_multiple_status_functions_across_capabilities() -> None:
     assert len(schema['capabilities']) == 3
     for capability in schema['capabilities'].values():
         assert 'status' in capability
+
+
+def test_single_discriminator() -> None:
+    class Model(BaseModel):
+        strategy: Literal['one', 'two']
+        # also check that we can properly handle this "anyOf" default value checking
+        extra_args: dict[str, float | int | bool | str | list[float] | tuple] | None = Field(
+            default=None
+        )
+
+    UnionType = Annotated[Model, Field(discriminator='strategy')]  # noqa: N806 (types should be CamelCase)
+
+    class Capability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'discriminator'
+
+        @intersect_message()
+        def myfunc(self, param: UnionType) -> str: ...
+
+    schema = get_schema_from_capability_implementations([Capability], FAKE_HIERARCHY_CONFIG)
+    assert sorted(schema['components']['schemas'].keys()) == [
+        'IntersectCoreStatus',
+        'Model',
+    ]
