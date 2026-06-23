@@ -2,6 +2,14 @@
 
 We follow [Common Changelog](https://common-changelog.org/) formatting for this document.
 
+## [0.9.3] - 2026-06-23
+
+Fixes a regression introduced by previous version, while keeping its fix in place
+
+### Fixed
+
+- fix schema generation for unions ([commit](https://github.com/INTERSECT-SDK/python-sdk/commit/3d48580c47f05c33297baaf37aa5b0db2d1a234c) (Lance Drane))
+
 ## [0.9.2] - 2026-06-23
 
 This release only contains a single bug fix.
@@ -116,6 +124,7 @@ _If you are upgrading: please see [`UPGRADING.md`](UPGRADING.md)._
 
 - **Breaking:** Added service-to-service request/response mechanism ([!9](https://github.com/INTERSECT-SDK/python-sdk/pull/9)) (Michael Brim, Lance Drane)
 
+[0.9.3]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.9.3
 [0.9.2]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.9.2
 [0.9.1]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.9.1
 [0.9.0]: https://github.com/INTERSECT-SDK/python-sdk/releases/tag/0.9.0
