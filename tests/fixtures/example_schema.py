@@ -134,6 +134,28 @@ class MyTypedDict(TypedDict):
     three: str
 
 
+class UnionClass1(BaseModel):
+    name: Literal['one'] = 'one'
+    scale: int = Field(ge=0, le=0, default=0)
+    loc: str
+
+
+class UnionClass2(BaseModel):
+    name: Literal['two'] = 'two'
+    scale: int = Field(ge=1)
+    loc: str
+
+
+UnionType = Annotated[
+    UnionClass1 | UnionClass2,
+    Field(description='example without discriminator'),
+]
+DiscriminatedUnionType = Annotated[
+    UnionClass1 | UnionClass2,
+    Field(description='example with discriminator', discriminator='name'),
+]
+
+
 class DummyStatus(TypedDict):
     """
     Example structure of a return type. TypedDict is the easiest to use for complex types,
@@ -142,7 +164,10 @@ class DummyStatus(TypedDict):
 
     functions_called: Annotated[
         int,
-        Field(gt=0, description='Every time a function is called, this value is increased by 1.'),
+        Field(
+            gt=0,
+            description='Every time a function is called, this value is increased by 1.',
+        ),
     ]
     """
     Every time a function is called, this value is increased by 1.
@@ -224,7 +249,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
 
     intersect_sdk_events: ClassVar[dict[str, IntersectEventDefinition]] = {
         'union': IntersectEventDefinition(
-            event_type=(int | str), event_documentation='Generic example of how to do a union event'
+            event_type=(int | str),
+            event_documentation='Generic example of how to do a union event',
         ),
         'int': IntersectEventDefinition(
             event_type=Annotated[int, Field(description='Generic integer event')]
@@ -234,7 +260,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
             event_type=float, event_documentation='Generic float event'
         ),
         'list_float': IntersectEventDefinition(
-            event_type=list[float], event_documentation='generic list of floats event'
+            event_type=list[float],
+            event_documentation='generic list of floats event',
         ),
     }
 
@@ -394,7 +421,8 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
 
     # NOTE: tz-agnostic and tz-gnostic datetimes often don't work well together, and I don't think Pydantic OR JsonSchema "formats" have a way to specify timezone (a)gnosticism.
     @intersect_message(
-        strict_request_validation=True, response_data_transfer_handler=IntersectDataHandler.MINIO
+        strict_request_validation=True,
+        response_data_transfer_handler=IntersectDataHandler.MINIO,
     )
     def test_datetime(self, request: datetime.datetime) -> str:
         """
@@ -607,6 +635,14 @@ class DummyCapabilityImplementation(IntersectBaseCapabilityImplementation):
     @intersect_message
     def raise_exception_no_param(self) -> str:
         raise IntersectCapabilityError('I should not exist in production!')  # noqa: EM101, TRY003
+
+    @intersect_message
+    def check_union_no_discriminator(self, param: UnionType) -> str:
+        return 'NOTHING' if param.name == 'one' else '*' * param.scale
+
+    @intersect_message
+    def check_union_discriminator(self, param: DiscriminatedUnionType) -> str:
+        return 'NOTHING' if param.name == 'one' else '*' * param.scale
 
 
 # quick script for generating a valid schema

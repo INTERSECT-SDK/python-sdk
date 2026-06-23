@@ -171,6 +171,85 @@
             "description": "calculates all fibonacci numbers between two numbers\n\ni.e. start = 4, end = 6:\nresponse = [5, 8, 13]"
           }
         },
+        "check_union_discriminator": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string",
+                "title": "check_union_discriminator"
+              }
+            }
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "description": "example with discriminator",
+                "discriminator": {
+                  "mapping": {
+                    "one": "#/components/schemas/UnionClass1",
+                    "two": "#/components/schemas/UnionClass2"
+                  },
+                  "propertyName": "name"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/UnionClass1"
+                  },
+                  {
+                    "$ref": "#/components/schemas/UnionClass2"
+                  }
+                ],
+                "title": "param"
+              }
+            }
+          }
+        },
+        "check_union_no_discriminator": {
+          "publish": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "type": "string",
+                "title": "check_union_no_discriminator"
+              }
+            }
+          },
+          "subscribe": {
+            "message": {
+              "schemaFormat": "application/vnd.aai.asyncapi+json;version=2.6.0",
+              "contentType": "application/json",
+              "traits": {
+                "$ref": "#/components/messageTraits/commonHeaders"
+              },
+              "payload": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/UnionClass1"
+                  },
+                  {
+                    "$ref": "#/components/schemas/UnionClass2"
+                  }
+                ],
+                "description": "example without discriminator",
+                "title": "param"
+              }
+            }
+          }
+        },
         "divide_by_zero_exceptions": {
           "publish": {
             "message": {
@@ -978,6 +1057,57 @@
           "disk_usage_percentage"
         ],
         "title": "IntersectCoreStatus",
+        "type": "object"
+      },
+      "UnionClass1": {
+        "properties": {
+          "name": {
+            "const": "one",
+            "default": "one",
+            "title": "Name",
+            "type": "string"
+          },
+          "scale": {
+            "default": 0,
+            "maximum": 0,
+            "minimum": 0,
+            "title": "Scale",
+            "type": "integer"
+          },
+          "loc": {
+            "title": "Loc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc"
+        ],
+        "title": "UnionClass1",
+        "type": "object"
+      },
+      "UnionClass2": {
+        "properties": {
+          "name": {
+            "const": "two",
+            "default": "two",
+            "title": "Name",
+            "type": "string"
+          },
+          "scale": {
+            "minimum": 1,
+            "title": "Scale",
+            "type": "integer"
+          },
+          "loc": {
+            "title": "Loc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scale",
+          "loc"
+        ],
+        "title": "UnionClass2",
         "type": "object"
       },
       "Json": {

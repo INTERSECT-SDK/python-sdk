@@ -90,7 +90,9 @@ def test_disallow_zero_parameters(caplog: pytest.LogCaptureFixture):
     assert 'zero or one additional parameters' in caplog.text
 
 
-def test_disallow_missing_parameter_annotation(caplog: pytest.LogCaptureFixture):
+def test_disallow_missing_parameter_annotation(
+    caplog: pytest.LogCaptureFixture,
+):
     # should fail because the function parameter is missing a type annotation
     class MissingParameterAnnotation(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
@@ -198,15 +200,19 @@ def test_disallow_dynamic_list_subtyping(caplog: pytest.LogCaptureFixture):
     assert 'dynamic typing is not allowed for INTERSECT schemas' in caplog.text
 
 
-def test_disallow_dynamic_list_subtyping_complex(caplog: pytest.LogCaptureFixture):
+def test_disallow_dynamic_list_subtyping_complex(
+    caplog: pytest.LogCaptureFixture,
+):
     # should fail because List's inner typing provides no information on typing
     # this will fail on the "Any" schema, not the "List" schema
     class MockComplexDynamicList(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
 
         @intersect_message()
-        def mock_message(self, param: list[namedtuple('Point', ['x', 'y'])]) -> None:  # noqa: PYI024 (this is the point of testing this...)
-            ...
+        def mock_message(
+            self,
+            param: list[namedtuple('Point', ['x', 'y'])],  # noqa: PYI024 (this is the point of the test)
+        ) -> None: ...
 
     with pytest.raises(SystemExit):
         get_schema_helper([MockComplexDynamicList])
@@ -527,7 +533,9 @@ def test_disallow_zero_parameters_status(caplog: pytest.LogCaptureFixture):
     assert "should have no parameters other than 'self'" in caplog.text
 
 
-def test_disallow_missing_return_annotation_status(caplog: pytest.LogCaptureFixture):
+def test_disallow_missing_return_annotation_status(
+    caplog: pytest.LogCaptureFixture,
+):
     # should fail because return annotation is missing
     class MissingReturnAnnotationOnStatus(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
@@ -546,7 +554,9 @@ def test_disallow_missing_return_annotation_status(caplog: pytest.LogCaptureFixt
     )
 
 
-def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixture):
+def test_disallow_invalid_return_annotation_status(
+    caplog: pytest.LogCaptureFixture,
+):
     # should fail because return annotation is a dynamic typing
     # (we're only testing one example here, for more extensive examples look at the @intersect_message() tests)
     class InvalidReturnAnnotationOnStatus(IntersectBaseCapabilityImplementation):
@@ -570,7 +580,9 @@ def test_disallow_invalid_return_annotation_status(caplog: pytest.LogCaptureFixt
 # EVENTS TESTS #####################################
 
 
-def test_disallow_event_type_without_schema(caplog: pytest.LogCaptureFixture) -> None:
+def test_disallow_event_type_without_schema(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     class CapImp(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
 
@@ -629,7 +641,9 @@ def test_disallow_classmethod(caplog: pytest.LogCaptureFixture):
     assert 'INTERSECT annotations cannot be used with @classmethod' in caplog.text
 
 
-def test_disallow_staticmethod_too_many_params(caplog: pytest.LogCaptureFixture):
+def test_disallow_staticmethod_too_many_params(
+    caplog: pytest.LogCaptureFixture,
+):
     # should fail because too many parameters for static methods (static methods use one fewer param than instance methods)
     class StaticMethodTooManyParams(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
@@ -643,7 +657,9 @@ def test_disallow_staticmethod_too_many_params(caplog: pytest.LogCaptureFixture)
     assert 'zero or one additional parameters' in caplog.text
 
 
-def test_disallow_staticmethod_missing_param_annotation(caplog: pytest.LogCaptureFixture):
+def test_disallow_staticmethod_missing_param_annotation(
+    caplog: pytest.LogCaptureFixture,
+):
     # should fail because static method parameters still need annotations
     class StaticMethodMissingParamAnnotation(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
@@ -664,7 +680,9 @@ def test_disallow_staticmethod_missing_param_annotation(caplog: pytest.LogCaptur
 # DEFAULT PARAMETERS TESTS ###############################
 
 
-def test_disallow_default_argument_in_function_signature(caplog: pytest.LogCaptureFixture):
+def test_disallow_default_argument_in_function_signature(
+    caplog: pytest.LogCaptureFixture,
+):
     # this just tests the Pythonic "default" style argument, you can use defaults with Annotated[int, Field(default=1)]
     class DefaultArgumentInFunctionSignature(IntersectBaseCapabilityImplementation):
         intersect_sdk_capability_name = 'unused'
@@ -806,7 +824,11 @@ def test_invalid_json_schema(caplog: pytest.LogCaptureFixture):
 
         @intersect_message()
         def invalid_schema_config(
-            self, one: Annotated[int, Field(json_schema_extra={'maximum': 'should be an integer'})]
+            self,
+            one: Annotated[
+                int,
+                Field(json_schema_extra={'maximum': 'should be an integer'}),
+            ],
         ) -> bool: ...
 
     with pytest.raises(SystemExit):
@@ -876,7 +898,9 @@ def test_duplicate_capability_names(caplog: pytest.LogCaptureFixture):
     assert '"dup" is a duplicate and has already appeared in another capability.' in caplog.text
 
 
-def test_input_param_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
+def test_input_param_must_be_bytes_if_content_type_is_binary(
+    caplog: pytest.LogCaptureFixture,
+):
     # fails because request_content_type is not application/json, but request param is not bytes
 
     class BinaryCapability(IntersectBaseCapabilityImplementation):
@@ -893,7 +917,9 @@ def test_input_param_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogC
     )
 
 
-def test_return_type_must_be_bytes_if_content_type_is_binary(caplog: pytest.LogCaptureFixture):
+def test_return_type_must_be_bytes_if_content_type_is_binary(
+    caplog: pytest.LogCaptureFixture,
+):
     # fails because response_content_type is not application/json, but return type is not bytes
 
     class BinaryCapability(IntersectBaseCapabilityImplementation):
@@ -927,3 +953,17 @@ def test_event_type_must_be_bytes_if_content_type_is_binary(
         "event key 'name' must have EventDefinition event_type be 'bytes' if content_type is not 'application/json'"
         in caplog.text
     )
+
+
+def test_disallow_multitype_sets(caplog: pytest.LogCaptureFixture):
+    # we explicitly forbid default values with multitype sets - they cause non-determinitive schema generation
+    class MultiSetCapability(IntersectBaseCapabilityImplementation):
+        intersect_sdk_capability_name = 'multitype_set'
+
+        @intersect_message
+        def my_function(self, param: Annotated[set[int | str], Field({1, '1'})]) -> int:
+            return len(param)
+
+    with pytest.raises(SystemExit):
+        get_schema_helper([MultiSetCapability])
+    assert 'sets must contain the same types' in caplog.text

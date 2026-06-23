@@ -3,6 +3,7 @@
 See: https://docs.pydantic.dev/latest/api/json_schema/#pydantic.json_schema.GenerateJsonSchema
 """
 
+import collections
 from typing import (
     Any,
 )
@@ -10,14 +11,23 @@ from typing import (
 from jsonschema import Draft202012Validator as SchemaValidator
 from jsonschema import ValidationError as SchemaValidationError
 from jsonschema.validators import validator_for
-from pydantic import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError, TypeAdapter
+from pydantic import (
+    PydanticInvalidForJsonSchema,
+    PydanticSchemaGenerationError,
+    TypeAdapter,
+)
 from pydantic.json_schema import (
     GenerateJsonSchema,
     JsonSchemaMode,
     JsonSchemaValue,
 )
 from pydantic.type_adapter import _type_has_config
-from pydantic_core import CoreSchema, PydanticSerializationError, core_schema, to_jsonable_python
+from pydantic_core import (
+    CoreSchema,
+    PydanticSerializationError,
+    core_schema,
+    to_jsonable_python,
+)
 
 
 # build nested dictionary from list of keys. i.e. if keys = ['one', 'two', 'three']
@@ -73,7 +83,8 @@ def validate_schema(json_schema: Any) -> list[str]:
     # custom impl. of check_schema() , gather all errors instead of throwing on first error
     validator_cls = validator_for(SchemaValidator.META_SCHEMA, default=SchemaValidator)
     metavalidator: SchemaValidator = validator_cls(
-        SchemaValidator.META_SCHEMA, format_checker=SchemaValidator.FORMAT_CHECKER
+        SchemaValidator.META_SCHEMA,
+        format_checker=SchemaValidator.FORMAT_CHECKER,
     )
     return [
         f'{error.json_path} : {error.message}' for error in metavalidator.iter_errors(json_schema)
@@ -120,7 +131,10 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             ref_parts = self.ref_template.split('/')[1:-1]
             defs_schema = build_nested_dict(ref_parts, defs)
 
-            for default, inner_schema in self.intersect_sdk_postgeneration_defaults:
+            for (
+                default,
+                inner_schema,
+            ) in self.intersect_sdk_postgeneration_defaults:
                 final_schema = {**defs_schema, **inner_schema}
                 try:
                     validate_against_schema(final_schema, default)
@@ -146,7 +160,8 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             The generated JSON schema.
         """
         return self.handle_invalid_for_json_schema(
-            schema, 'Any or object : dynamic typing is not allowed for INTERSECT schemas'
+            schema,
+            'Any or object : dynamic typing is not allowed for INTERSECT schemas',
         )
 
     def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
@@ -249,12 +264,14 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         """
         if not schema.get('items_schema'):
             return self.handle_invalid_for_json_schema(
-                schema, 'generator yield subtyping (first argument) may not be dynamic in INTERSECT'
+                schema,
+                'generator yield subtyping (first argument) may not be dynamic in INTERSECT',
             )
         json_schema = super().generator_schema(schema)
         if not json_schema.get('items'):
             return self.handle_invalid_for_json_schema(
-                schema, 'generator yield subtyping (first argument) may not be dynamic in INTERSECT'
+                schema,
+                'generator yield subtyping (first argument) may not be dynamic in INTERSECT',
             )
         return json_schema
 
@@ -281,7 +298,8 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             )
         if 'values_schema' not in schema:
             return self.handle_invalid_for_json_schema(
-                schema, 'dict or mapping: value type cannot be Any/object for INTERSECT'
+                schema,
+                'dict or mapping: value type cannot be Any/object for INTERSECT',
             )
         keys_schema = self.generate_inner(schema['keys_schema']).copy()
         values_schema = self.generate_inner(schema['values_schema']).copy()
@@ -343,6 +361,19 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
             return json_schema
         default = schema['default']
 
+        # Sort set/frozenset defaults to ensure deterministic JSON schema generation
+        # We only sort if len > 1 because sets of size 0 or 1 are already deterministic
+        if isinstance(default, collections.abc.Set) and len(default) > 1:
+            try:
+                default = sorted(default)
+            except TypeError:
+                # If items aren't comparable (e.g. mixed types), we can't sort them.
+                # Unlike Pydantic, we will actually raise an error here, as we want to force deterministic schema generation
+                err_msg = (
+                    f'Do not use "{default}" as a default value: sets must contain the same types'
+                )
+                raise PydanticInvalidForJsonSchema(err_msg)  # noqa: B904 (TypeError provides indirection)
+
         try:
             encoded_default = self.encode_default(default)
         except PydanticSerializationError:
@@ -352,9 +383,9 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
                 f"Default value '{default}' is not JSON serializable; use pydantic.Field's 'default_factory' argument for this.",
             )
 
-        if '$ref' in json_schema:
-            # TODO - not best way to handle this
-            # validate this default later, when all $refs have been resolved
+        # check if the schema has $ref in it directly, or if it has a boolean schema composition keyword
+        # if it does, we must validate this during $ref construction
+        if '$ref' in json_schema or 'oneOf' in json_schema or 'anyOf' in json_schema:
             # IMPORTANT!!! You must send the "json_schema" object itself, it will be modified later internally by Pydantic
             self.intersect_sdk_postgeneration_defaults.append((encoded_default, json_schema))
             # Since reference schemas do not support child keys, we wrap the reference schema in a single-case allOf:
@@ -479,7 +510,9 @@ class GenerateTypedJsonSchema(GenerateJsonSchema):
         return super().kw_arguments_schema(arguments, var_kwargs_schema)
 
     def p_arguments_schema(
-        self, arguments: list[core_schema.ArgumentsParameter], var_args_schema: CoreSchema | None
+        self,
+        arguments: list[core_schema.ArgumentsParameter],
+        var_args_schema: CoreSchema | None,
     ) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function's positional arguments.
 
