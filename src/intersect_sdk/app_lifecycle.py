@@ -39,15 +39,15 @@ class SignalHandler:
       - SIGTERM
       - SIGHUP
       - SIGQUIT
-      - SIGUSR1
-      - SIGUSR2
 
-    Currently, we do not ignore any signals we catch, though debatably
-    SIGHUP (terminal died), SIGQUIT (core dump), SIGUSR1, and SIGUSR2
-    should be ignored.
+    If you expect to catch additional signals and you want to terminate on catching it, it's recommended you add it to the additional_signals list. See signal(7) for more details.
     """
 
-    def __init__(self, cleanup_callback: Callable[[int], None] | None = None) -> None:
+    def __init__(
+        self,
+        cleanup_callback: Callable[[int], None] | None = None,
+        additional_signals: list[signal.Signals] | None = None,
+    ) -> None:
         """Basic constructor. Signal listeners are set up on constructor call.
 
         Parameters:
@@ -56,6 +56,7 @@ class SignalHandler:
         called once a signal is caught. The callback function takes in a single
         integer parameter, which will be the signal code intercepted.
 
+        additional_signals: Optional list of additional signals you may want to catch.
         """
         self._exit = Event()
         self._cleanup_callback = cleanup_callback
@@ -67,11 +68,12 @@ class SignalHandler:
             catch_signals += [
                 signal.SIGHUP,
                 signal.SIGQUIT,
-                signal.SIGUSR1,
-                signal.SIGUSR2,
             ]
         for signum in catch_signals:
             signal.signal(signum, self._on_signal_caught)
+        if additional_signals:
+            for signum in additional_signals:
+                signal.signal(signum, self._on_signal_caught)
 
     def _on_signal_caught(self, signal: int, _: Any) -> None:
         """Executes when signal is caught.
@@ -118,6 +120,7 @@ def default_intersect_lifecycle_loop(
     post_startup_callback: Callable[[], None] | None = None,
     cleanup_callback: Callable[[int], None] | None = None,
     waiting_callback: Callable[[IntersectClient | IntersectService], None] | None = None,
+    additional_signals: list[signal.Signals] | None = None,
 ) -> None:
     """If users don't have their own lifecycle manager, they can import this function to begin a lifecycle loop.
 
@@ -140,9 +143,12 @@ def default_intersect_lifecycle_loop(
       - waiting_callback: This is an optional callback function which will be
         called every <DELAY> seconds. It takes in the adapter, and returns nothing.
         This can be useful to set for debugging purposes.
+      - additional_signals: Optional list of additional signals you may want to catch. By default, always catch HUP/INT/TERM/QUIT .
 
     """
-    sighandler = SignalHandler(cleanup_callback=cleanup_callback)
+    sighandler = SignalHandler(
+        cleanup_callback=cleanup_callback, additional_signals=additional_signals
+    )
     intersect_gateway.startup()
     if post_startup_callback:
         post_startup_callback()
